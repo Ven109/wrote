@@ -1,8 +1,13 @@
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { defineConfig, devices } from '@playwright/test'
 
 const PORT = Number(process.env.E2E_PORT ?? 3100)
 // Optional: use a preinstalled Chromium (e.g. in sandboxes) instead of Playwright's download.
 const executablePath = process.env.PW_CHROMIUM_PATH || undefined
+// Every run gets a fresh, empty workspace.
+const workspaceDir = process.env.E2E_WORKSPACE_DIR ?? mkdtempSync(join(tmpdir(), 'wrote-e2e-'))
 
 export default defineConfig({
   testDir: 'test/e2e',
@@ -22,7 +27,8 @@ export default defineConfig({
   webServer: {
     command: `pnpm build && PORT=${PORT} node .output/server/index.mjs`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    env: { NUXT_WORKSPACE_DIR: workspaceDir },
+    reuseExistingServer: false,
     timeout: 240_000,
   },
 })

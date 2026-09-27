@@ -24,6 +24,10 @@ export default defineNuxtConfig({
 
   typescript: {
     strict: true,
+    tsConfig: {
+      // Unknown components/props in templates are type errors (catches wrong auto-import names).
+      vueCompilerOptions: { checkUnknownComponents: true },
+    },
   },
 
   eslint: {

@@ -57,3 +57,31 @@ describe('GET /api/books/:bookId/events', () => {
     expect(received).toContain('"kind":"changed"')
   }, 15_000)
 })
+
+describe('library API', () => {
+  it('creates, lists, updates and removes books', async () => {
+    const created = await $fetch<{ book: { id: string }, firstScenePath: string }>('/api/books', {
+      method: 'POST',
+      body: { title: 'Api Book', template: 'blank' },
+    })
+    expect(created.book.id).toBe('api-book')
+    expect(created.firstScenePath).toMatch(/^manuscript\/01-part-one\/01-chapter-one\/01-untitled\.md$/)
+
+    const books = await $fetch<{ id: string }[]>('/api/books')
+    expect(books.map(b => b.id)).toContain('api-book')
+
+    const updated = await $fetch<{ author: string }>('/api/books/api-book', { method: 'PATCH', body: { author: 'Me' } })
+    expect(updated.author).toBe('Me')
+
+    const removed = await fetch('/api/books/api-book', { method: 'DELETE' })
+    expect(removed.status).toBe(204)
+    expect((await fetch('/api/books/api-book')).status).toBe(404)
+  })
+
+  it('validates input', async () => {
+    const response = await fetch('/api/books', { method: 'POST', body: JSON.stringify({ title: '' }), headers: { 'content-type': 'application/json' } })
+    expect(response.status).toBe(400)
+    const open = await fetch('/api/books/open', { method: 'POST', body: JSON.stringify({ path: 'relative' }), headers: { 'content-type': 'application/json' } })
+    expect(open.status).toBe(400)
+  })
+})
