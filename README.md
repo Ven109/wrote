@@ -13,3 +13,17 @@ Collect notes, build your story bible, outline, draft and revise — with an AI 
 Built with **Nuxt 4** and **Nuxt UI 4** (zinc + yellow).
 
 > Status: concept stage. See [docs/CONCEPT.md](docs/CONCEPT.md).
+
+## Development
+
+Requirements: Node 22+, pnpm 10 (`corepack enable`).
+
+```bash
+pnpm install      # install dependencies (also sets up git hooks)
+pnpm dev          # start the app on http://localhost:3000
+pnpm lint         # lint
+pnpm typecheck    # type-check
+pnpm test         # unit + component tests
+```
+
+See [CLAUDE.md](CLAUDE.md) for architecture and conventions.
