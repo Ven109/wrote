@@ -1,7 +1,7 @@
-import { ensureMcpToken } from '../../services/mcp-auth'
+import { mcpSettingsView } from '../../services/mcp-clients'
 
-/** Connection details for MCP clients (local app only). */
+/** MCP endpoint, connected clients (tokens are never returned) and the assistant's policy. Local app only. */
 export default defineEventHandler(async (event) => {
   const url = getRequestURL(event)
-  return { url: `${url.protocol}//${url.host}/mcp`, token: await ensureMcpToken(useWorkspaceDir(event)) }
+  return mcpSettingsView(useWorkspaceDir(event), `${url.protocol}//${url.host}/mcp`)
 })

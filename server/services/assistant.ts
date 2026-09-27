@@ -1,5 +1,7 @@
 import { convertToModelMessages, stepCountIs, streamText, type LanguageModel, type ToolSet, type UIMessage } from 'ai'
 import type { ChatContext } from '#shared/schemas/chat'
+import { DEFAULT_TOOL_POLICY, type ToolPolicy } from '#shared/schemas/permissions'
+import type { Actor } from '#shared/schemas/suggestion'
 import type { ContextSnapshot } from '#shared/schemas/context'
 import { buildContext } from '../ai/context/build'
 import { renderContext } from '../ai/context/render'
@@ -7,18 +9,22 @@ import { saveThreadMessages } from '../db/state/chat'
 import { saveContextSnapshot } from '../db/state/context-snapshots'
 import { readBookConfig } from '../storage/config'
 import { toAiSdkTools } from '../tools/adapters'
-import type { ToolPermission } from '../tools/define'
+import { decisionFor } from '../tools/define'
+import { approvalsFor } from './tool-approvals'
 import { WROTE_TOOLS } from '../tools'
 import type { BookContext } from './workspace'
 
-/** The assistant may read and propose; it never writes book content directly (suggestion flow). */
-export const ASSISTANT_PERMISSIONS: readonly ToolPermission[] = ['read', 'propose']
 export const MAX_STEPS = 8
 const TITLE_LENGTH = 60
+const ASSISTANT: Actor = { kind: 'assistant', name: 'Assistant' }
 
-export function assistantTools(book: BookContext, workspaceDir: string): ToolSet {
-  const allowed = WROTE_TOOLS.filter(tool => ASSISTANT_PERMISSIONS.includes(tool.permission))
-  return toAiSdkTools(allowed, { workspaceDir, book, caller: { kind: 'assistant', name: 'Assistant' } })
+/**
+ * The assistant's tools under its policy (Settings → Connect agents): denied levels are left out; `ask`
+ * levels wait for the author's approval in the app. Prose changes always go through propose_edit.
+ */
+export function assistantTools(book: BookContext, workspaceDir: string, policy: ToolPolicy = DEFAULT_TOOL_POLICY): ToolSet {
+  const offered = WROTE_TOOLS.filter(tool => decisionFor(policy, tool.permission) !== 'deny')
+  return toAiSdkTools(offered, { workspaceDir, book, caller: ASSISTANT, policy, requestApproval: approvalsFor(book.id, ASSISTANT) })
 }
 
 /** Assistant instructions with the book and what the user is looking at (book content comes via the context engine). */
@@ -72,6 +78,8 @@ export interface AssistantRequest {
   model: LanguageModel
   /** `provider:model` of `model` (context budget, snapshot). */
   modelRef: string
+  /** The assistant's tool policy (default: write/destructive ask). */
+  policy?: ToolPolicy
   threadId: string
   messages: UIMessage[]
   context: ChatContext
@@ -90,7 +98,7 @@ export async function streamAssistant(request: AssistantRequest): Promise<Respon
     model: request.model,
     system: snapshot.system,
     messages: await convertToModelMessages(request.messages),
-    tools: assistantTools(request.book, request.workspaceDir),
+    tools: assistantTools(request.book, request.workspaceDir, request.policy),
     stopWhen: stepCountIs(MAX_STEPS),
     abortSignal: request.abortSignal,
   })

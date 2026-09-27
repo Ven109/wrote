@@ -86,8 +86,8 @@ describe('read tools', () => {
 })
 
 describe('write tools', () => {
-  it('creates notes in the inbox', async () => {
-    const note = await runTool(createNoteTool, { title: 'Lighthouse keeper', body: 'He drew the map.' }, context)
+  it('creates notes in the inbox when the caller may write', async () => {
+    const note = await runTool(createNoteTool, { title: 'Lighthouse keeper', body: 'He drew the map.' }, { ...context, policy: { read: 'allow', propose: 'allow', write: 'allow', destructive: 'ask' } })
     expect(note.path).toBe('notes/inbox/lighthouse-keeper.md')
   })
 
@@ -124,5 +124,36 @@ describe('adapters', () => {
     expect(search.annotations.readOnlyHint).toBe(true)
     expect(search.jsonSchema).toMatchObject({ type: 'object', required: ['query'] })
     expect(mcp.find(t => t.name === 'create_note')!.annotations.readOnlyHint).toBe(false)
+  })
+})
+
+describe('permissions', () => {
+  const policy = (write: 'allow' | 'ask' | 'deny') => ({ read: 'allow' as const, propose: 'allow' as const, write, destructive: 'ask' as const })
+  const inboxTitles = async () => (await context.book!.repository.list()).entries.filter(e => e.path.startsWith('notes/inbox/')).map(e => e.frontmatter.title)
+
+  it('refuses denied calls with a clear error and never runs them', async () => {
+    await expect(runTool(createNoteTool, { title: 'Denied note' }, { ...context, policy: policy('deny') })).rejects.toMatchObject({ code: 'permission_denied', message: expect.stringMatching(/not allowed/) })
+    expect(await inboxTitles()).not.toContain('Denied note')
+  })
+
+  it('asks the author for "ask" levels and runs only on approval', async () => {
+    const asked: string[] = []
+    const approve = (answer: boolean) => async (tool: { name: string }) => {
+      asked.push(tool.name)
+      return answer
+    }
+    await expect(runTool(createNoteTool, { title: 'Declined note' }, { ...context, policy: policy('ask'), requestApproval: approve(false) })).rejects.toMatchObject({ code: 'permission_denied' })
+    await runTool(createNoteTool, { title: 'Approved note' }, { ...context, policy: policy('ask'), requestApproval: approve(true) })
+    expect(asked).toEqual(['create_note', 'create_note'])
+    expect(await inboxTitles()).toEqual(expect.arrayContaining(['Approved note']))
+    expect(await inboxTitles()).not.toContain('Declined note')
+  })
+
+  it('refuses "ask" levels when approval is impossible, and never asks for reads', async () => {
+    await expect(runTool(createNoteTool, { title: 'x' }, context)).rejects.toMatchObject({ code: 'approval_unavailable' })
+    const requestApproval = async () => {
+      throw new Error('should not ask')
+    }
+    await expect(runTool(searchTool, { query: 'harbor' }, { ...context, requestApproval })).resolves.toBeDefined()
   })
 })

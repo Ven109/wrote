@@ -3,6 +3,7 @@ import { ChatRequestSchema } from '#shared/schemas/chat'
 import { getModelWithRef } from '../../../../ai/models'
 import { getThread } from '../../../../db/state/chat'
 import { streamAssistant } from '../../../../services/assistant'
+import { assistantPolicy } from '../../../../services/mcp-clients'
 
 /** Streams an assistant reply (AI SDK UI message stream) for a thread. Aborts when the client disconnects. */
 export default defineEventHandler(async (event) => {
@@ -15,5 +16,5 @@ export default defineEventHandler(async (event) => {
 
   const controller = new AbortController()
   event.node.req.on('close', () => controller.abort())
-  return streamAssistant({ book, workspaceDir, model: configured.model, modelRef: configured.ref, threadId: input.threadId, messages: input.messages as unknown as UIMessage[], context: input.context, abortSignal: controller.signal })
+  return streamAssistant({ book, workspaceDir, model: configured.model, modelRef: configured.ref, policy: await assistantPolicy(workspaceDir), threadId: input.threadId, messages: input.messages as unknown as UIMessage[], context: input.context, abortSignal: controller.signal })
 })

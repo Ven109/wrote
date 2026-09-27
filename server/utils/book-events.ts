@@ -1,5 +1,6 @@
 import type { BookChangeEvent } from '#shared/schemas/events'
 import type { Job } from '#shared/schemas/jobs'
+import type { ApprovalEvent } from '#shared/schemas/permissions'
 import type { SuggestionEvent } from '#shared/schemas/suggestion'
 
 /** A per-book in-process pub/sub channel (server → SSE clients). */
@@ -24,6 +25,7 @@ function createBookChannel<T>() {
 const changes = createBookChannel<BookChangeEvent>()
 const jobs = createBookChannel<Job>()
 const suggestions = createBookChannel<SuggestionEvent>()
+const approvals = createBookChannel<ApprovalEvent>()
 
 /** File changes of a book (watcher and own writes → SSE clients). */
 export const subscribeBookEvents = changes.subscribe
@@ -34,3 +36,6 @@ export const publishJobEvent = jobs.publish
 /** Suggestions created or resolved (they live in state.db, so no file event announces them). */
 export const subscribeSuggestionEvents = suggestions.subscribe
 export const publishSuggestionEvent = suggestions.publish
+/** Tool calls waiting for (or answered by) the author (permission model). */
+export const subscribeApprovalEvents = approvals.subscribe
+export const publishApprovalEvent = approvals.publish

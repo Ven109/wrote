@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { $fetch, fetch, setup, url } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
+import { createMcpToken } from '../utils/mcp-token'
 import { createTestWorkspace } from '../utils/workspace'
 
 const workspace = await createTestWorkspace()
@@ -12,7 +13,7 @@ const path = 'manuscript/01-part-one/01-the-harbor/02-the-map.md'
 
 describe('provenance API', () => {
   it('records accepted AI text and reports it per entry and for the book', async () => {
-    const { token } = await $fetch<{ token: string }>('/api/settings/mcp')
+    const token = await createMcpToken($fetch)
     const client = new Client({ name: 'provenance-test', version: '1.0.0' })
     await client.connect(new StreamableHTTPClientTransport(new URL(url('/mcp')), { requestInit: { headers: { Authorization: `Bearer ${token}` } } }))
     await client.callTool({ name: 'propose_edit', arguments: { entryId: 'scn_themap0001', find: 'tired creases', replace: 'creases her father had worn into it' } })

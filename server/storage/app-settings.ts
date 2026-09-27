@@ -1,4 +1,4 @@
-import { chmod, readFile } from 'node:fs/promises'
+import { chmod, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { z } from 'zod'
 import { writeFileAtomic } from './fs'
@@ -23,4 +23,19 @@ export async function writeSettingsFile(workspaceDir: string, name: string, data
   const path = settingsPath(workspaceDir, name)
   await writeFileAtomic(path, `${JSON.stringify(data, null, 2)}\n`, { mode: options.secret ? 0o600 : undefined })
   if (options.secret) await chmod(path, 0o600)
+}
+
+/** Reads a plain-text settings file (trimmed), or `null` when it does not exist. */
+export async function readSettingsText(workspaceDir: string, name: string): Promise<string | null> {
+  try {
+    return (await readFile(settingsPath(workspaceDir, name), 'utf8')).trim()
+  }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
+    throw error
+  }
+}
+
+export async function removeSettingsFile(workspaceDir: string, name: string): Promise<void> {
+  await rm(settingsPath(workspaceDir, name), { force: true })
 }

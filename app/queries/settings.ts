@@ -1,5 +1,6 @@
 import { defineQueryOptions } from '@pinia/colada'
 import type { AiModelOption, AiProviderId, AiSettingsView, ModelPurpose } from '#shared/schemas/ai'
+import type { McpSettingsView } from '#shared/schemas/permissions'
 import { settingsKeys } from './keys'
 
 export const aiSettingsQuery = defineQueryOptions({
@@ -13,7 +14,8 @@ export const aiModelsQuery = defineQueryOptions((purpose: ModelPurpose = 'langua
   query: () => $fetch<{ provider: AiProviderId, models: AiModelOption[] }[]>('/api/settings/ai/models', { query: { purpose } }),
 }))
 
+/** MCP endpoint, connected clients and the assistant's policy (tokens are never returned). */
 export const mcpSettingsQuery = defineQueryOptions({
   key: settingsKeys.mcp(),
-  query: () => $fetch<{ url: string, token: string }>('/api/settings/mcp'),
+  query: () => $fetch<McpSettingsView>('/api/settings/mcp'),
 })

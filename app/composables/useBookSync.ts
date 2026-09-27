@@ -1,5 +1,6 @@
 import { useQueryCache } from '@pinia/colada'
 import type { Job } from '#shared/schemas/jobs'
+import type { PendingApproval } from '#shared/schemas/permissions'
 import { bookKeys } from '~/queries/keys'
 import { upsertJob } from '~/utils/jobs'
 
@@ -30,6 +31,12 @@ export function useBookSync(bookId: MaybeRefOrGetter<string | null>) {
       if (!id) return
       queryCache.setQueryData(bookKeys.jobs(id), upsertJob(queryCache.getQueryData<Job[]>(bookKeys.jobs(id)), job))
       if (job.status === 'succeeded') refreshBook(id)
+    },
+    approval: ({ approval, state }) => {
+      const id = toValue(bookId)
+      if (!id) return
+      const others = (queryCache.getQueryData<PendingApproval[]>(bookKeys.approvals(id)) ?? []).filter(a => a.id !== approval.id)
+      queryCache.setQueryData(bookKeys.approvals(id), state === 'pending' ? [...others, approval] : others)
     },
     suggestion: ({ entryId }) => {
       const id = toValue(bookId)

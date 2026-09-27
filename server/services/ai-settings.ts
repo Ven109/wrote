@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { AI_PROVIDER_IDS, AiSettingsSchema, type AiProviderId, type AiSettings, type AiSettingsView, type AiTask, type UpdateAiSettingsInput } from '#shared/schemas/ai'
 import { PROVIDERS, createProvider } from '../ai/providers'
 import { readSettingsFile, writeSettingsFile } from '../storage/app-settings'
+import { createSerializer } from '../utils/serialize'
 
 const SETTINGS_FILE = 'ai-settings.json'
 const SECRETS_FILE = 'secrets.json'
@@ -95,18 +96,7 @@ export function aiSettingsView(config: AiConfig): AiSettingsView {
 }
 
 /** Per-workspace write lock: patches are read-merge-write, so concurrent ones must not interleave. */
-const writeLocks = new Map<string, Promise<unknown>>()
-
-function serialized<T>(workspaceDir: string, task: () => Promise<T>): Promise<T> {
-  const previous = writeLocks.get(workspaceDir) ?? Promise.resolve()
-  const next = previous.then(task, task)
-  writeLocks.set(workspaceDir, next)
-  const release = () => {
-    if (writeLocks.get(workspaceDir) === next) writeLocks.delete(workspaceDir)
-  }
-  next.then(release, release)
-  return next
-}
+const serialized = createSerializer()
 
 /** Merges a settings patch; keys go to the owner-only secrets file and are never echoed back. */
 export function updateAiSettings(workspaceDir: string, input: UpdateAiSettingsInput): Promise<AiSettingsView> {

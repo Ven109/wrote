@@ -37,5 +37,9 @@ useBookSync(bookId)
     <AppAssistantSidebar v-model:open="assistantOpen" />
     <AppCommandPalette />
     <NotesQuickCapture />
+    <AppApprovals
+      v-if="bookId"
+      :book-id="bookId"
+    />
   </div>
 </template>

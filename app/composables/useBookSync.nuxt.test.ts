@@ -53,4 +53,20 @@ describe('useBookSync', () => {
     FakeEventSource.last!.emit('suggestion', { entryId: 'scn_1' })
     expect(invalidate).toHaveBeenCalledWith({ key: bookKeys.entrySuggestions('demo', 'scn_1') })
   })
+
+  it('keeps the approvals cache current from approval events', async () => {
+    let cache!: ReturnType<typeof useQueryCache>
+    await mountSuspended(defineComponent({
+      setup() {
+        cache = useQueryCache()
+        useBookSync('demo')
+        return () => h('div')
+      },
+    }))
+    const approval = { id: 'apr_1', bookId: 'demo' }
+    FakeEventSource.last!.emit('approval', { approval, state: 'pending' })
+    expect(cache.getQueryData(bookKeys.approvals('demo'))).toEqual([approval])
+    FakeEventSource.last!.emit('approval', { approval, state: 'expired' })
+    expect(cache.getQueryData(bookKeys.approvals('demo'))).toEqual([])
+  })
 })

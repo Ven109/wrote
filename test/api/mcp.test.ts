@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { $fetch, fetch, setup, url } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
+import { createMcpToken } from '../utils/mcp-token'
 import { createTestWorkspace } from '../utils/workspace'
 
 const workspace = await createTestWorkspace()
@@ -20,15 +21,16 @@ describe('MCP over HTTP', () => {
   it('rejects unauthenticated and cross-origin requests', async () => {
     const init = { method: 'POST', headers: { 'content-type': 'application/json', 'accept': 'application/json, text/event-stream' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) }
     expect((await fetch('/mcp', init)).status).toBe(401)
-    const { token } = await $fetch<{ token: string }>('/api/settings/mcp')
+    expect((await fetch('/mcp', { ...init, headers: { ...init.headers, authorization: 'Bearer wrote_unknown' } })).status).toBe(401)
+    const token = await createMcpToken($fetch)
     const foreign = await fetch('/mcp', { ...init, headers: { ...init.headers, authorization: `Bearer ${token}`, origin: 'https://evil.example' } })
     expect(foreign.status).toBe(403)
   })
 
   it('calls every tool against the fixture book with the official MCP client', async () => {
-    const { url: endpoint, token } = await $fetch<{ url: string, token: string }>('/api/settings/mcp')
+    const { url: endpoint } = await $fetch<{ url: string }>('/api/settings/mcp')
     expect(endpoint).toMatch(/\/mcp$/)
-    const client = await connect(token)
+    const client = await connect(await createMcpToken($fetch, 'Claude Code', { write: 'allow' }))
     const tools = (await client.listTools()).tools.map(tool => tool.name).sort()
     expect(tools).toEqual(['create_note', 'get_codex', 'get_codex_entry', 'get_progress', 'get_structure', 'get_summaries', 'list_books', 'list_suggestions', 'propose_edit', 'read_entry', 'search'])
 
@@ -50,8 +52,7 @@ describe('MCP over HTTP', () => {
   })
 
   it('stores MCP proposals as pending suggestions the author resolves via the API', async () => {
-    const { token } = await $fetch<{ token: string }>('/api/settings/mcp')
-    const client = await connect(token)
+    const client = await connect(await createMcpToken($fetch, 'Reviewer'))
     const proposal = await client.callTool({ name: 'propose_edit', arguments: { entryId: 'scn_themap0001', find: 'tired creases', replace: 'old creases', rationale: 'Fresher' } })
     const insert = await client.callTool({ name: 'propose_edit', arguments: { entryId: 'scn_themap0001', find: 'in the drawer', replace: 'She did not touch it.', mode: 'insert_after' } })
     const ambiguous = await client.callTool({ name: 'propose_edit', arguments: { entryId: 'scn_themap0001', find: 'the', replace: 'x' } })
