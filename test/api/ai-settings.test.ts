@@ -1,7 +1,8 @@
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { $fetch, fetch, setup } from '@nuxt/test-utils/e2e'
+import { $fetch, fetch } from '@nuxt/test-utils/e2e'
 import { afterAll, describe, expect, it } from 'vitest'
+import { setupApiServer } from '../utils/api-server'
 import { createTestWorkspace } from '../utils/workspace'
 
 /** A minimal Ollama stand-in: model list + OpenAI-compatible chat completions. */
@@ -33,7 +34,7 @@ const workspace = await createTestWorkspace()
 const ollama = await fakeOllama()
 afterAll(() => ollama.server.close())
 
-await setup({ server: true, nuxtConfig: { runtimeConfig: { workspaceDir: workspace } } })
+await setupApiServer(workspace, import.meta.url)
 
 describe('/api/settings/ai', () => {
   it('starts unconfigured', async () => {

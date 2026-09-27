@@ -39,3 +39,16 @@ export function scriptedModel(steps: MockStep[]): MockLanguageModelV4 & { prompt
 }
 
 export type { LanguageModelV4 }
+
+/** A non-streaming model that answers every call with `text` (e.g. JSON for structured output). Records the prompts. */
+export function textModel(text: string): MockLanguageModelV4 & { prompts: unknown[] } {
+  const prompts: unknown[] = []
+  const model = new MockLanguageModelV4({
+    doGenerate: async (options) => {
+      prompts.push(options.prompt)
+      return { content: [{ type: 'text', text }], finishReason: { unified: 'stop', raw: 'stop' }, usage, warnings: [] }
+    },
+  }) as MockLanguageModelV4 & { prompts: unknown[] }
+  model.prompts = prompts
+  return model
+}

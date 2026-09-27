@@ -166,7 +166,7 @@ Wrote's own data about the book, next to the Markdown files:
 | Path | What | If deleted |
 |---|---|---|
 | `index.db` | search index, chunks and vectors | rebuilt from the Markdown files (vectors re-embedded in the background) |
-| `state.db` | background jobs, chat threads, summaries, suggestions, AI context snapshots | lost – regenerated where possible (summaries), otherwise gone |
+| `state.db` | background jobs, chat threads, summaries, suggestions, codex proposals, activity log, AI context snapshots | lost – regenerated where possible (summaries), otherwise gone |
 | `provenance/<entry id>.json` | which accepted passages were AI-written | lost – the text stays, the AI-assisted marks disappear |
 
 `.wrote/` is gitignored by default. Commit `provenance/` if you want AI provenance to travel with the book.

@@ -1,12 +1,13 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
-import { $fetch, fetch, setup, url } from '@nuxt/test-utils/e2e'
+import { $fetch, fetch, url } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
 import { createMcpToken } from '../utils/mcp-token'
+import { setupApiServer } from '../utils/api-server'
 import { createTestWorkspace } from '../utils/workspace'
 
 const workspace = await createTestWorkspace()
-await setup({ server: true, nuxtConfig: { runtimeConfig: { workspaceDir: workspace } } })
+await setupApiServer(workspace, import.meta.url)
 
 async function connect(token: string) {
   const client = new Client({ name: 'integration-test', version: '1.0.0' })
@@ -32,7 +33,7 @@ describe('MCP over HTTP', () => {
     expect(endpoint).toMatch(/\/mcp$/)
     const client = await connect(await createMcpToken($fetch, 'Claude Code', { write: 'allow' }))
     const tools = (await client.listTools()).tools.map(tool => tool.name).sort()
-    expect(tools).toEqual(['create_note', 'get_codex', 'get_codex_entry', 'get_progress', 'get_structure', 'get_summaries', 'list_books', 'list_suggestions', 'propose_edit', 'read_entry', 'search'])
+    expect(tools).toEqual(['create_note', 'extract_codex', 'get_codex', 'get_codex_entry', 'get_progress', 'get_structure', 'get_summaries', 'list_books', 'list_suggestions', 'propose_codex_entries', 'propose_edit', 'read_entry', 'search'])
 
     expect(text(await client.callTool({ name: 'list_books', arguments: {} }))).toContain('sample-book')
     expect(text(await client.callTool({ name: 'search', arguments: { query: 'harbor' } }))).toContain('Arrival')

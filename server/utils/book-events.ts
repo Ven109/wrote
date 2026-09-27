@@ -28,6 +28,7 @@ const jobs = createBookChannel<Job>()
 const suggestions = createBookChannel<SuggestionEvent>()
 const approvals = createBookChannel<ApprovalEvent>()
 const activity = createBookChannel<ActivityEvent>()
+const codexProposals = createBookChannel<{ sourceEntryId: string }>()
 
 /** File changes of a book (watcher and own writes → SSE clients). */
 export const subscribeBookEvents = changes.subscribe
@@ -44,3 +45,6 @@ export const publishApprovalEvent = approvals.publish
 /** AI/MCP tool calls logged (or undone) in the activity log. */
 export const subscribeActivityEvents = activity.subscribe
 export const publishActivityEvent = activity.publish
+/** Codex proposals created (scan) or resolved. */
+export const subscribeCodexProposalEvents = codexProposals.subscribe
+export const publishCodexProposalEvent = codexProposals.publish

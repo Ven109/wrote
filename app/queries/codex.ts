@@ -1,4 +1,5 @@
 import { defineQueryOptions } from '@pinia/colada'
+import type { CodexProposal } from '#shared/schemas/codex-proposals'
 import type { CodexAppearance, CodexEntrySummary, CodexMentionTarget, CodexQuery, CodexTypeTemplate } from '#shared/schemas/codex'
 import { bookKeys } from './keys'
 
@@ -26,4 +27,11 @@ export const codexAppearancesQuery = defineQueryOptions(({ bookId, entryId }: { 
   key: bookKeys.codexAppearances(bookId, entryId),
   query: () => $fetch<CodexAppearance[]>(`${base(bookId)}/appears`, { query: { id: entryId } }),
   enabled: Boolean(bookId && entryId),
+}))
+
+/** Pending codex proposals from "Scan chapter" (refreshed by the `codex-proposal` SSE event). */
+export const codexProposalsQuery = defineQueryOptions((bookId: string) => ({
+  key: bookKeys.codexProposals(bookId),
+  query: () => $fetch<CodexProposal[]>(`/api/books/${encodeURIComponent(bookId)}/codex/proposals`, { query: { status: 'pending' } }),
+  enabled: Boolean(bookId),
 }))

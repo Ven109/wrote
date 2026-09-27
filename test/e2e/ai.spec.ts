@@ -13,6 +13,10 @@ test.beforeAll(async () => {
   model = await startFakeOpenAi((messages) => {
     const lastUser = [...messages].reverse().find(message => message.role === 'user')
     const system = JSON.stringify(messages[0]?.content ?? '')
+    if (system.includes('story bible')) return { text: JSON.stringify({ entries: [
+      { name: 'Captain Rook', type: 'character', existingId: null, aliases: ['Rook'], facts: [{ field: 'role', value: 'supporting' }], description: 'Waits at the market.', evidence: ['Captain Rook waited'] },
+      { name: 'Weir Market', type: 'place', existingId: null, aliases: [], facts: [], description: 'A market.', evidence: ['at the Weir Market'] },
+    ] }) }
     if (system.includes('manuscript editor')) return { text: JSON.stringify(lastUser?.content).includes('Continue after') ? 'The gulls rose over the pier.' : 'The harbor reeked of brine.' }
     if (JSON.stringify(lastUser?.content).includes('inject')) return { text: 'Look: <img src=x onerror="window.__xss=1"> **done**' }
     return messages.some(message => message.role === 'tool')
@@ -154,6 +158,30 @@ test('model output cannot inject scripts', async ({ page }) => {
   await expect(page.locator('.prose-chat strong', { hasText: 'done' })).toBeVisible()
   expect(await page.evaluate(() => (window as { __xss?: number }).__xss)).toBeUndefined()
   expect(await page.locator('.prose-chat img[onerror]').count()).toBe(0)
+})
+
+test('scan chapter proposes codex entries that are only added when accepted', async ({ page }) => {
+  const { bookId, scenePath } = await createBookWithHarbor(page, `Scan ${Date.now()}`)
+  await page.request.put(`/api/books/${bookId}/document`, { data: { path: scenePath, body: 'Captain Rook waited at the Weir Market.\n' } })
+  await gotoHydrated(page, `/books/${bookId}/codex`)
+  await page.getByRole('button', { name: 'Scan chapter for codex entries' }).click()
+  await page.getByRole('combobox', { name: 'Chapter to scan' }).click()
+  await page.getByRole('option').first().click()
+  await page.getByRole('button', { name: 'Scan', exact: true }).click()
+
+  const review = page.getByRole('list', { name: 'Codex proposals' })
+  await expect(review).toContainText('Captain Rook')
+  await expect(review).toContainText('“Captain Rook waited”')
+  await review.getByRole('button', { name: 'Edit Captain Rook' }).click()
+  await review.getByLabel('Name').fill('Captain Ada Rook')
+  await review.getByRole('button', { name: 'Accept Captain Rook' }).click()
+  await review.getByRole('button', { name: 'Reject Weir Market' }).click()
+  await expect(page.getByText('All reviewed')).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  const entries = page.getByRole('navigation', { name: 'Codex entries' })
+  await expect(entries).toContainText('Captain Ada Rook')
+  await expect(entries).not.toContainText('Weir Market')
 })
 
 test('settings and assistant fit a phone screen', async ({ browser }) => {

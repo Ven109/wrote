@@ -1,13 +1,14 @@
-import { $fetch, fetch, setup } from '@nuxt/test-utils/e2e'
+import { $fetch, fetch } from '@nuxt/test-utils/e2e'
 import { afterAll, describe, expect, it } from 'vitest'
 import { startFakeOpenAi } from '../utils/fake-openai'
+import { setupApiServer } from '../utils/api-server'
 import { createTestWorkspace } from '../utils/workspace'
 
 const workspace = await createTestWorkspace()
 const ollama = await startFakeOpenAi()
 afterAll(() => ollama.close())
 
-await setup({ server: true, nuxtConfig: { runtimeConfig: { workspaceDir: workspace } } })
+await setupApiServer(workspace, import.meta.url)
 
 const base = '/api/books/sample-book/chat'
 const ask = (threadId: string, text: string) => fetch(base, {

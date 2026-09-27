@@ -42,6 +42,10 @@ export function useBookSync(bookId: MaybeRefOrGetter<string | null>) {
       const id = toValue(bookId)
       if (id) void queryCache.invalidateQueries({ key: bookKeys.activity(id) })
     },
+    codexProposal: () => {
+      const id = toValue(bookId)
+      if (id) void queryCache.invalidateQueries({ key: bookKeys.codexProposals(id) })
+    },
     suggestion: ({ entryId }) => {
       const id = toValue(bookId)
       if (id) void queryCache.invalidateQueries({ key: bookKeys.entrySuggestions(id, entryId) })
