@@ -9,7 +9,10 @@ import { NotFoundError } from '../storage/errors'
 import { readTextIfExists, writeFileAtomic } from '../storage/fs'
 import { createBookRepository, type BookRepository } from '../storage/repository'
 import { createBookWatcher, type BookWatcher } from '../storage/watcher'
-import { publishBookEvent } from '../utils/book-events'
+import { publishBookEvent, publishJobEvent } from '../utils/book-events'
+import { openStateDb, type StateDb } from '../db/state/client'
+import { WROTE_JOBS } from '../jobs'
+import { createJobRunner, type JobRunner } from './jobs'
 
 export interface BookContext {
   id: string
@@ -17,6 +20,11 @@ export interface BookContext {
   repository: BookRepository
   watcher: BookWatcher
   db: IndexDb
+  /** Primary app state (jobs, later chat threads, activity). */
+  state: StateDb
+  jobs: JobRunner
+  /** Resolves when in-flight index updates (watcher events, own writes) are done. */
+  settle: () => Promise<void>
 }
 
 /** Directory holding the user's books. Configurable via `NUXT_WORKSPACE_DIR`. */
@@ -110,34 +118,54 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
   await syncIndex(db, repository)
 
   // Keep the index current before notifying clients, for external edits and our own writes alike.
+  // Handlers are tracked so closing the book waits for them instead of closing the db under them.
+  const pending = new Set<Promise<void>>()
+  const track = (task: () => Promise<void>) => {
+    const running = task().catch(error => console.warn(`[wrote] ${bookId}: index update failed`, error))
+    pending.add(running)
+    void running.finally(() => pending.delete(running))
+    return running
+  }
   const watcher = createBookWatcher(root, {
-    onChange: async (event) => {
+    onChange: event => track(async () => {
       await applyChange(db, repository, event)
       publishBookEvent(bookId, event)
-    },
+    }),
   })
-  repository.onWrite(async (path, hash) => {
+  repository.onWrite((path, hash) => {
     watcher.ignoreOwnWrite(path, hash)
-    await applyChange(db, repository, { kind: 'changed', path })
-    publishBookEvent(bookId, { kind: 'changed', path, hash })
+    void track(async () => {
+      await applyChange(db, repository, { kind: 'changed', path })
+      publishBookEvent(bookId, { kind: 'changed', path, hash })
+    })
   })
-  const context = { id: bookId, root, repository, watcher, db }
+  const state = await openStateDb(root)
+  // Jobs receive the full context lazily; it exists before `start()` runs any job.
+  const jobs = createJobRunner({ db: state, jobs: WROTE_JOBS, book: () => context, publish: job => publishJobEvent(bookId, job) })
+  const context: BookContext = { id: bookId, root, repository, watcher, db, state, jobs, settle: () => Promise.allSettled([...pending]).then(() => {}) }
   contexts.set(bookId, context)
+  await jobs.start()
   return context
+}
+
+async function shutdown(context: BookContext): Promise<void> {
+  await context.jobs.stop()
+  await context.watcher.close()
+  await context.settle()
+  context.db.$client.close()
+  context.state.$client.close()
 }
 
 export async function closeBook(bookId: string): Promise<void> {
   const context = contexts.get(bookId)
   if (!context) return
   contexts.delete(bookId)
-  await context.watcher.close()
-  context.db.$client.close()
+  await shutdown(context)
 }
 
 export async function closeAllBooks(): Promise<void> {
   await Promise.all([...contexts.values()].map(async (context) => {
-    await context.watcher.close()
-    context.db.$client.close()
+    await shutdown(context)
   }))
   contexts.clear()
 }

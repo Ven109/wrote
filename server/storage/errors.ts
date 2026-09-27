@@ -29,3 +29,9 @@ export class EntryParseError extends StorageError {
     super(`Cannot parse ${path}: ${reason}`, 'invalid_entry')
   }
 }
+
+export class InvalidInputError extends StorageError {
+  constructor(message: string) {
+    super(message, 'invalid_input')
+  }
+}

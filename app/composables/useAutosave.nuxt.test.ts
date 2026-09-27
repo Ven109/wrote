@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { effectScope, ref } from 'vue'
-import type { SaveResult } from './useEntryDocument'
+import type { SaveResult } from '~/stores/document-session'
 import { useAutosave } from './useAutosave'
 
 function target(results: SaveResult[] = []) {
