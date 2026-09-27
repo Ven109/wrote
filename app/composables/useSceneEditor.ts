@@ -5,6 +5,7 @@ export function useSceneEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefO
   const words = useWordCounts(bookId, () => entry.document.value?.id, entry.draft)
   const meta = useSceneMeta(bookId, entry.document, autosave.flush)
   const links = useWikiLinks(bookId, entry.draft)
+  useCodexMentions(bookId)
   const { backlinks } = useBacklinks(bookId, () => entry.document.value?.id)
   return { entry, autosave, words, meta, links, backlinks }
 }

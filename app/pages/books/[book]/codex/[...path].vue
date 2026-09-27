@@ -50,6 +50,12 @@ defineShortcuts({ meta_s: { usingInput: true, handler: codex.autosave.flush } })
           @retry="codex.autosave.flush"
         />
       </header>
+      <USwitch
+        :model-value="codex.detect.value"
+        label="Highlight this entry's names in the text"
+        size="sm"
+        @update:model-value="codex.setDetect($event)"
+      />
       <CodexEntryForm
         v-if="codex.template.value"
         v-model="codex.fields.form.value"
@@ -61,6 +67,7 @@ defineShortcuts({ meta_s: { usingInput: true, handler: codex.autosave.flush } })
         v-model="draft"
         placeholder="Describe this entry…"
       />
+      <CodexAppearsIn :scenes="codex.appearances.value" />
       <EditorBacklinks :backlinks="codex.backlinks.value" />
     </template>
     <USkeleton

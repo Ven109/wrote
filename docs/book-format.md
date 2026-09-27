@@ -112,6 +112,10 @@ fields:
 
 Fields that are not in the template are kept untouched when Wrote saves an entry.
 
+Titles and aliases of codex entries are highlighted where they appear in the text (a display-only decoration; nothing is
+written into the Markdown). Add `detect: false` to an entry's frontmatter (or switch it off on the entry page) to skip
+it, e.g. for common words. Typing `@` in the editor inserts a `[[link]]` to a codex entry.
+
 ## Links
 
 - `[[Title]]` or `[[id|Label]]` links to any entry (notes, scenes, codex, research).

@@ -99,3 +99,23 @@ export const CodexQuerySchema = z.object({
   q: z.string().trim().max(200).optional(),
 })
 export type CodexQuery = z.infer<typeof CodexQuerySchema>
+
+/** A codex entry as a detection target and hover card (names = title + aliases). */
+export interface CodexMentionTarget {
+  id: string
+  path: string
+  title: string
+  codexType: string
+  names: string[]
+  excerpt: string
+  /** Up to three filled template fields for the hover card. */
+  facts: { label: string, value: string }[]
+}
+
+/** A scene (or other entry) in which a codex entry is mentioned. */
+export interface CodexAppearance {
+  id: string
+  path: string
+  title: string
+  count: number
+}
