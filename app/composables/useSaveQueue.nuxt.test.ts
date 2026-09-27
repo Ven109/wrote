@@ -9,7 +9,7 @@ const deferred = () => {
 
 describe('useSaveQueue', () => {
   it('runs saves for the same path one after another and tracks the latest body', async () => {
-    const queue = useSaveQueue<string>()
+    const queue = useSaveQueue()
     const order: string[] = []
     const first = deferred()
     const a = queue.enqueue('p', 'one', () => {
@@ -32,7 +32,7 @@ describe('useSaveQueue', () => {
   })
 
   it('keeps going after a failed save and runs other paths independently', async () => {
-    const queue = useSaveQueue<string>()
+    const queue = useSaveQueue()
     const failed = queue.enqueue('p', 'x', () => Promise.reject(new Error('boom')))
     const next = queue.enqueue('p', 'y', async () => 'ok')
     const other = queue.enqueue('q', 'z', async () => 'other')

@@ -18,7 +18,7 @@ function resultOf(error: unknown): SaveResult {
  */
 export const useDocumentSessionStore = defineStore('document-session', () => {
   const queryCache = useQueryCache()
-  const queue = useSaveQueue<SaveResult>()
+  const queue = useSaveQueue()
   const confirmed = shallowReactive(new Map<string, Version>())
   const seen = new Set<string>()
   const keyOf = (bookId: string, path: string) => `${bookId}\u0000${path}`
@@ -55,8 +55,23 @@ export const useDocumentSessionStore = defineStore('document-session', () => {
     })
   }
 
+  /**
+   * Runs another write to the same file (frontmatter: title, tags, codex fields, …) in the document's queue,
+   * so it never races a body save, and confirms the version it produced.
+   */
+  function mutate(bookId: string, path: string, write: () => Promise<EntryDocument>): Promise<EntryDocument> {
+    const key = keyOf(bookId, path)
+    return queue.enqueue(key, baseBody(bookId, path) ?? '', async () => {
+      const saved = await write()
+      confirm(bookId, saved)
+      queryCache.setQueryData(bookKeys.document(bookId, path), saved)
+      return saved
+    })
+  }
+
   return {
     confirm,
+    mutate,
     baseBody,
     persist,
     confirmedHash: (bookId: string, path: string) => confirmed.get(keyOf(bookId, path))?.hash,

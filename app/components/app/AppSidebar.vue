@@ -38,11 +38,25 @@ const { bookId, activeEntryPath } = useAppNavigation()
         </template>
       </UButton>
       <AppSidebarNav :collapsed="state === 'collapsed'" />
-      <ManuscriptTree
-        v-if="bookId && state !== 'collapsed'"
-        :book-id="bookId"
-        :active-path="activeEntryPath"
-      />
+      <!-- Client-only: the tree's node menus don't hydrate identically, which shifted useId()s page-wide. -->
+      <ClientOnly v-if="bookId && state !== 'collapsed'">
+        <ManuscriptTree
+          :book-id="bookId"
+          :active-path="activeEntryPath"
+        />
+        <template #fallback>
+          <div
+            class="flex flex-col gap-2 px-2 py-3"
+            aria-hidden="true"
+          >
+            <USkeleton
+              v-for="n in 4"
+              :key="n"
+              class="h-5 w-full"
+            />
+          </div>
+        </template>
+      </ClientOnly>
     </template>
 
     <template #footer="{ state }">

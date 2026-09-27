@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { CODEX_TYPES, EntryIdSchema, EntryTypeSchema } from '#shared/schemas/entry'
+import { EntryIdSchema, EntryTypeSchema } from '#shared/schemas/entry'
 import { readBookConfig } from '../storage/config'
 import { searchEntries } from '../db/queries'
-import { getEntry, listEntrySummaries } from '../services/entries'
+import { getEntry } from '../services/entries'
 import { getProgress } from '../services/progress'
 import { getStructure } from '../services/structure'
 import { listBookIds } from '../services/workspace'
@@ -74,21 +74,6 @@ export const getStructureTool = defineWroteTool({
   permission: 'read',
   input: z.object({}),
   handler: (_input, { book }) => getStructure(book!.db),
-})
-
-export const getCodexTool = defineWroteTool({
-  name: 'get_codex',
-  title: 'Get codex entries',
-  description: 'Lists the story bible (codex): characters, places, items, factions, lore, glossary. Filter by codexType or tag. Returns ids, titles, aliases and all frontmatter fields (e.g. appearance, role). Use read_entry for the full description.',
-  permission: 'read',
-  input: z.object({
-    codexType: z.enum(CODEX_TYPES).optional(),
-    tag: z.string().optional(),
-  }),
-  handler: (input, { book }) => listEntrySummaries(book!.db, ['codex'], {
-    tag: input.tag,
-    field: input.codexType ? ['codexType', input.codexType] : undefined,
-  }),
 })
 
 export const getProgressTool = defineWroteTool({

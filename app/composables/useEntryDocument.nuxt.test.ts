@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { getQuery, readBody } from 'h3'
 import type { EntryDocument } from '#shared/schemas/document'
+import { useDocumentSessionStore } from '~/stores/document-session'
 import { useEntryDocument } from './useEntryDocument'
 
 const PATH = 'manuscript/a/b/01-x.md'
@@ -226,5 +227,49 @@ describe('useEntryDocument after dispose', () => {
     await vi.waitFor(() => expect(puts).toEqual(['stale\n']))
     expect(await api.save()).toBe('unchanged')
     expect(puts).toEqual(['stale\n'])
+  })
+})
+
+describe('document session mutate', () => {
+  it('queues other writes behind body saves so neither uses a stale hash', async () => {
+    const P = 'codex/characters/q.md'
+    let doc: EntryDocument = { id: 'cdx_q00000001', path: P, type: 'codex', title: 'Q', body: '', hash: 'q0', frontmatter: {} }
+    const order: string[] = []
+    let release!: () => void
+    const gate = new Promise<void>(resolve => (release = resolve))
+    registerEndpoint('/api/books/mut/document', { method: 'GET', handler: () => doc })
+    registerEndpoint('/api/books/mut/document', {
+      method: 'PUT',
+      async handler(event) {
+        const input = await readBody<{ body: string, expectedHash?: string }>(event)
+        order.push(`put:${input.expectedHash}`)
+        await gate
+        if (input.expectedHash !== doc.hash) throw createError({ statusCode: 409 })
+        doc = { ...doc, body: input.body, hash: `${doc.hash}b` }
+        return doc
+      },
+    })
+    let api!: ReturnType<typeof useEntryDocument>
+    await mountSuspended(defineComponent({
+      setup() {
+        api = useEntryDocument('mut', P)
+        return () => h('div')
+      },
+    }))
+    await vi.waitFor(() => expect(api.document.value?.path).toBe(P))
+    const session = useDocumentSessionStore()
+    api.draft.value = 'Body'
+    const bodySave = api.save()
+    const fieldWrite = session.mutate('mut', P, async () => {
+      order.push(`patch after ${doc.hash}`)
+      doc = { ...doc, frontmatter: { age: '31' }, hash: `${doc.hash}f` }
+      return doc
+    })
+    release()
+    expect(await bodySave).toBe('saved')
+    await fieldWrite
+    api.draft.value = 'Body more'
+    expect(await api.save()).toBe('saved')
+    expect(order).toEqual(['put:q0', 'patch after q0b', 'put:q0bf'])
   })
 })

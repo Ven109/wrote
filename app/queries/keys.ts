@@ -1,3 +1,4 @@
+import type { CodexQuery } from '#shared/schemas/codex'
 import type { NotesQuery } from '#shared/schemas/notes'
 
 /**
@@ -26,5 +27,8 @@ export const bookKeys = {
   resolvedLinks: (bookId: string, targets: string[]) => ['book', bookId, 'links', 'resolve', ...targets] as const,
   jobs: (bookId: string) => ['book', bookId, 'jobs'] as const,
   chatThreads: (bookId: string) => ['book', bookId, 'chat', 'threads'] as const,
+  codex: (bookId: string) => ['book', bookId, 'codex'] as const,
+  codexList: (bookId: string, query: CodexQuery) => ['book', bookId, 'codex', 'list', query.type ?? '', query.tag ?? '', query.q ?? ''] as const,
+  codexTypes: (bookId: string) => ['book', bookId, 'codex', 'types'] as const,
   search: (bookId: string, query: string) => ['book', bookId, 'search', query] as const,
 }

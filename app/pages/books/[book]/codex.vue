@@ -1,16 +1,16 @@
 <script setup lang="ts">
 const bookId = useRouteBookId()
 const { activeEntryPath } = useAppNavigation()
-useSeoMeta({ title: 'Notes' })
+useSeoMeta({ title: 'Codex' })
 </script>
 
 <template>
   <BaseSplitView
     :detail-active="Boolean(activeEntryPath)"
-    list-label="Notes list"
+    list-label="Codex list"
   >
     <template #list>
-      <NotesListPanel
+      <CodexListPanel
         :book-id="bookId"
         :active-path="activeEntryPath"
       />

@@ -37,3 +37,16 @@ test.describe('app shell', () => {
     expect(overflow).toBeLessThanOrEqual(0)
   })
 })
+
+test('book pages hydrate without mismatches', async ({ page, request }, testInfo) => {
+  const res = await request.post('/api/books', { data: { title: `Hydrate ${testInfo.project.name} ${Date.now()}`, template: 'novel' } })
+  const { book, firstScenePath } = await res.json() as { book: { id: string }, firstScenePath: string }
+  const warnings: string[] = []
+  page.on('console', (message) => {
+    if (/hydration/i.test(message.text())) warnings.push(message.text())
+  })
+  for (const path of [`/books/${book.id}/write/${firstScenePath}`, `/books/${book.id}/notes`, `/books/${book.id}/codex`]) {
+    await gotoHydrated(page, path)
+  }
+  expect(warnings).toEqual([])
+})
