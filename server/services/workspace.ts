@@ -9,7 +9,10 @@ import { NotFoundError } from '../storage/errors'
 import { readTextIfExists, writeFileAtomic } from '../storage/fs'
 import { createBookRepository, type BookRepository } from '../storage/repository'
 import { createBookWatcher, type BookWatcher } from '../storage/watcher'
-import { publishBookEvent } from '../utils/book-events'
+import { publishBookEvent, publishJobEvent } from '../utils/book-events'
+import { openStateDb, type StateDb } from '../db/state/client'
+import { WROTE_JOBS } from '../jobs'
+import { createJobRunner, type JobRunner } from './jobs'
 
 export interface BookContext {
   id: string
@@ -17,6 +20,9 @@ export interface BookContext {
   repository: BookRepository
   watcher: BookWatcher
   db: IndexDb
+  /** Primary app state (jobs, later chat threads, activity). */
+  state: StateDb
+  jobs: JobRunner
   /** Resolves when in-flight index updates (watcher events, own writes) are done. */
   settle: () => Promise<void>
 }
@@ -133,25 +139,33 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
       publishBookEvent(bookId, { kind: 'changed', path, hash })
     })
   })
-  const context: BookContext = { id: bookId, root, repository, watcher, db, settle: () => Promise.allSettled([...pending]).then(() => {}) }
+  const state = await openStateDb(root)
+  // Jobs receive the full context lazily; it exists before `start()` runs any job.
+  const jobs = createJobRunner({ db: state, jobs: WROTE_JOBS, book: () => context, publish: job => publishJobEvent(bookId, job) })
+  const context: BookContext = { id: bookId, root, repository, watcher, db, state, jobs, settle: () => Promise.allSettled([...pending]).then(() => {}) }
   contexts.set(bookId, context)
+  await jobs.start()
   return context
+}
+
+async function shutdown(context: BookContext): Promise<void> {
+  await context.jobs.stop()
+  await context.watcher.close()
+  await context.settle()
+  context.db.$client.close()
+  context.state.$client.close()
 }
 
 export async function closeBook(bookId: string): Promise<void> {
   const context = contexts.get(bookId)
   if (!context) return
   contexts.delete(bookId)
-  await context.watcher.close()
-  await context.settle()
-  context.db.$client.close()
+  await shutdown(context)
 }
 
 export async function closeAllBooks(): Promise<void> {
   await Promise.all([...contexts.values()].map(async (context) => {
-    await context.watcher.close()
-    await context.settle()
-    context.db.$client.close()
+    await shutdown(context)
   }))
   contexts.clear()
 }

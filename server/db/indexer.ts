@@ -56,13 +56,23 @@ export interface RebuildResult {
   errors: string[]
 }
 
+export interface SyncOptions {
+  /** Re-index every entry, even unchanged ones. */
+  force?: boolean
+  /** Called after each entry with (done, total). */
+  onProgress?: (done: number, total: number) => void | Promise<void>
+  signal?: AbortSignal
+}
+
 /** Syncs the index with the book folder: re-indexes changed files, drops deleted ones. */
-export async function syncIndex(db: IndexDb, repository: BookRepository): Promise<RebuildResult> {
+export async function syncIndex(db: IndexDb, repository: BookRepository, options: SyncOptions = {}): Promise<RebuildResult> {
   const { entries: onDisk, errors } = await repository.list()
   const known = new Map((await db.select({ path: entries.path, hash: entries.hash }).from(entries)).map(row => [row.path, row.hash]))
   const result: RebuildResult = { indexed: 0, unchanged: 0, removed: 0, errors: errors.map(error => error.message) }
-  for (const entry of onDisk) {
-    if (known.get(entry.path) === entry.hash) {
+  for (const [done, entry] of onDisk.entries()) {
+    options.signal?.throwIfAborted()
+    await options.onProgress?.(done, onDisk.length)
+    if (!options.force && known.get(entry.path) === entry.hash) {
       result.unchanged++
     }
     else {

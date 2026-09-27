@@ -8,7 +8,8 @@ watch(() => route.fullPath, () => {
   if (isMobile.value) sidebarOpen.value = false
 })
 useAppCommands()
-useBookSync(useAppNavigation().bookId)
+const { bookId } = useAppNavigation()
+useBookSync(bookId)
 </script>
 
 <template>
@@ -21,6 +22,12 @@ useBookSync(useAppNavigation().bookId)
         @toggle-assistant="toggleAssistant"
       >
         <slot name="title" />
+        <template #actions>
+          <AppJobsIndicator
+            v-if="bookId"
+            :book-id="bookId"
+          />
+        </template>
       </AppTopbar>
       <div class="flex-1 overflow-y-auto">
         <slot />

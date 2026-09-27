@@ -23,5 +23,6 @@ export const bookKeys = {
   entryLinks: (bookId: string, entryId: string) => ['book', bookId, 'links', 'entry', entryId] as const,
   linkTargets: (bookId: string) => ['book', bookId, 'links', 'targets'] as const,
   resolvedLinks: (bookId: string, targets: string[]) => ['book', bookId, 'links', 'resolve', ...targets] as const,
+  jobs: (bookId: string) => ['book', bookId, 'jobs'] as const,
   search: (bookId: string, query: string) => ['book', bookId, 'search', query] as const,
 }

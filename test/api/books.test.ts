@@ -176,3 +176,33 @@ describe('/api/books/:bookId/links', () => {
     expect((await fetch('/api/books/sample-book/links/resolve')).status).toBe(400)
   })
 })
+
+describe('/api/books/:bookId/jobs', () => {
+  it('enqueues a job, streams its progress over SSE and lists it', async () => {
+    const response = await fetch('/api/books/sample-book/events')
+    const reader = response.body!.getReader()
+    const decoder = new TextDecoder()
+    let received = ''
+    while (!received.includes('event: ready')) received += decoder.decode((await reader.read()).value)
+
+    const job = await $fetch<{ id: string, status: string }>('/api/books/sample-book/jobs', { method: 'POST', body: { kind: 'reindex' } })
+    expect(job.status).toBe('queued')
+    while (!received.includes('"status":"succeeded"')) {
+      const { value, done } = await reader.read()
+      if (done) break
+      received += decoder.decode(value)
+    }
+    await reader.cancel()
+    expect(received).toContain('event: job')
+    expect(received).toMatch(/"status":"running","progress":0\.\d+/)
+
+    const jobs = await $fetch<{ id: string, status: string }[]>('/api/books/sample-book/jobs')
+    expect(jobs.find(j => j.id === job.id)?.status).toBe('succeeded')
+  }, 20_000)
+
+  it('rejects unknown kinds and cancels unknown jobs with 404', async () => {
+    const unknown = await fetch('/api/books/sample-book/jobs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'nope' }) })
+    expect(unknown.status).toBe(400)
+    expect((await fetch('/api/books/sample-book/jobs/job_missing/cancel', { method: 'POST' })).status).toBe(404)
+  })
+})
