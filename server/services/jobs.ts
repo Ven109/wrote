@@ -84,12 +84,18 @@ export function createJobRunner(options: JobRunnerOptions) {
     running.set(job.id, { controller, done })
   }
 
-  /** Wakes up for the next delayed retry (jobs already due start when a slot frees up). */
+  /**
+   * Arms a timer for the next delayed job of a kind with a free slot (busy kinds are picked up when their
+   * running job finishes). A job that became due since the last claim is claimed right away instead –
+   * otherwise it would sit in the queue with no timer left to wake it.
+   */
   async function scheduleWake() {
     clearTimeout(wakeTimer)
-    const at = await nextRunAfter(options.db, [...definitions.keys()])
-    const delay = at ? at.getTime() - now().getTime() : 0
-    if (!stopped && at && delay > 0) wakeTimer = setTimeout(() => void tick(), Math.min(delay, 2 ** 31 - 1))
+    const at = await nextRunAfter(options.db, freeKinds())
+    if (!at || stopped) return
+    const delay = at.getTime() - now().getTime()
+    if (delay <= 0) tickAgain = true
+    else wakeTimer = setTimeout(() => void tick(), Math.min(delay, 2 ** 31 - 1))
   }
 
   /** Starts as many due jobs as there are free slots. Concurrent calls coalesce. */
@@ -106,6 +112,8 @@ export function createJobRunner(options: JobRunnerOptions) {
       } while (tickAgain && !stopped)
     })().finally(() => {
       ticking = null
+      // A request that arrived after the loop's last check would otherwise be lost.
+      if (tickAgain && !stopped) void tick()
     })
     return ticking
   }

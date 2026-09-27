@@ -205,4 +205,25 @@ describe('job runner', () => {
     await runner.idle()
     expect(runs).toBe(1)
   })
+
+  it('runs a delayed job that becomes due between checking for work and scheduling the wake-up', async () => {
+    // Every clock read advances 10 ms: enqueue reads 0 (run at 25) and 10, the claim reads 20 (not due yet),
+    // the wake-up scheduling reads 30 (already due). A missing timer here left the job queued forever.
+    let reads = 0
+    let ran = false
+    runner = createJobRunner({
+      db,
+      jobs: [defineWroteJob({ kind: 'edge', title: 'Edge', input: z.null().optional(), run: async () => {
+        ran = true
+      } })],
+      book: () => book,
+      publish: job => events.push(job),
+      now: () => new Date(Date.UTC(2026, 0, 1) + 10 * reads++),
+    })
+    await runner.enqueue('edge', null, { delayMs: 25 })
+    await runner.idle()
+    await new Promise(resolve => setTimeout(resolve, 20))
+    await runner.idle()
+    expect(ran).toBe(true)
+  })
 })
