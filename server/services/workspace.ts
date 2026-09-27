@@ -17,6 +17,8 @@ export interface BookContext {
   repository: BookRepository
   watcher: BookWatcher
   db: IndexDb
+  /** Resolves when in-flight index updates (watcher events, own writes) are done. */
+  settle: () => Promise<void>
 }
 
 /** Directory holding the user's books. Configurable via `NUXT_WORKSPACE_DIR`. */
@@ -110,18 +112,28 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
   await syncIndex(db, repository)
 
   // Keep the index current before notifying clients, for external edits and our own writes alike.
+  // Handlers are tracked so closing the book waits for them instead of closing the db under them.
+  const pending = new Set<Promise<void>>()
+  const track = (task: () => Promise<void>) => {
+    const running = task().catch(error => console.warn(`[wrote] ${bookId}: index update failed`, error))
+    pending.add(running)
+    void running.finally(() => pending.delete(running))
+    return running
+  }
   const watcher = createBookWatcher(root, {
-    onChange: async (event) => {
+    onChange: event => track(async () => {
       await applyChange(db, repository, event)
       publishBookEvent(bookId, event)
-    },
+    }),
   })
-  repository.onWrite(async (path, hash) => {
+  repository.onWrite((path, hash) => {
     watcher.ignoreOwnWrite(path, hash)
-    await applyChange(db, repository, { kind: 'changed', path })
-    publishBookEvent(bookId, { kind: 'changed', path, hash })
+    void track(async () => {
+      await applyChange(db, repository, { kind: 'changed', path })
+      publishBookEvent(bookId, { kind: 'changed', path, hash })
+    })
   })
-  const context = { id: bookId, root, repository, watcher, db }
+  const context: BookContext = { id: bookId, root, repository, watcher, db, settle: () => Promise.allSettled([...pending]).then(() => {}) }
   contexts.set(bookId, context)
   return context
 }
@@ -131,12 +143,14 @@ export async function closeBook(bookId: string): Promise<void> {
   if (!context) return
   contexts.delete(bookId)
   await context.watcher.close()
+  await context.settle()
   context.db.$client.close()
 }
 
 export async function closeAllBooks(): Promise<void> {
   await Promise.all([...contexts.values()].map(async (context) => {
     await context.watcher.close()
+    await context.settle()
     context.db.$client.close()
   }))
   contexts.clear()

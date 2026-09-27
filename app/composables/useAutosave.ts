@@ -1,4 +1,4 @@
-import type { SaveResult } from './useEntryDocument'
+import type { SaveResult } from '~/stores/document-session'
 
 export type AutosaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'conflict' | 'error'
 
