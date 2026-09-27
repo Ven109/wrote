@@ -1,4 +1,7 @@
+import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import type { BookSummary, CreateBookInput } from '#shared/schemas/library'
+import { booksQuery } from '~/queries/books'
+import { bookKeys } from '~/queries/keys'
 
 export interface CreatedBook {
   book: BookSummary
@@ -7,24 +10,34 @@ export interface CreatedBook {
 
 /** The workspace's books plus actions to create, open and remove them. */
 export function useBooks() {
-  const { data: books, status, error, refresh } = useFetch<BookSummary[]>('/api/books', { key: 'books', default: () => [] })
+  const queryCache = useQueryCache()
+  const { data, status, error, refresh } = useQuery(booksQuery)
+  const books = computed(() => data.value ?? [])
+  const invalidate = () => queryCache.invalidateQueries({ key: bookKeys.list() })
 
-  async function createBook(input: CreateBookInput): Promise<CreatedBook> {
-    const created = await $fetch<CreatedBook>('/api/books', { method: 'POST', body: input })
-    await refresh()
-    return created
-  }
+  const { mutateAsync: createBook } = useMutation({
+    mutation: (input: CreateBookInput) => $fetch<CreatedBook>('/api/books', { method: 'POST', body: input }),
+    onSettled: invalidate,
+  })
 
-  async function openFolder(path: string): Promise<BookSummary> {
-    const book = await $fetch<BookSummary>('/api/books/open', { method: 'POST', body: { path } })
-    await refresh()
-    return book
-  }
+  const { mutateAsync: openFolder } = useMutation({
+    mutation: (path: string) => $fetch<BookSummary>('/api/books/open', { method: 'POST', body: { path } }),
+    onSettled: invalidate,
+  })
 
-  async function removeBook(id: string): Promise<void> {
-    await $fetch(`/api/books/${encodeURIComponent(id)}`, { method: 'DELETE' })
-    await refresh()
-  }
+  const { mutateAsync: removeBook } = useMutation({
+    mutation: (id: string) => $fetch(`/api/books/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    // Optimistically drop the book from the list; restore it if the request fails.
+    onMutate(id) {
+      const previous = queryCache.getQueryData<BookSummary[]>(bookKeys.list())
+      queryCache.setQueryData(bookKeys.list(), (previous ?? []).filter(book => book.id !== id))
+      return { previous }
+    },
+    onError(_error, _id, context) {
+      if (context?.previous) queryCache.setQueryData(bookKeys.list(), context.previous)
+    },
+    onSettled: invalidate,
+  })
 
   return { books, status, error, refresh, createBook, openFolder, removeBook }
 }
