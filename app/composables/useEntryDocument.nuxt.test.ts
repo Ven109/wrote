@@ -109,3 +109,122 @@ describe('useEntryDocument when switching entries', () => {
     expect(puts).toEqual([`${PATH}:Unsaved\n`])
   })
 })
+
+describe('useEntryDocument races', () => {
+  it('does not lose edits when switching back before the previous save finished', async () => {
+    const A = 'manuscript/a/b/01-a.md'
+    const B = 'manuscript/a/b/02-b.md'
+    const disk: Record<string, EntryDocument> = {
+      [A]: { id: 'scn_a00000001', path: A, type: 'scene', title: 'A', body: '', hash: 'a0', frontmatter: {} },
+      [B]: { id: 'scn_b00000001', path: B, type: 'scene', title: 'B', body: '', hash: 'b0', frontmatter: {} },
+    }
+    let release!: () => void
+    const gate = new Promise<void>(resolve => (release = resolve))
+    let version = 0
+    registerEndpoint('/api/books/race/document', { method: 'GET', handler: event => disk[String(getQuery(event).path)] })
+    registerEndpoint('/api/books/race/document', {
+      method: 'PUT',
+      async handler(event) {
+        const input = await readBody<{ path: string, body: string, expectedHash?: string }>(event)
+        if (input.path === A && disk[A]!.hash === 'a0') await gate
+        if (input.expectedHash && input.expectedHash !== disk[input.path]!.hash) throw createError({ statusCode: 409 })
+        disk[input.path] = { ...disk[input.path]!, body: input.body, hash: `v${++version}` }
+        return disk[input.path]
+      },
+    })
+    const path = ref(A)
+    let api!: ReturnType<typeof useEntryDocument>
+    await mountSuspended(defineComponent({
+      setup() {
+        api = useEntryDocument('race', path)
+        return () => h('div')
+      },
+    }))
+    await vi.waitFor(() => expect(api.document.value?.path).toBe(A))
+
+    api.draft.value = 'first-1'
+    path.value = B // save of A starts and hangs
+    await vi.waitFor(() => expect(api.document.value?.path).toBe(B))
+    path.value = A // back before the save finished
+    await vi.waitFor(() => expect(api.document.value?.path).toBe(A))
+    expect(api.draft.value).toBe('first-1')
+
+    api.draft.value = 'first-1 first-2'
+    const second = api.save()
+    release()
+    expect(await second).toBe('saved')
+    expect(disk[A]!.body).toBe('first-1 first-2\n')
+    expect(api.dirty.value).toBe(false)
+  })
+})
+
+describe('useEntryDocument across page remounts', () => {
+  it('saves on unmount and a new instance starts from the queued body', async () => {
+    const P = 'manuscript/a/b/01-remount.md'
+    let doc: EntryDocument = { id: 'scn_r00000001', path: P, type: 'scene', title: 'R', body: '', hash: 'r0', frontmatter: {} }
+    let release!: () => void
+    const gate = new Promise<void>(resolve => (release = resolve))
+    registerEndpoint('/api/books/remount/document', { method: 'GET', handler: () => doc })
+    registerEndpoint('/api/books/remount/document', {
+      method: 'PUT',
+      async handler(event) {
+        const input = await readBody<{ body: string, expectedHash?: string }>(event)
+        await gate
+        if (input.expectedHash && input.expectedHash !== doc.hash) throw createError({ statusCode: 409 })
+        doc = { ...doc, body: input.body, hash: `${doc.hash}+` }
+        return doc
+      },
+    })
+    const mountAt = async () => {
+      let api!: ReturnType<typeof useEntryDocument>
+      const wrapper = await mountSuspended(defineComponent({
+        setup() {
+          api = useEntryDocument('remount', P)
+          return () => h('div')
+        },
+      }))
+      await vi.waitFor(() => expect(api.document.value?.path).toBe(P))
+      return { api, wrapper }
+    }
+
+    const first = await mountAt()
+    first.api.draft.value = 'kept'
+    first.wrapper.unmount()
+    const second = await mountAt()
+    expect(second.api.draft.value).toBe('kept')
+    second.api.draft.value = 'kept and more'
+    const saved = second.api.save()
+    release()
+    expect(await saved).toBe('saved')
+    expect(doc.body).toBe('kept and more\n')
+  })
+})
+
+describe('useEntryDocument after dispose', () => {
+  it('ignores late saves from a disposed instance', async () => {
+    const P = 'manuscript/a/b/01-late.md'
+    const puts: string[] = []
+    registerEndpoint('/api/books/late/document', { method: 'GET', handler: () => ({ id: 'scn_l00000001', path: P, type: 'scene', title: 'L', body: '', hash: 'l0', frontmatter: {} }) })
+    registerEndpoint('/api/books/late/document', {
+      method: 'PUT',
+      async handler(event) {
+        const input = await readBody<{ body: string }>(event)
+        puts.push(input.body)
+        return { id: 'scn_l00000001', path: P, type: 'scene', title: 'L', body: input.body, hash: `l${puts.length}`, frontmatter: {} }
+      },
+    })
+    let api!: ReturnType<typeof useEntryDocument>
+    const wrapper = await mountSuspended(defineComponent({
+      setup() {
+        api = useEntryDocument('late', P)
+        return () => h('div')
+      },
+    }))
+    await vi.waitFor(() => expect(api.document.value?.path).toBe(P))
+    api.draft.value = 'stale'
+    wrapper.unmount()
+    await vi.waitFor(() => expect(puts).toEqual(['stale\n']))
+    expect(await api.save()).toBe('unchanged')
+    expect(puts).toEqual(['stale\n'])
+  })
+})
