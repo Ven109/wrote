@@ -270,7 +270,7 @@ In Settings → Integrations, users connect external MCP servers which the in-ap
 | Layer | Choice | Why |
 |---|---|---|
 | Framework | **Nuxt 4** (4.5+) | Full-stack Vue, server routes (Nitro), great DX |
-| UI | **Nuxt UI 4** (4.11+) | Dashboard layouts, `UEditor` (TipTap), `UChat*` components, command palette, Tailwind v4 |
+| UI | **Nuxt UI 4** (4.11+) | `USidebar` app layout (inset), `UEditor` (TipTap), `UChat*` components, command palette, Tailwind v4 |
 | Theme | `primary: yellow`, `neutral: zinc` | See §8 |
 | Editor | `UEditor` + TipTap 3 extensions | Block layout (drag handle, slash menu), Markdown round-trip, mentions, custom Wrote blocks |
 | Speech-to-text (later) | AI SDK transcription providers / whisper.cpp (local) | Interview transcription with timestamps & speakers |
@@ -309,7 +309,7 @@ wrote/
 ├── app/
 │   ├── app.config.ts            # Nuxt UI theme (yellow / zinc)
 │   ├── assets/css/main.css
-│   ├── layouts/default.vue      # UDashboardGroup shell
+│   ├── layouts/default.vue      # USidebar (inset) app shell
 │   ├── pages/
 │   │   ├── index.vue            # library / all books
 │   │   └── books/[book]/
@@ -386,7 +386,7 @@ export default defineAppConfig({
 └────────────┴──────────────────────────────────────────┴─────────────────┘
 ```
 
-Built from Nuxt UI building blocks: `UDashboardGroup`, `UDashboardSidebar`, `UDashboardPanel` (resizable, collapsible), `UNavigationMenu` / `UTree` for the manuscript tree, `UEditor` + `UEditorToolbar` + `UEditorSuggestionMenu` + `UEditorMentionMenu`, `UChatMessages` + `UChatPrompt` for the assistant, `UCommandPalette` for ⌘K.
+Built from Nuxt UI building blocks: an app shell with `USidebar` (`variant="inset"`, `collapsible="icon"`, `rail`) on the left and a second `USidebar side="right"` for the assistant, with the page content in an inset main area (no `UDashboard*` components), `UNavigationMenu` / `UTree` for the manuscript tree, `UEditor` + `UEditorToolbar` + `UEditorSuggestionMenu` + `UEditorMentionMenu`, `UChatMessages` + `UChatPrompt` for the assistant, `UCommandPalette` for ⌘K.
 
 ---
 
