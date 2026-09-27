@@ -1,12 +1,13 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
-import { $fetch, fetch, setup, url } from '@nuxt/test-utils/e2e'
+import { $fetch, fetch, url } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
 import { createMcpToken } from '../utils/mcp-token'
+import { setupApiServer } from '../utils/api-server'
 import { createTestWorkspace } from '../utils/workspace'
 
 const workspace = await createTestWorkspace()
-await setup({ server: true, nuxtConfig: { runtimeConfig: { workspaceDir: workspace } } })
+await setupApiServer(workspace, import.meta.url)
 
 const book = '/api/books/sample-book'
 const path = 'manuscript/01-part-one/01-the-harbor/02-the-map.md'

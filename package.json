@@ -21,7 +21,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "prepare": "simple-git-hooks",
-    "build:cli": "node cli/build.mjs"
+    "build:cli": "node cli/build.mjs",
+    "eval:extraction": "vitest run --project unit server/codex/extraction-eval.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.65",

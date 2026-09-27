@@ -1,5 +1,6 @@
 import type { WroteTool } from './define'
 import { getCodexEntryTool, getCodexTool } from './codex-tools'
+import { extractCodexTool, proposeCodexEntriesTool } from './extraction-tools'
 import { getProgressTool, getStructureTool, listBooksTool, readEntryTool, searchTool } from './read-tools'
 import { getSummariesTool } from './summary-tools'
 import { createNoteTool, listSuggestionsTool, proposeEditTool } from './write-tools'
@@ -17,6 +18,8 @@ export const WROTE_TOOLS = [
   listSuggestionsTool,
   createNoteTool,
   proposeEditTool,
+  extractCodexTool,
+  proposeCodexEntriesTool,
 ] as const satisfies readonly WroteTool[]
 
 export { runTool, defineWroteTool, ToolError } from './define'

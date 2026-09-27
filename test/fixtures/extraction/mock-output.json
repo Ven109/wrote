@@ -1,0 +1,11 @@
+{
+  "entries": [
+    { "name": "Ines Calder", "type": "character", "existingId": null, "aliases": ["Ines"], "facts": [{ "field": "role", "value": "protagonist" }], "description": "Climbs the lighthouse to deliver Captain Rook's letter.", "evidence": ["Ines Calder finally climbed the lighthouse stairs"] },
+    { "name": "Brother Aldo", "type": "character", "existingId": null, "aliases": ["Aldo"], "facts": [], "description": "Keeps the lamp and the logbook of the lighthouse.", "evidence": ["He kept the lamp and the logbook"] },
+    { "name": "Captain Rook", "type": "character", "existingId": null, "aliases": ["Rook"], "facts": [], "description": "Sent Ines; his seal is a rook with a key.", "evidence": ["Captain Rook sent me."] },
+    { "name": "Saltmere Lighthouse", "type": "place", "existingId": null, "aliases": [], "facts": [{ "field": "atmosphere", "value": "fog-bound" }], "description": "A lighthouse with two hundred and twelve steps.", "evidence": ["the Saltmere Lighthouse beam swung out over the water"] },
+    { "name": "Weir Market", "type": "place", "existingId": null, "aliases": [], "facts": [], "description": "A harbour market of fish stalls and smugglers.", "evidence": ["the Weir Market at dawn"] },
+    { "name": "Order of the Tide", "type": "faction", "existingId": null, "aliases": [], "facts": [], "description": "Aldo's order.", "evidence": ["the brown wool of the Order of the Tide"] },
+    { "name": "Sea Serpent", "type": "lore", "existingId": null, "aliases": [], "facts": [], "description": "Invented.", "evidence": ["a sea serpent rose from the waves"] }
+  ]
+}

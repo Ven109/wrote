@@ -1,15 +1,13 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { $fetch, fetch, setup } from '@nuxt/test-utils/e2e'
+import { $fetch, fetch } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
+import { setupApiServer } from '../utils/api-server'
 import { createTestWorkspace } from '../utils/workspace'
 
 const workspace = await createTestWorkspace()
 
-await setup({
-  server: true,
-  nuxtConfig: { runtimeConfig: { workspaceDir: workspace } },
-})
+await setupApiServer(workspace, import.meta.url)
 
 describe('GET /api/books/:bookId/search', () => {
   it('returns ranked hits with snippets', async () => {

@@ -67,3 +67,12 @@ export const activityLog = sqliteTable('activity_log', {
   tool: text('tool').notNull(),
   data: text('data', { mode: 'json' }).notNull(),
 })
+
+/** Codex proposals (WRO-66); `data` holds the full `CodexProposal` (JSON). */
+export const codexProposals = sqliteTable('codex_proposals', {
+  id: text('id').primaryKey(),
+  sourceEntryId: text('source_entry_id').notNull(),
+  status: text('status').notNull(),
+  createdAt: text('created_at').notNull(),
+  data: text('data', { mode: 'json' }).notNull(),
+})

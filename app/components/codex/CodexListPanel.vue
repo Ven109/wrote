@@ -12,6 +12,7 @@ const typeItems = computed(() => [{ label: 'All types', value: null }, ...types.
         Codex
       </h1>
       <div class="flex items-center gap-1">
+        <CodexScanControls :book-id="bookId" />
         <UButton
           :icon="view === 'grid' ? 'i-lucide-list' : 'i-lucide-layout-grid'"
           :aria-label="view === 'grid' ? 'Show as list' : 'Show as grid'"

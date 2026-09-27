@@ -98,4 +98,15 @@ export const STATE_MIGRATIONS: string[][] = [
     )`,
     'CREATE INDEX activity_log_created_idx ON activity_log(created_at)',
   ],
+  // 7: codex proposals from "Scan chapter" (WRO-66)
+  [
+    `CREATE TABLE codex_proposals (
+      id TEXT PRIMARY KEY,
+      source_entry_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      data TEXT NOT NULL
+    )`,
+    'CREATE INDEX codex_proposals_status_idx ON codex_proposals(status, source_entry_id)',
+  ],
 ]
