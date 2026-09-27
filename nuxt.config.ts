@@ -15,6 +15,11 @@ export default defineNuxtConfig({
     fonts: false,
   },
 
+  runtimeConfig: {
+    // Folder containing the user's books (override with NUXT_WORKSPACE_DIR).
+    workspaceDir: '',
+  },
+
   compatibilityDate: '2026-09-01',
 
   typescript: {
