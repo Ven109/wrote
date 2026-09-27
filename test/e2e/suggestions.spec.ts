@@ -37,4 +37,14 @@ test('an MCP agent proposes edits that appear live as tracked changes, and only 
   await expect(editor.locator('p', { hasText: 'At dawn the ships came home.' })).toBeVisible()
   await expect.poll(bodyOnDisk).toBe('The keeper trimmed the *last* wick. The lamp burned all night.\n\nAt dawn the ships came home.\n')
   await expect(page.getByRole('button', { name: /^\d+ suggestions?$/ })).toBeHidden()
+
+  // Provenance: the accepted AI text can be highlighted, and counts as AI-assisted.
+  await page.keyboard.press('Escape')
+  await expect(panel).toBeHidden()
+  await page.getByRole('button', { name: 'Highlight AI-assisted text' }).click()
+  await expect(editor.locator('.ai-provenance').first()).toBeVisible()
+  await expect(editor.locator('.ai-provenance', { hasText: 'At dawn the ships came home.' })).toBeVisible()
+  await expect(editor.locator('.ai-provenance', { hasText: 'trimmed the' })).toBeVisible()
+  await page.getByRole('button', { name: 'Word counts' }).click()
+  await expect(page.getByText('AI-assisted')).toBeVisible()
 })

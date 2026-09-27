@@ -36,6 +36,8 @@ export const AiSettingsSchema = z.object({
   summaries: SummarySettingsSchema.default({ enabled: false, dailyTokenBudget: 100_000 }),
   /** Ghost-text autocomplete in the editor (fast model). Off by default. */
   autocomplete: z.boolean().default(false),
+  /** Share of an accepted AI passage the author must rewrite before it stops counting as AI-assisted. */
+  provenanceThreshold: z.number().min(0.1).max(1).default(0.5),
 })
 export type AiSettings = z.infer<typeof AiSettingsSchema>
 
@@ -50,6 +52,7 @@ export const UpdateAiSettingsSchema = z.object({
   models: z.partialRecord(AiModelSlotSchema, ModelRefSchema.nullable()).optional(),
   summaries: SummarySettingsPatchSchema.optional(),
   autocomplete: z.boolean().optional(),
+  provenanceThreshold: z.number().min(0.1).max(1).optional(),
   /** Write-only: a new key, or `null` to delete it. Keys are never returned. */
   keys: z.partialRecord(AiProviderIdSchema, z.string().trim().min(1).max(500).nullable()).optional(),
 })
@@ -80,6 +83,7 @@ export interface AiSettingsView {
   embeddings: boolean
   summaries: z.infer<typeof SummarySettingsSchema>
   autocomplete: boolean
+  provenanceThreshold: number
 }
 
 export interface AiModelOption {

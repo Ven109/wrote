@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { AiConfig } from '../services/ai-settings'
 import { listModels, testConnection } from './models'
 
-const config = (providers: AiConfig['settings']['providers'] = {}): AiConfig => ({ settings: { providers, models: {}, summaries: { enabled: false, dailyTokenBudget: 100_000 }, autocomplete: false }, keys: {}, env: {} })
+const config = (providers: AiConfig['settings']['providers'] = {}): AiConfig => ({ settings: { providers, models: {}, summaries: { enabled: false, dailyTokenBudget: 100_000 }, autocomplete: false, provenanceThreshold: 0.5 }, keys: {}, env: {} })
 
 describe('testConnection', () => {
   it('reports success with latency', async () => {

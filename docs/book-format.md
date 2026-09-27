@@ -23,7 +23,7 @@ my-novel/
 ├── research/                      # sources, clippings, interviews
 ├── outline.md
 ├── style-guide.md
-└── .wrote/                        # generated index & cache – gitignored, rebuildable
+└── .wrote/                        # index (rebuildable), app state, AI provenance – gitignored
 ```
 
 Paths inside the book are POSIX and relative to the book root. Entry types are derived from the location (`shared/book/layout.ts`):
@@ -161,7 +161,15 @@ Unknown keys are preserved.
 
 ## `.wrote/`
 
-Generated data: SQLite index (full-text + vector search), summaries, chat history, activity log. It is gitignored and can be deleted at any time; Wrote rebuilds everything derivable from the Markdown files. Data that exists only in `.wrote/` (chat history, activity log) is documented where it is introduced.
+Wrote's own data about the book, next to the Markdown files:
+
+| Path | What | If deleted |
+|---|---|---|
+| `index.db` | search index, chunks and vectors | rebuilt from the Markdown files (vectors re-embedded in the background) |
+| `state.db` | background jobs, chat threads, summaries, suggestions, AI context snapshots | lost – regenerated where possible (summaries), otherwise gone |
+| `provenance/<entry id>.json` | which accepted passages were AI-written | lost – the text stays, the AI-assisted marks disappear |
+
+`.wrote/` is gitignored by default. Commit `provenance/` if you want AI provenance to travel with the book.
 
 ## Example
 

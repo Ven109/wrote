@@ -29,6 +29,8 @@ export const SuggestionSchema = z.object({
   after: z.string().default(''),
   rationale: z.string().optional(),
   author: ActorSchema,
+  /** `provider:model` that wrote the proposal, when known. */
+  model: z.string().nullable().default(null),
   status: SuggestionStatusSchema.default('pending'),
   /** What the author actually applied, if they edited the proposal before accepting. */
   appliedText: z.string().optional(),

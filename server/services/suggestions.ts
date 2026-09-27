@@ -5,6 +5,7 @@ import { findSuggestions, upsertSuggestion } from '../db/state/suggestions'
 import { InvalidInputError, NotFoundError } from '../storage/errors'
 import { readLegacySuggestionFiles, removeLegacySuggestionFiles } from '../storage/legacy-suggestions'
 import { publishSuggestionEvent } from '../utils/book-events'
+import { recordProvenance } from './provenance'
 import { getEntry } from './entries'
 import type { BookContext } from './workspace'
 
@@ -15,6 +16,7 @@ export interface ProposeInput {
   replace: string
   rationale?: string
   author: Actor
+  model?: string | null
 }
 
 async function bodyOf(book: BookContext, entryId: string): Promise<string | null> {
@@ -78,6 +80,18 @@ export async function resolveSuggestions(book: BookContext, input: ResolveSugges
     resolvedAt: now.toISOString(),
     ...(input.text !== undefined && input.text !== suggestion.replace ? { appliedText: input.text } : {}),
   })))
+  // Accepted AI text is remembered outside the prose (provenance). Inserted blocks get their surroundings on first read.
+  for (const suggestion of resolved.filter(s => s.status === 'accepted')) {
+    await recordProvenance(book, {
+      entryId: suggestion.entryId,
+      text: suggestion.appliedText ?? suggestion.replace,
+      before: suggestion.kind === 'replace' ? suggestion.before : '',
+      after: suggestion.kind === 'replace' ? suggestion.after : '',
+      author: suggestion.author,
+      model: suggestion.model,
+      suggestionId: suggestion.id,
+    }, now)
+  }
   for (const entryId of new Set(resolved.map(suggestion => suggestion.entryId))) publishSuggestionEvent(book.id, { entryId })
   return resolved
 }

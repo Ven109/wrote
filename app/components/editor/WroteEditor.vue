@@ -61,6 +61,7 @@ const editorHandlers = ai ? { ...wikiLinkHandlers, ...inlineAiHandlers(ai) } : w
     />
     <EditorSuggestions :editor="editor" />
     <EditorGhostText :editor="editor" />
+    <EditorProvenance :editor="editor" />
     <template v-if="mode === 'block'">
       <EditorBlockHandle
         :editor="editor"

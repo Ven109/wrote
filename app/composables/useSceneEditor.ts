@@ -11,5 +11,6 @@ export function useSceneEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefO
   const suggestions = useSuggestions(bookId, entry.document)
   const ai = useInlineAi(bookId, entry.document, autosave.flush)
   useAutocomplete(bookId, entry.document)
-  return { entry, autosave, words, meta, links, backlinks, summary, suggestions, ai }
+  const provenance = useProvenance(bookId, entry.document)
+  return { entry, autosave, words, meta, links, backlinks, summary, suggestions, ai, provenance }
 }
