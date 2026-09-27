@@ -29,5 +29,6 @@ useBookSync(useAppNavigation().bookId)
 
     <AppAssistantSidebar v-model:open="assistantOpen" />
     <AppCommandPalette />
+    <NotesQuickCapture />
   </div>
 </template>

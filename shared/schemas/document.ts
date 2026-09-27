@@ -29,8 +29,10 @@ export interface EntryDocument {
 
 const optionalText = (max: number) => z.string().trim().max(max).nullable().optional()
 
-/** Editable scene metadata. `null` clears a field; omitted fields are left unchanged. */
-export const SceneMetaSchema = z.object({
+/** Editable entry metadata (scene details, note title/tags/pin). `null` clears a field; omitted fields are left unchanged. */
+export const EntryMetaSchema = z.object({
+  title: z.string().trim().min(1).max(200).optional(),
+  pinned: z.boolean().optional(),
   status: SceneStatusSchema.optional(),
   pov: optionalText(200),
   location: optionalText(200),
@@ -38,10 +40,10 @@ export const SceneMetaSchema = z.object({
   synopsis: optionalText(5000),
   tags: z.array(z.string().trim().min(1).max(60)).max(50).optional(),
 })
-export type SceneMeta = z.infer<typeof SceneMetaSchema>
+export type EntryMeta = z.infer<typeof EntryMetaSchema>
 
 export const UpdateDocumentMetaSchema = z.object({
   path: EntryPathSchema,
-  meta: SceneMetaSchema,
+  meta: EntryMetaSchema,
 })
 export type UpdateDocumentMetaInput = z.infer<typeof UpdateDocumentMetaSchema>
