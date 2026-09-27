@@ -232,3 +232,13 @@ describe('/api/books/:bookId/codex', () => {
     expect((await fetch('/api/books/sample-book/codex', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: 'dragon', title: 'x' }) })).status).toBe(400)
   })
 })
+
+describe('/api/books/:bookId/codex mentions', () => {
+  it('lists detection targets and scenes an entry appears in', async () => {
+    const targets = await $fetch<{ id: string, names: string[] }[]>('/api/books/sample-book/codex/mentions')
+    expect(targets.find(t => t.id === 'cdx_mara000001')?.names).toContain('Mara Velden')
+    const appears = await $fetch<{ title: string }[]>('/api/books/sample-book/codex/appears', { query: { id: 'cdx_h0llowbay1' } })
+    expect(Array.isArray(appears)).toBe(true)
+    expect((await fetch('/api/books/sample-book/codex/appears?id=bad')).status).toBe(400)
+  })
+})

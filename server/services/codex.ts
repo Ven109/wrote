@@ -67,6 +67,8 @@ export const UpdateCodexEntrySchema = z.object({
   path: z.string().min(1),
   fields: z.record(z.string(), z.union([z.string().max(20_000), z.array(z.string().max(500)).max(200), z.null()])).default({}),
   aliases: z.array(z.string().trim().min(1).max(200)).max(50).optional(),
+  /** `false` excludes the entry from name detection in prose (stored as `detect: false`). */
+  detect: z.boolean().optional(),
 })
 export type UpdateCodexEntryInput = z.infer<typeof UpdateCodexEntrySchema>
 
@@ -82,9 +84,10 @@ export async function updateCodexEntry(book: BookContext, input: UpdateCodexEntr
   const problems = validateFields(type, input.fields as Record<string, FieldValue>)
   if (problems.length) throw new InvalidInputError(problems.join('; '))
   const cleared = new Set(Object.entries(input.fields).filter(([, value]) => value === null || value === '').map(([key]) => key))
+  if (input.detect === true) cleared.add('detect')
   const kept = Object.entries(frontmatter).filter(([key]) => !cleared.has(key))
   const set = Object.entries(input.fields).filter(([key]) => !cleared.has(key))
-  const next = { ...Object.fromEntries(kept), ...Object.fromEntries(set), ...(input.aliases ? { aliases: input.aliases } : {}), updated: now.toISOString() }
+  const next = { ...Object.fromEntries(kept), ...Object.fromEntries(set), ...(input.aliases ? { aliases: input.aliases } : {}), ...(input.detect === false ? { detect: false } : {}), updated: now.toISOString() }
   const saved = await book.repository.write(entry.path, { frontmatter: next as typeof entry.frontmatter, body: entry.body }, entry.hash)
   await applyChange(book.db, book.repository, { kind: 'changed', path: entry.path })
   return { id: saved.frontmatter.id, path: saved.path, type: saved.type, title: saved.frontmatter.title, body: saved.body, hash: saved.hash, frontmatter: saved.frontmatter }

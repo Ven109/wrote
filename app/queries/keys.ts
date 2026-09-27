@@ -30,5 +30,7 @@ export const bookKeys = {
   codex: (bookId: string) => ['book', bookId, 'codex'] as const,
   codexList: (bookId: string, query: CodexQuery) => ['book', bookId, 'codex', 'list', query.type ?? '', query.tag ?? '', query.q ?? ''] as const,
   codexTypes: (bookId: string) => ['book', bookId, 'codex', 'types'] as const,
+  codexMentions: (bookId: string) => ['book', bookId, 'codex', 'mentions'] as const,
+  codexAppearances: (bookId: string, entryId: string) => ['book', bookId, 'codex', 'appears', entryId] as const,
   search: (bookId: string, query: string) => ['book', bookId, 'search', query] as const,
 }

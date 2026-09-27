@@ -45,6 +45,11 @@ describe('codex service', () => {
     await expect(updateCodexEntry(book, { path: 'notes/ending.md', fields: {} })).rejects.toMatchObject({ code: 'not_found' })
   })
 
+  it('turns name detection off and on', async () => {
+    expect((await updateCodexEntry(book, { path: MARA, fields: {}, detect: false })).frontmatter.detect).toBe(false)
+    expect((await updateCodexEntry(book, { path: MARA, fields: {}, detect: true })).frontmatter).not.toHaveProperty('detect')
+  })
+
   it('creates entries of built-in and custom types in their folders', async () => {
     const tide = await createCodexEntry(book, { type: 'lore', title: 'The Drowning' })
     expect(tide.path).toBe('codex/lore/the-drowning.md')

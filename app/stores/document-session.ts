@@ -51,6 +51,8 @@ export const useDocumentSessionStore = defineStore('document-session', () => {
       finally {
         void queryCache.invalidateQueries({ key: bookKeys.structure(bookId) })
         void queryCache.invalidateQueries({ key: bookKeys.links(bookId) })
+        // Mentions/"appears in" depend on scene text and codex names.
+        void queryCache.invalidateQueries({ key: bookKeys.codex(bookId) })
       }
     })
   }

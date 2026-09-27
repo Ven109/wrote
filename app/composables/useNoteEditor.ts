@@ -8,6 +8,7 @@ export function useNoteEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefOr
   const { update, saving: savingMeta } = useEntryMeta(bookId, entry.document)
   const { fileNote } = useNotes(bookId)
   useWikiLinks(bookId, entry.draft)
+  useCodexMentions(bookId)
   const { backlinks } = useBacklinks(bookId, () => entry.document.value?.id)
 
   const frontmatter = computed(() => entry.document.value?.frontmatter ?? {})

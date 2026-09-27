@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import { refDebounced } from '@vueuse/core'
 import { bookKeys } from '~/queries/keys'
-import { codexListQuery, codexTypesQuery } from '~/queries/codex'
+import { codexAppearancesQuery, codexListQuery, codexTypesQuery } from '~/queries/codex'
+import { entryHref } from '~/utils/entry-href'
 
 export type CodexView = 'list' | 'grid'
 
@@ -67,4 +68,11 @@ export function useCodexEntryOptions(bookId: MaybeRefOrGetter<string>, exclude?:
     .filter(entry => entry.id !== toValue(exclude))
     .map(entry => ({ label: entry.title, value: entry.id })))
   return { options }
+}
+
+/** Scenes that mention a codex entry, with counts and links. */
+export function useCodexAppearances(bookId: MaybeRefOrGetter<string>, entryId: MaybeRefOrGetter<string | undefined>) {
+  const { data, status } = useQuery(() => codexAppearancesQuery({ bookId: toValue(bookId), entryId: toValue(entryId) ?? '' }))
+  const appearances = computed(() => (data.value ?? []).map(scene => ({ ...scene, href: entryHref(toValue(bookId), { type: 'scene', path: scene.path }) })))
+  return { appearances, status }
 }
