@@ -32,6 +32,7 @@ export async function openStateDb(bookRoot: string | ':memory:'): Promise<StateD
   }
   const client = createClient({ url })
   await client.execute('PRAGMA journal_mode = WAL')
+  await client.execute('PRAGMA foreign_keys = ON')
   await migrate(client)
   return drizzle(client, { schema })
 }
