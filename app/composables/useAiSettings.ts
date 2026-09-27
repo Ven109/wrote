@@ -64,6 +64,7 @@ export function useAiSettings() {
     saveKey: (id: AiProviderId, key: string) => update({ keys: { [id]: key.trim() } }),
     removeKey: (id: AiProviderId) => update({ keys: { [id]: null } }),
     setModel: (slot: AiModelSlot, ref: string | null) => update({ models: { [slot]: ref } }),
+    setAutocomplete: (enabled: boolean) => update({ autocomplete: enabled }),
     setSummaries: (patch: NonNullable<UpdateAiSettingsInput['summaries']>) => update({ summaries: patch }),
     test,
   }

@@ -5,6 +5,8 @@ import { MARKDOWN_OPTIONS } from '~/editor/markdown'
 import { SLASH_ITEMS } from '~/editor/menus'
 import { WIKI_LINK_CONTEXT, wikiLinkHandlers } from '~/editor/wiki-link-context'
 import { CODEX_MENTIONS_CONTEXT } from '~/editor/codex-mentions-context'
+import { inlineAiHandlers, SLASH_AI_ITEMS } from '~/editor/ai-actions'
+import { INLINE_AI_CONTEXT } from '~/editor/inline-ai-context'
 
 withDefaults(defineProps<{ placeholder?: string }>(), { placeholder: 'Write, or press / for blocks…' })
 const markdown = defineModel<string>({ required: true })
@@ -12,6 +14,9 @@ const { mode } = useEditorMode()
 const links = inject(WIKI_LINK_CONTEXT, null)
 const codex = inject(CODEX_MENTIONS_CONTEXT, null)
 const extensions = wroteExtensions({ wikiLink: WikiLinkView })
+const ai = inject(INLINE_AI_CONTEXT, null)
+const slashItems = ai ? [...SLASH_ITEMS, SLASH_AI_ITEMS] : SLASH_ITEMS
+const editorHandlers = ai ? { ...wikiLinkHandlers, ...inlineAiHandlers(ai) } : wikiLinkHandlers
 </script>
 
 <template>
@@ -22,7 +27,7 @@ const extensions = wroteExtensions({ wikiLink: WikiLinkView })
     :markdown="MARKDOWN_OPTIONS"
     :mention="false"
     :extensions="extensions"
-    :handlers="wikiLinkHandlers"
+    :handlers="editorHandlers"
     :placeholder="placeholder"
     :data-mode="mode"
     class="prose-manuscript w-full"
@@ -31,7 +36,7 @@ const extensions = wroteExtensions({ wikiLink: WikiLinkView })
   >
     <UEditorSuggestionMenu
       :editor="editor"
-      :items="SLASH_ITEMS"
+      :items="slashItems"
     />
     <UEditorSuggestionMenu
       v-if="links"
@@ -55,6 +60,7 @@ const extensions = wroteExtensions({ wikiLink: WikiLinkView })
       :editor="editor"
     />
     <EditorSuggestions :editor="editor" />
+    <EditorGhostText :editor="editor" />
     <template v-if="mode === 'block'">
       <EditorBlockHandle
         :editor="editor"

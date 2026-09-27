@@ -22,6 +22,11 @@ const { inset } = useKeyboardInset()
         size="lg"
         class="min-w-0 flex-1"
       />
+      <EditorAiMenu
+        :editor="editor"
+        size="lg"
+        class="shrink-0"
+      />
       <UButton
         icon="i-lucide-ellipsis"
         color="neutral"

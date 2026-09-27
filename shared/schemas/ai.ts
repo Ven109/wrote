@@ -34,6 +34,8 @@ export const AiSettingsSchema = z.object({
   models: z.partialRecord(AiModelSlotSchema, ModelRefSchema.nullable()).default({}),
   /** Rolling scene/chapter/book summaries (WRO-48), written in the background with the fast model. */
   summaries: SummarySettingsSchema.default({ enabled: false, dailyTokenBudget: 100_000 }),
+  /** Ghost-text autocomplete in the editor (fast model). Off by default. */
+  autocomplete: z.boolean().default(false),
 })
 export type AiSettings = z.infer<typeof AiSettingsSchema>
 
@@ -47,6 +49,7 @@ export const UpdateAiSettingsSchema = z.object({
   providers: z.partialRecord(AiProviderIdSchema, ProviderPatchSchema).optional(),
   models: z.partialRecord(AiModelSlotSchema, ModelRefSchema.nullable()).optional(),
   summaries: SummarySettingsPatchSchema.optional(),
+  autocomplete: z.boolean().optional(),
   /** Write-only: a new key, or `null` to delete it. Keys are never returned. */
   keys: z.partialRecord(AiProviderIdSchema, z.string().trim().min(1).max(500).nullable()).optional(),
 })
@@ -76,6 +79,7 @@ export interface AiSettingsView {
   /** True when an embedding model resolves: semantic search is on. */
   embeddings: boolean
   summaries: z.infer<typeof SummarySettingsSchema>
+  autocomplete: boolean
 }
 
 export interface AiModelOption {

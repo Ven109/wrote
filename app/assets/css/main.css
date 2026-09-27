@@ -118,3 +118,9 @@
     min-height: 2.75rem;
   }
 }
+
+/* Ghost-text autocomplete (decoration; Tab accepts). */
+.prose-manuscript .ghost-text {
+  color: var(--ui-text-dimmed);
+  pointer-events: none;
+}

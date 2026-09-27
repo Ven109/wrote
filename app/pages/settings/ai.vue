@@ -64,6 +64,14 @@ useSeoMeta({ title: 'AI models' })
         :settings="ai.settings.value.summaries"
         @update="ai.setSummaries"
       />
+      <div class="rounded-lg border border-default p-4">
+        <USwitch
+          :model-value="ai.settings.value.autocomplete"
+          label="Autocomplete while writing"
+          description="Suggests the rest of a sentence as grey ghost text after a short pause – Tab accepts, Esc dismisses. Uses the fast model."
+          @update:model-value="ai.setAutocomplete"
+        />
+      </div>
     </section>
     <section
       class="flex flex-col gap-3"
