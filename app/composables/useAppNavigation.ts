@@ -11,11 +11,14 @@ export const BOOK_SECTIONS = [
   { key: 'settings', label: 'Settings', icon: 'i-lucide-settings' },
 ] as const
 
-export function bookNavigationItems(bookId: string): NavigationMenuItem[] {
+type SectionKey = (typeof BOOK_SECTIONS)[number]['key']
+
+export function bookNavigationItems(bookId: string, badges: Partial<Record<SectionKey, number>> = {}): NavigationMenuItem[] {
   return BOOK_SECTIONS.map(section => ({
     label: section.label,
     icon: section.icon,
     to: `/books/${bookId}/${section.key}`,
+    badge: badges[section.key] || undefined,
   }))
 }
 
@@ -34,9 +37,12 @@ export function useAppNavigation() {
     return parts.length ? parts.join('/') : null
   })
 
+  const { counts: noteCounts } = useNoteCounts(bookId)
+  const badges = computed(() => ({ notes: noteCounts.value?.inbox ?? 0 }))
+
   const items = computed<NavigationMenuItem[][]>(() => {
     const global: NavigationMenuItem[] = [{ label: 'Library', icon: 'i-lucide-library-big', to: '/', exact: true }]
-    return bookId.value ? [global, bookNavigationItems(bookId.value)] : [global]
+    return bookId.value ? [global, bookNavigationItems(bookId.value, badges.value)] : [global]
   })
 
   return { bookId, activeEntryPath, items }

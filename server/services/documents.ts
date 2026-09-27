@@ -1,4 +1,4 @@
-import type { EntryDocument, SaveDocumentInput, SceneMeta, UpdateDocumentMetaInput } from '#shared/schemas/document'
+import type { EntryDocument, SaveDocumentInput, EntryMeta, UpdateDocumentMetaInput } from '#shared/schemas/document'
 import { applyChange } from '../db/indexer'
 import type { StoredEntry } from '../storage/entries'
 import type { BookContext } from './workspace'
@@ -33,7 +33,7 @@ export async function saveDocumentBody(book: BookContext, input: SaveDocumentInp
 }
 
 /** Applies a metadata patch: `null` removes a key, `undefined` keeps it. */
-export function applyMetaPatch(frontmatter: Record<string, unknown>, meta: SceneMeta): Record<string, unknown> {
+export function applyMetaPatch(frontmatter: Record<string, unknown>, meta: EntryMeta): Record<string, unknown> {
   const cleared = new Set(Object.entries(meta).filter(([, value]) => value === null || value === '').map(([key]) => key))
   const set = Object.entries(meta).filter(([key, value]) => value !== undefined && !cleared.has(key))
   const kept = Object.entries(frontmatter).filter(([key]) => !cleared.has(key))

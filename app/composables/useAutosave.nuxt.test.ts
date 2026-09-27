@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
-import type { SaveResult } from './useEntryDocument'
+import { effectScope, ref } from 'vue'
+import type { SaveResult } from '~/stores/document-session'
 import { useAutosave } from './useAutosave'
 
 function target(results: SaveResult[] = []) {
@@ -57,5 +57,20 @@ describe('useAutosave', () => {
     await autosave.useTheirs()
     expect(t.draft.value).toBe('disk')
     expect(autosave.status.value).toBe('saved')
+  })
+})
+
+describe('useAutosave dispose', () => {
+  it('cancels a pending debounced save when its scope is disposed', async () => {
+    vi.useFakeTimers()
+    const t = target()
+    const scope = effectScope()
+    scope.run(() => useAutosave(t, { delay: 1000 }))
+    t.draft.value = 'changed'
+    await nextTick()
+    scope.stop()
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(t.save).not.toHaveBeenCalled()
+    vi.useRealTimers()
   })
 })

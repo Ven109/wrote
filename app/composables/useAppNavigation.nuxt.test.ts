@@ -8,6 +8,12 @@ describe('bookNavigationItems', () => {
     expect(items[0]).toMatchObject({ label: 'Write', to: '/books/my-novel/write' })
     expect(items.every(item => String(item.to).startsWith('/books/my-novel/'))).toBe(true)
   })
+
+  it('shows badges only for non-zero counts', () => {
+    const items = bookNavigationItems('b', { notes: 3 })
+    expect(items.find(item => item.label === 'Notes')?.badge).toBe(3)
+    expect(bookNavigationItems('b', { notes: 0 }).find(item => item.label === 'Notes')?.badge).toBeUndefined()
+  })
 })
 
 describe('useAppNavigation', () => {

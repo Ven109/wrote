@@ -1,5 +1,4 @@
-import { useDebounceFn } from '@vueuse/core'
-import type { SaveResult } from './useEntryDocument'
+import type { SaveResult } from '~/stores/document-session'
 
 export type AutosaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'conflict' | 'error'
 
@@ -37,12 +36,17 @@ export function useAutosave(target: AutosaveTarget, options: { delay?: number } 
     await running
   }
 
-  const schedule = useDebounceFn(flush, options.delay ?? 1000)
+  let timer: ReturnType<typeof setTimeout> | undefined
+  function schedule() {
+    clearTimeout(timer)
+    timer = setTimeout(() => void flush(), options.delay ?? 1000)
+  }
+  onScopeDispose(() => clearTimeout(timer))
 
   watch(target.draft, () => {
     if (!target.dirty.value || status.value === 'conflict') return
     status.value = 'pending'
-    void schedule()
+    schedule()
   })
 
   async function keepMine() {

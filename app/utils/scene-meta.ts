@@ -1,4 +1,4 @@
-import type { SceneMeta } from '#shared/schemas/document'
+import type { EntryMeta } from '#shared/schemas/document'
 import type { SceneStatus } from '#shared/schemas/entry'
 
 /** Form state of the scene metadata panel (strings are never null in inputs). */
@@ -25,7 +25,7 @@ export function metaFormFrom(frontmatter: Record<string, unknown>): SceneMetaFor
 }
 
 /** Converts the form into an API patch: blank text clears the field. */
-export function metaPatchFrom(form: SceneMetaForm): SceneMeta {
+export function metaPatchFrom(form: SceneMetaForm): EntryMeta {
   const orNull = (value: string) => value.trim() || null
   return {
     status: form.status,

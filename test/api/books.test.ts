@@ -146,3 +146,22 @@ describe('PATCH /api/books/:bookId/document', () => {
     expect(invalid.status).toBe(400)
   })
 })
+
+describe('/api/books/:bookId/notes', () => {
+  it('captures, lists, counts and files notes', async () => {
+    const created = await $fetch<{ path: string }>('/api/books/sample-book/notes', { method: 'POST', body: { text: 'API capture\nbody' } })
+    expect(created.path).toBe('notes/inbox/api-capture.md')
+    const inbox = await $fetch<{ title: string }[]>('/api/books/sample-book/notes', { query: { filter: 'inbox' } })
+    expect(inbox.map(n => n.title)).toContain('API capture')
+    const counts = await $fetch<{ inbox: number }>('/api/books/sample-book/notes/counts')
+    expect(counts.inbox).toBeGreaterThanOrEqual(2)
+    const filed = await $fetch<{ path: string }>('/api/books/sample-book/notes/file', { method: 'POST', body: { path: created.path } })
+    expect(filed.path).toBe('notes/api-capture.md')
+  })
+
+  it('validates input', async () => {
+    expect((await fetch('/api/books/sample-book/notes?filter=bogus')).status).toBe(400)
+    const empty = await fetch('/api/books/sample-book/notes', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: '  ' }) })
+    expect(empty.status).toBe(400)
+  })
+})

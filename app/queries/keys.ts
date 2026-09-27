@@ -1,3 +1,5 @@
+import type { NotesQuery } from '#shared/schemas/notes'
+
 /**
  * Query key factory. Keys are hierarchical so a whole subtree can be invalidated at once,
  * e.g. `invalidateQueries({ key: bookKeys.book(id) })` refreshes everything of one book.
@@ -9,5 +11,8 @@ export const bookKeys = {
   structure: (bookId: string) => ['book', bookId, 'structure'] as const,
   entry: (bookId: string, entryId: string) => ['book', bookId, 'entry', entryId] as const,
   document: (bookId: string, path: string) => ['book', bookId, 'document', path] as const,
+  notes: (bookId: string) => ['book', bookId, 'notes'] as const,
+  noteList: (bookId: string, query: NotesQuery) => ['book', bookId, 'notes', 'list', query.filter, query.tag ?? '', query.q ?? ''] as const,
+  noteCounts: (bookId: string) => ['book', bookId, 'notes', 'counts'] as const,
   search: (bookId: string, query: string) => ['book', bookId, 'search', query] as const,
 }
