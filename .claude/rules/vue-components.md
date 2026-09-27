@@ -11,7 +11,7 @@ paths:
 - Never call `$fetch`/`useFetch` in a component; use a data composable (`useBook`, `useNotes`, …).
 - **Nuxt UI first.** Build from `U*` components (`UButton`, `UCard`, `UForm`, `UModal`, `USidebar`, `UTree`, `UEditor`, `UChat*`, …) before writing custom markup. Customize through props / `ui` prop / `app.config.ts`, not by overriding internals.
 - **Extract generic components** when markup repeats (2+ times) or a block is reusable across features. Put them in `app/components/base/` (auto-imported as `Base*`, e.g. `BaseEmptyState`, `BaseSectionHeader`, `BaseEntityCard`). Generic components know nothing about books/notes – they take props and slots.
-- Feature components live in feature folders (`app/components/editor/`, `codex/`, `notes/`, `outline/`, `assistant/`, `app/` for the shell) and are auto-prefixed by folder (`EditorToolbar`, `CodexCard`).
+- Feature components live in feature folders (`app/components/editor/`, `codex/`, `notes/`, `outline/`, `assistant/`, `library/`, `app/` for the shell) and are **auto-prefixed by folder**: `library/BookCard.vue` is used as `<LibraryBookCard>`. A file whose name already starts with the folder name is not double-prefixed (`app/AppSidebar.vue` → `<AppSidebar>`). Unknown component names fail `pnpm typecheck` (`checkUnknownComponents`).
 - Prefer slots over boolean props for variations; max ~5 props per component before considering a split.
 - Keep components ≤ ~150 lines. Split into subcomponents instead of long templates.
 - No hardcoded colors or sizes: use theme tokens / Tailwind utilities (`text-muted`, `bg-elevated`, `text-primary`). AI-related UI uses the sparkles icon + primary tint.

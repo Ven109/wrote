@@ -1,11 +1,24 @@
-import { describe, expect, it } from 'vitest'
-import { mountSuspended } from '@nuxt/test-utils/runtime'
+import { describe, expect, it, vi } from 'vitest'
+import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import type { BookSummary } from '#shared/schemas/library'
 import IndexPage from './index.vue'
 
+const books: BookSummary[] = []
+registerEndpoint('/api/books', () => books)
+
 describe('library page', () => {
-  it('shows the library heading and empty state', async () => {
+  it('shows an empty state without books', async () => {
+    books.length = 0
     const page = await mountSuspended(IndexPage)
     expect(page.text()).toContain('Library')
-    expect(page.text()).toContain('No books yet')
+    await vi.waitFor(() => expect(page.text()).toContain('No books yet'))
+  })
+
+  it('lists books as cards linking to the editor', async () => {
+    books.push({ id: 'tide', title: 'The Long Tide', subtitle: null, author: 'A. Writer', language: 'en', template: 'novel', external: false, wordCount: 1234, scenes: 3, updatedAt: null })
+    await refreshNuxtData('books')
+    const page = await mountSuspended(IndexPage)
+    await vi.waitFor(() => expect(page.text()).toContain('The Long Tide'))
+    expect(page.find('a[href="/books/tide/write"]').exists()).toBe(true)
   })
 })
