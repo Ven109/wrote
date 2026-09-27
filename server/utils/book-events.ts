@@ -1,3 +1,4 @@
+import type { ActivityEvent } from '#shared/schemas/activity'
 import type { BookChangeEvent } from '#shared/schemas/events'
 import type { Job } from '#shared/schemas/jobs'
 import type { ApprovalEvent } from '#shared/schemas/permissions'
@@ -26,6 +27,7 @@ const changes = createBookChannel<BookChangeEvent>()
 const jobs = createBookChannel<Job>()
 const suggestions = createBookChannel<SuggestionEvent>()
 const approvals = createBookChannel<ApprovalEvent>()
+const activity = createBookChannel<ActivityEvent>()
 
 /** File changes of a book (watcher and own writes → SSE clients). */
 export const subscribeBookEvents = changes.subscribe
@@ -39,3 +41,6 @@ export const publishSuggestionEvent = suggestions.publish
 /** Tool calls waiting for (or answered by) the author (permission model). */
 export const subscribeApprovalEvents = approvals.subscribe
 export const publishApprovalEvent = approvals.publish
+/** AI/MCP tool calls logged (or undone) in the activity log. */
+export const subscribeActivityEvents = activity.subscribe
+export const publishActivityEvent = activity.publish

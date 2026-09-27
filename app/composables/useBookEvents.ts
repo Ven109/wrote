@@ -1,3 +1,4 @@
+import type { ActivityEvent } from '#shared/schemas/activity'
 import type { BookChangeEvent } from '#shared/schemas/events'
 import type { JobEvent } from '#shared/schemas/jobs'
 import type { ApprovalEvent } from '#shared/schemas/permissions'
@@ -14,6 +15,8 @@ export interface BookEventHandlers {
   suggestion?: (event: SuggestionEvent) => void
   /** Tool calls waiting for the author's approval (and their outcome). */
   approval?: (event: ApprovalEvent) => void
+  /** Tool calls logged in (or undone from) the activity log. */
+  activity?: (event: ActivityEvent) => void
 }
 
 /** Subscribes to a book's live event stream (SSE). Reconnects automatically (EventSource). */
@@ -40,6 +43,9 @@ export function useBookEvents(bookId: MaybeRefOrGetter<string | null>, handlers:
     })
     source.addEventListener('approval', (message) => {
       handlers.approval?.(JSON.parse((message as MessageEvent<string>).data) as ApprovalEvent)
+    })
+    source.addEventListener('activity', (message) => {
+      handlers.activity?.(JSON.parse((message as MessageEvent<string>).data) as ActivityEvent)
     })
     source.addEventListener('suggestion', (message) => {
       handlers.suggestion?.(JSON.parse((message as MessageEvent<string>).data) as SuggestionEvent)

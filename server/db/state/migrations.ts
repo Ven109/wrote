@@ -87,4 +87,15 @@ export const STATE_MIGRATIONS: string[][] = [
     )`,
     'CREATE INDEX suggestions_entry_status_idx ON suggestions(entry_id, status)',
   ],
+  // 6: activity log of AI/MCP tool calls that change data, with before/after file states for undo (WRO-61)
+  [
+    `CREATE TABLE activity_log (
+      id TEXT PRIMARY KEY,
+      created_at TEXT NOT NULL,
+      actor_kind TEXT NOT NULL,
+      tool TEXT NOT NULL,
+      data TEXT NOT NULL
+    )`,
+    'CREATE INDEX activity_log_created_idx ON activity_log(created_at)',
+  ],
 ]

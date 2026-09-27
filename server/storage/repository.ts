@@ -1,11 +1,13 @@
 import type { BookConfigInput } from '#shared/schemas/book'
 import { readBookConfig, writeBookConfig } from './config'
 import { listEntries, readEntry } from './entries'
+import { readRawFile, restoreRawFile } from './raw'
 import { createEntry, moveEntry, trashEntry, type CreateEntryInput } from './mutations'
 import { listOrderedChildren, reorderChildren } from './reorder'
 import { writeEntry, type EntryContent } from './write'
 
-export type WriteListener = (path: string, hash: string) => void
+/** `hash` is `null` when the file was removed (undo of a created file). */
+export type WriteListener = (path: string, hash: string | null) => void
 
 /**
  * File repository for one book folder: the only place that reads and writes book files.
@@ -31,6 +33,10 @@ export function createBookRepository(root: string) {
     trash: (path: string) => trashEntry(root, path),
     listOrdered: (dir: string) => listOrderedChildren(root, dir),
     reorder: (dir: string, ordered: string[]) => reorderChildren(root, dir, ordered),
+    /** Raw file text (activity log snapshots). */
+    readRaw: (path: string) => readRawFile(root, path),
+    /** Restores a recorded raw file state; `null` removes the file (undo). */
+    restoreRaw: (path: string, content: string | null) => restoreRawFile(root, path, content, onWrite),
   }
 }
 

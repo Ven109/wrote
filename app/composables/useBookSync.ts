@@ -38,6 +38,10 @@ export function useBookSync(bookId: MaybeRefOrGetter<string | null>) {
       const others = (queryCache.getQueryData<PendingApproval[]>(bookKeys.approvals(id)) ?? []).filter(a => a.id !== approval.id)
       queryCache.setQueryData(bookKeys.approvals(id), state === 'pending' ? [...others, approval] : others)
     },
+    activity: () => {
+      const id = toValue(bookId)
+      if (id) void queryCache.invalidateQueries({ key: bookKeys.activity(id) })
+    },
     suggestion: ({ entryId }) => {
       const id = toValue(bookId)
       if (id) void queryCache.invalidateQueries({ key: bookKeys.entrySuggestions(id, entryId) })
