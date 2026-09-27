@@ -1,4 +1,4 @@
-import { mergeAttributes, Node } from '@tiptap/core'
+import { InputRule, mergeAttributes, Node } from '@tiptap/core'
 import { formatWikiLink, matchWikiLinkAt } from '#shared/utils/links'
 
 /**
@@ -29,6 +29,17 @@ export const WikiLink = Node.create({
   renderHTML({ node, HTMLAttributes }) {
     const attrs = { 'data-type': 'wiki-link', 'data-target': node.attrs.target, 'data-label': node.attrs.label, 'class': 'wiki-link' }
     return ['span', mergeAttributes(HTMLAttributes, attrs), node.attrs.label ?? node.attrs.target]
+  },
+
+  addInputRules() {
+    return [new InputRule({
+      find: /\[\[([^[\]|\n]+?)(?:\|([^[\]\n]+?))?\]\]$/,
+      handler: ({ range, match, chain }) => {
+        const target = match[1]?.trim()
+        if (!target) return
+        chain().deleteRange(range).insertContent({ type: this.name, attrs: { target, label: match[2]?.trim() || null } }).run()
+      },
+    })]
   },
 
   renderText({ node }) {

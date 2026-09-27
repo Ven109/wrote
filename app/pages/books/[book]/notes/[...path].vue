@@ -30,6 +30,7 @@ defineShortcuts({ meta_s: { usingInput: true, handler: note.autosave.flush } })
         v-model="draft"
         placeholder="Write your note…"
       />
+      <EditorBacklinks :backlinks="note.backlinks.value" />
     </template>
     <USkeleton
       v-else-if="status === 'pending'"

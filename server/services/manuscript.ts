@@ -4,6 +4,7 @@ import { applyChange, syncIndex } from '../db/indexer'
 import { InvalidPathError } from '../storage/errors'
 import { entryNodePath } from '../storage/mutations'
 import { pathForId } from './entries'
+import { updateLinksForRename } from './links'
 import { getStructure } from './structure'
 import type { BookContext } from './workspace'
 
@@ -43,7 +44,8 @@ export async function renameNode(book: BookContext, id: string, title: string) {
   const entry = await book.repository.read(await pathForId(book.db, id))
   const saved = await book.repository.write(entry.path, { frontmatter: { ...entry.frontmatter, title, updated: new Date().toISOString() }, body: entry.body }, entry.hash)
   await applyChange(book.db, book.repository, { kind: 'changed', path: entry.path })
-  return { id, title: saved.frontmatter.title }
+  const updatedLinks = await updateLinksForRename(book, id, entry.frontmatter.title, title)
+  return { id, title: saved.frontmatter.title, updatedLinks }
 }
 
 export async function trashNode(book: BookContext, id: string) {

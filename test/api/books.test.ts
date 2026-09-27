@@ -165,3 +165,14 @@ describe('/api/books/:bookId/notes', () => {
     expect(empty.status).toBe(400)
   })
 })
+
+describe('/api/books/:bookId/links', () => {
+  it('resolves targets and lists linkable entries', async () => {
+    const resolved = await $fetch<Record<string, { id: string } | null>>('/api/books/sample-book/links/resolve', { query: { targets: ['Mara Velden', 'Nope'] } })
+    expect(resolved['Mara Velden']?.id).toBe('cdx_mara000001')
+    expect(resolved.Nope).toBeNull()
+    const targets = await $fetch<{ title: string }[]>('/api/books/sample-book/links/targets')
+    expect(targets.map(t => t.title)).toContain('Mara Velden')
+    expect((await fetch('/api/books/sample-book/links/resolve')).status).toBe(400)
+  })
+})

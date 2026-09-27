@@ -29,7 +29,10 @@ export function useEntryDocument(bookId: MaybeRefOrGetter<string>, path: MaybeRe
   const { mutateAsync, isLoading: saving } = useMutation({
     mutation: (input: SaveDocumentInput) => $fetch<EntryDocument>(endpoint(), { method: 'PUT', body: input }),
     onSuccess: saved => queryCache.setQueryData(bookKeys.document(params().bookId, saved.path), saved),
-    onSettled: () => queryCache.invalidateQueries({ key: bookKeys.structure(params().bookId) }),
+    onSettled: () => Promise.all([
+      queryCache.invalidateQueries({ key: bookKeys.structure(params().bookId) }),
+      queryCache.invalidateQueries({ key: bookKeys.links(params().bookId) }),
+    ]),
   })
 
   async function persist(doc: EntryDocument, body: string, force = false): Promise<SaveResult> {

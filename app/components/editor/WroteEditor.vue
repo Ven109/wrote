@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { wroteExtensions } from '~/editor/extensions'
+import { WikiLinkView } from '~/editor/extensions/wiki-link-view'
 import { MARKDOWN_OPTIONS } from '~/editor/markdown'
 import { SLASH_ITEMS } from '~/editor/menus'
+import { WIKI_LINK_CONTEXT, wikiLinkHandlers } from '~/editor/wiki-link-context'
 
 withDefaults(defineProps<{ placeholder?: string }>(), { placeholder: 'Write, or press / for blocks…' })
 const markdown = defineModel<string>({ required: true })
 const { mode } = useEditorMode()
-const extensions = wroteExtensions()
+const links = inject(WIKI_LINK_CONTEXT, null)
+const extensions = wroteExtensions({ wikiLink: WikiLinkView })
 </script>
 
 <template>
@@ -17,6 +20,7 @@ const extensions = wroteExtensions()
     :markdown="MARKDOWN_OPTIONS"
     :mention="false"
     :extensions="extensions"
+    :handlers="wikiLinkHandlers"
     :placeholder="placeholder"
     :data-mode="mode"
     class="prose-manuscript w-full"
@@ -26,6 +30,14 @@ const extensions = wroteExtensions()
     <UEditorSuggestionMenu
       :editor="editor"
       :items="SLASH_ITEMS"
+    />
+    <UEditorSuggestionMenu
+      v-if="links"
+      :editor="editor"
+      :items="links.pickerItems.value"
+      char="[["
+      plugin-key="wikiLinkMenu"
+      :limit="12"
     />
     <template v-if="mode === 'block'">
       <EditorBlockHandle
