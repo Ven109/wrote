@@ -33,10 +33,12 @@ test('loses no edits when switching scenes quickly', async ({ page, request, isM
 
   for (const round of [1, 2, 3]) {
     await page.locator('.ProseMirror').click()
+    await page.keyboard.press('ControlOrMeta+End')
     await page.keyboard.type(` first-${round}`)
     await tree.getByText(second.title).click()
     await expect(page).toHaveURL(new RegExp(second.path))
     await page.locator('.ProseMirror').click()
+    await page.keyboard.press('ControlOrMeta+End')
     await page.keyboard.type(` second-${round}`)
     await tree.getByText(first.title).click()
     await expect(page).toHaveURL(new RegExp(first.path))

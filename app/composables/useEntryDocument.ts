@@ -1,87 +1,84 @@
-import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
+import { useQuery } from '@pinia/colada'
 import { useEventListener } from '@vueuse/core'
-import type { EntryDocument, SaveDocumentInput } from '#shared/schemas/document'
 import { bodiesDiffer, toStoredBody } from '~/editor/markdown'
 import { documentQuery } from '~/queries/documents'
-import { bookKeys } from '~/queries/keys'
+import { useDocumentSessionStore, type SaveResult } from '~/stores/document-session'
 
-export type SaveResult = 'saved' | 'unchanged' | 'conflict' | 'error'
-
-function resultOf(error: unknown): SaveResult {
-  return (error as { statusCode?: number } | null)?.statusCode === 409 ? 'conflict' : 'error'
-}
+export type { SaveResult }
 
 /**
- * One entry opened in the editor: the stored document, a local `draft` bound to the editor,
- * and `save()` with optimistic concurrency (`expectedHash`). External changes replace the draft
- * only while it has no unsaved edits. Unsaved edits are flushed when switching entries,
- * leaving the page or hiding the tab.
+ * One entry opened in the editor: the stored document, a local `draft` bound to the editor, and `save()`
+ * with optimistic concurrency. Guarantees against lost edits (state lives in the document session store,
+ * so it survives page remounts):
+ * - saves are queued per document and use the hash confirmed by the previous save;
+ * - opening an entry with a save in flight starts from the queued body, not the stale cache;
+ * - only versions with a never-seen hash count as external edits, and they replace the draft only while
+ *   it has no unsaved changes (stale refetches and own writes are ignored);
+ * - unsaved edits are saved when switching entries or leaving the page, and sent with `keepalive` on unload.
  */
 export function useEntryDocument(bookId: MaybeRefOrGetter<string>, path: MaybeRefOrGetter<string | null>) {
-  const queryCache = useQueryCache()
-  const params = () => ({ bookId: toValue(bookId), path: toValue(path) ?? '' })
-  const endpoint = () => `/api/books/${encodeURIComponent(params().bookId)}/document`
-  const { data: document, status, error, refetch } = useQuery(() => documentQuery(params()))
+  const session = useDocumentSessionStore()
+  const id = () => toValue(bookId)
+  const { data: document, status, error, refetch } = useQuery(() => documentQuery({ bookId: id(), path: toValue(path) ?? '' }))
 
   const draft = ref('')
-  const dirty = computed(() => Boolean(document.value) && bodiesDiffer(draft.value, document.value!.body))
+  const draftPath = ref<string | null>(null)
+  const baseBody = (p: string) => session.baseBody(id(), p) ?? ''
+  const dirty = computed(() => Boolean(draftPath.value) && bodiesDiffer(draft.value, baseBody(draftPath.value!)))
+  const saving = computed(() => Boolean(draftPath.value) && session.isSaving(id(), draftPath.value!))
 
-  const { mutateAsync, isLoading: saving } = useMutation({
-    mutation: (input: SaveDocumentInput) => $fetch<EntryDocument>(endpoint(), { method: 'PUT', body: input }),
-    onSuccess: saved => queryCache.setQueryData(bookKeys.document(params().bookId, saved.path), saved),
-    onSettled: () => queryCache.invalidateQueries({ key: bookKeys.structure(params().bookId) }),
-  })
-
-  async function persist(doc: EntryDocument, body: string, force = false): Promise<SaveResult> {
-    try {
-      await mutateAsync({ path: doc.path, body: toStoredBody(body), expectedHash: force ? undefined : doc.hash })
-      return 'saved'
-    }
-    catch (error) {
-      return resultOf(error)
-    }
-  }
-
-  /** The document the draft belongs to (survives the `undefined` gap while another entry loads). */
-  let loaded: EntryDocument | undefined
   watch(document, (next) => {
     if (!next) return
-    const previous = loaded
-    loaded = next
-    const switched = next.path !== previous?.path
-    if (switched && previous && bodiesDiffer(draft.value, previous.body)) void persist(previous, draft.value)
-    const untouched = !previous || !bodiesDiffer(draft.value, previous.body)
-    if (switched || (untouched && bodiesDiffer(draft.value, next.body))) draft.value = next.body.trimEnd()
+    if (next.path !== draftPath.value) {
+      if (draftPath.value && dirty.value) void session.persist(id(), draftPath.value, draft.value)
+      if (!session.isSeen(next.hash) && !session.isSaving(id(), next.path)) session.confirm(id(), next)
+      draftPath.value = next.path
+      draft.value = baseBody(next.path).trimEnd()
+      return
+    }
+    if (session.isSeen(next.hash) || session.isSaving(id(), next.path)) return
+    const untouched = !dirty.value
+    session.confirm(id(), next)
+    if (untouched) draft.value = next.body.trimEnd()
   }, { immediate: true })
+
+  // After dispose (page remount) this instance's draft is stale: the dispose handler saved it once, and
+  // late callers (e.g. a debounced autosave) must not save it again over newer edits.
+  let disposed = false
 
   /** Saves the draft. `force` overwrites a newer version on disk (resolving a conflict with "keep mine"). */
   async function save(options: { force?: boolean } = {}): Promise<SaveResult> {
-    const current = document.value
-    if (!current || !dirty.value) return 'unchanged'
-    return persist(current, draft.value, options.force)
+    if (disposed || !draftPath.value || !dirty.value) return 'unchanged'
+    return session.persist(id(), draftPath.value, draft.value, options.force)
   }
 
   /** Discards the draft and loads the version on disk (resolving a conflict with "use theirs"). */
   async function reload() {
     const { data } = await refetch()
-    if (data) draft.value = data.body.trimEnd()
+    if (!data) return
+    session.confirm(id(), data)
+    draft.value = data.body.trimEnd()
   }
 
   /** Last-chance save that survives page unload (`keepalive`). */
-  function flushOnExit() {
-    const current = document.value
-    if (!current || !dirty.value) return
-    const body = JSON.stringify({ path: current.path, body: toStoredBody(draft.value), expectedHash: current.hash })
-    void fetch(endpoint(), { method: 'PUT', body, keepalive: true, headers: { 'content-type': 'application/json' } }).catch(() => {})
+  function flushOnUnload() {
+    const target = draftPath.value
+    if (!target || !dirty.value) return
+    const body = JSON.stringify({ path: target, body: toStoredBody(draft.value), expectedHash: session.confirmedHash(id(), target) })
+    const url = `/api/books/${encodeURIComponent(id())}/document`
+    void fetch(url, { method: 'PUT', body, keepalive: true, headers: { 'content-type': 'application/json' } }).catch(() => {})
   }
 
   if (import.meta.client) {
-    useEventListener(window, 'pagehide', flushOnExit)
+    useEventListener(window, 'pagehide', flushOnUnload)
     useEventListener(window.document, 'visibilitychange', () => {
-      if (window.document.visibilityState === 'hidden') flushOnExit()
+      if (window.document.visibilityState === 'hidden') flushOnUnload()
     })
   }
-  onScopeDispose(flushOnExit)
+  onScopeDispose(() => {
+    if (draftPath.value && dirty.value) void session.persist(id(), draftPath.value, draft.value)
+    disposed = true
+  })
 
   return { document, status, error, draft, dirty, saving, save, reload }
 }
