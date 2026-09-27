@@ -22,5 +22,6 @@ describe('useAppNavigation', () => {
     expect(bookId.value).toBeNull()
     expect(items.value).toHaveLength(1)
     expect(items.value[0]![0]).toMatchObject({ label: 'Library', to: '/' })
+    expect(items.value[0]![1]).toMatchObject({ label: 'AI models', to: '/settings/ai' })
   })
 })

@@ -7,11 +7,11 @@ export function hashContent(content: string): string {
 }
 
 /** Writes via a temp file + rename so readers never see a half-written file. */
-export async function writeFileAtomic(path: string, content: string): Promise<void> {
+export async function writeFileAtomic(path: string, content: string, options: { mode?: number } = {}): Promise<void> {
   await mkdir(dirname(path), { recursive: true })
   const temp = `${path}.${randomBytes(6).toString('hex')}.tmp`
   try {
-    await writeFile(temp, content, 'utf8')
+    await writeFile(temp, content, { encoding: 'utf8', mode: options.mode })
     await rename(temp, path)
   }
   catch (error) {

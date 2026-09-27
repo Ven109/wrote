@@ -4,6 +4,11 @@ import type { NotesQuery } from '#shared/schemas/notes'
  * Query key factory. Keys are hierarchical so a whole subtree can be invalidated at once,
  * e.g. `invalidateQueries({ key: bookKeys.book(id) })` refreshes everything of one book.
  */
+export const settingsKeys = {
+  ai: () => ['settings', 'ai'] as const,
+  aiModels: () => ['settings', 'ai', 'models'] as const,
+}
+
 export const bookKeys = {
   list: () => ['books'] as const,
   book: (bookId: string) => ['book', bookId] as const,
