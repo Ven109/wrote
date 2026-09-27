@@ -14,6 +14,8 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 | `get_progress` | Word counts and goals | read |
 | `list_suggestions` | Edit suggestions with status, author and `stale` (text changed since) | read |
 | `create_note` | Adds a note to the inbox | write |
+| `extract_codex` | Scans a chapter/scene/part with Wrote's configured model and proposes codex entries (with quotes as evidence) – **never applied directly** | propose |
+| `propose_codex_entries` | Proposes codex entries the agent found itself in a chapter/scene/part; entries whose quotes are not in the text are dropped | propose |
 | `propose_edit` | Suggests a change (replace a passage, or `mode: "insert_after"` to add paragraphs) – **never applied directly**; it appears live as a tracked change you accept, edit or reject in Wrote | propose |
 
 Tools that work on a book take an optional `bookId` (from `list_books`). It can be omitted when you have only one
@@ -100,6 +102,7 @@ in `.wrote/state.db` of the book.
 - "Which scenes of my book mention the harbor?"
 - "Read the scene *Arrival* and add a note to my inbox with three ideas to raise the tension."
 - "Suggest a tighter first sentence for *Arrival*." (creates a suggestion)
+- "Read chapter 2 and propose codex entries for its characters and places." (creates codex proposals)
 
 ## Troubleshooting
 

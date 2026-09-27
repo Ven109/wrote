@@ -1,6 +1,6 @@
-import { subscribeActivityEvents, subscribeApprovalEvents, subscribeBookEvents, subscribeJobEvents, subscribeSuggestionEvents } from '../../../utils/book-events'
+import { subscribeActivityEvents, subscribeApprovalEvents, subscribeCodexProposalEvents, subscribeBookEvents, subscribeJobEvents, subscribeSuggestionEvents } from '../../../utils/book-events'
 
-/** Server-sent events stream of a book: file changes (`change`), background jobs (`job`), suggestions (`suggestion`), tool calls awaiting approval (`approval`) and the activity log (`activity`). */
+/** Server-sent events stream of a book: file changes (`change`), background jobs (`job`), suggestions (`suggestion`), tool calls awaiting approval (`approval`), the activity log (`activity`) and codex proposals (`codex-proposal`). */
 export default defineEventHandler(async (event) => {
   const book = await requireBook(event)
   const stream = createEventStream(event)
@@ -19,6 +19,9 @@ export default defineEventHandler(async (event) => {
   const unsubscribeActivity = subscribeActivityEvents(book.id, (change) => {
     void stream.push({ event: 'activity', data: JSON.stringify(change) })
   })
+  const unsubscribeProposals = subscribeCodexProposalEvents(book.id, (change) => {
+    void stream.push({ event: 'codex-proposal', data: JSON.stringify(change) })
+  })
   // Flush headers immediately so clients know the stream is live.
   void stream.push({ event: 'ready', data: JSON.stringify({ bookId: book.id }) })
   stream.onClosed(async () => {
@@ -27,6 +30,7 @@ export default defineEventHandler(async (event) => {
     unsubscribeSuggestions()
     unsubscribeApprovals()
     unsubscribeActivity()
+    unsubscribeProposals()
     await stream.close()
   })
   return stream.send()

@@ -17,6 +17,8 @@ export interface BookEventHandlers {
   approval?: (event: ApprovalEvent) => void
   /** Tool calls logged in (or undone from) the activity log. */
   activity?: (event: ActivityEvent) => void
+  /** Codex proposals created (scan, agents) or resolved. */
+  codexProposal?: (event: { sourceEntryId: string }) => void
 }
 
 /** Subscribes to a book's live event stream (SSE). Reconnects automatically (EventSource). */
@@ -46,6 +48,9 @@ export function useBookEvents(bookId: MaybeRefOrGetter<string | null>, handlers:
     })
     source.addEventListener('activity', (message) => {
       handlers.activity?.(JSON.parse((message as MessageEvent<string>).data) as ActivityEvent)
+    })
+    source.addEventListener('codex-proposal', (message) => {
+      handlers.codexProposal?.(JSON.parse((message as MessageEvent<string>).data) as { sourceEntryId: string })
     })
     source.addEventListener('suggestion', (message) => {
       handlers.suggestion?.(JSON.parse((message as MessageEvent<string>).data) as SuggestionEvent)
