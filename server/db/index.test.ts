@@ -91,6 +91,9 @@ describe('book index', () => {
     await syncIndex(fresh, repo)
     const snapshot = async (d: IndexDb) => (await d.$client.execute('SELECT id, path, hash, word_count FROM entries ORDER BY id')).rows
     expect(await snapshot(db)).toEqual(await snapshot(fresh))
+    const chunkRows = async (d: IndexDb) => (await d.$client.execute('SELECT entry_id, seq, hash FROM chunks ORDER BY entry_id, seq')).rows
+    expect(await chunkRows(db)).toEqual(await chunkRows(fresh))
+    expect((await chunkRows(db)).length).toBeGreaterThan(5)
     fresh.$client.close()
   })
 })

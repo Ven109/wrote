@@ -1,9 +1,9 @@
 import { z } from 'zod'
 import { EntryIdSchema, EntryTypeSchema } from '#shared/schemas/entry'
 import { readBookConfig } from '../storage/config'
-import { searchEntries } from '../db/queries'
 import { getEntry } from '../services/entries'
 import { getProgress } from '../services/progress'
+import { searchBook } from '../services/search'
 import { getStructure } from '../services/structure'
 import { listBookIds } from '../services/workspace'
 import { defineWroteTool } from './define'
@@ -30,15 +30,15 @@ export const listBooksTool = defineWroteTool({
 export const searchTool = defineWroteTool({
   name: 'search',
   title: 'Search the book',
-  description: 'Full-text search across the manuscript, notes, codex and research of the book. Returns ranked hits with the entry id, path, type, title and a snippet (matches wrapped in <mark>). Use read_entry to get the full text of a hit.',
+  description: 'Searches the manuscript, notes, codex and research of the book by words and, when semantic search is set up, by meaning – so descriptive queries like "scenes where Mara feels guilty" work too. Returns ranked hits with the entry id, path, type, title, a snippet (word matches wrapped in <mark>) and `match` ("text", "meaning" or "both"). Use read_entry to get the full text of a hit.',
   permission: 'read',
   input: z.object({
-    query: z.string().min(1).describe('Words to search for'),
+    query: z.string().min(1).describe('Words or a description of what to find'),
     types: z.array(EntryTypeSchema).optional().describe('Only return these entry types'),
     tags: z.array(z.string()).optional(),
     limit: z.number().int().min(1).max(50).default(10),
   }),
-  handler: (input, { book }) => searchEntries(book!.db, input.query, { types: input.types, tags: input.tags, limit: input.limit }),
+  handler: (input, { book }) => searchBook(book!, input.query, { types: input.types, tags: input.tags, limit: input.limit }),
 })
 
 export const readEntryTool = defineWroteTool({

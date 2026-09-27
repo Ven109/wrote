@@ -1,11 +1,14 @@
 import { createServer, type IncomingMessage, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import { conceptVector } from './fake-embeddings'
 
 export interface FakeOpenAi {
   server: Server
   /** Base URL of the Ollama-style root (OpenAI API under `/v1`). */
   url: string
   requests: { messages: { role: string, content?: unknown }[] }[]
+  /** Texts sent to `/v1/embeddings`, per request. */
+  embedRequests: string[][]
   close: () => Promise<void>
 }
 
@@ -33,10 +36,19 @@ function streamReply(reply: Reply): string {
   return chunk({ role: 'assistant', tool_calls: [call] }) + chunk({}, 'tool_calls') + 'data: [DONE]\n\n'
 }
 
-/** A tiny Ollama/OpenAI-compatible server for tests: model list + scripted (streaming) chat completions. */
+/** A tiny Ollama/OpenAI-compatible server for tests: model list, scripted (streaming) chat completions and concept embeddings. */
 export async function startFakeOpenAi(script: Script = defaultScript): Promise<FakeOpenAi> {
   const requests: FakeOpenAi['requests'] = []
+  const embedRequests: string[][] = []
   const server = createServer(async (request, response) => {
+    if (request.url === '/v1/embeddings') {
+      const body = await readJson(request)
+      const input = Array.isArray(body.input) ? body.input as string[] : [String(body.input)]
+      embedRequests.push(input)
+      response.setHeader('content-type', 'application/json')
+      const data = input.map((text, index) => ({ object: 'embedding', index, embedding: conceptVector(text) }))
+      return void response.end(JSON.stringify({ object: 'list', data, model: body.model, usage: { prompt_tokens: 1, total_tokens: 1 } }))
+    }
     if (request.url === '/api/tags') {
       response.setHeader('content-type', 'application/json')
       return void response.end(JSON.stringify({ models: [{ name: 'tiny:latest' }] }))
@@ -62,6 +74,7 @@ export async function startFakeOpenAi(script: Script = defaultScript): Promise<F
     server,
     url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
     requests,
+    embedRequests,
     close: () => new Promise(resolve => server.close(() => resolve())),
   }
 }

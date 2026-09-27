@@ -136,4 +136,52 @@ describe('job runner', () => {
     await second.idle()
     expect(await second.get(queued.id)).toMatchObject({ status: 'succeeded', result: 'done', attempts: 2 })
   })
+
+  it('dedupes unique jobs while one is queued, but queues again once it runs', async () => {
+    const running = gate()
+    const release = gate()
+    let runs = 0
+    const r = start([defineWroteJob({
+      kind: 'embed-like',
+      title: 'Unique',
+      input: z.object({ book: z.string() }),
+      async run() {
+        runs++
+        running.open()
+        await release.promise
+      },
+    })])
+    const first = await r.enqueue('embed-like', { book: 'a' }, { unique: true })
+    await running.promise
+    // The first one is running: a change now must queue a follow-up run …
+    const second = await r.enqueue('embed-like', { book: 'a' }, { unique: true })
+    expect(second.id).not.toBe(first.id)
+    // … but further changes join that queued follow-up. Other inputs are separate jobs.
+    expect((await r.enqueue('embed-like', { book: 'a' }, { unique: true })).id).toBe(second.id)
+    expect((await r.enqueue('embed-like', { book: 'b' }, { unique: true })).id).not.toBe(second.id)
+    release.open()
+    await r.idle()
+    expect(runs).toBe(3)
+  })
+
+  it('delays a job until its run time', async () => {
+    let clock = new Date('2026-01-01T00:00:00Z')
+    let ran = false
+    runner = createJobRunner({
+      db,
+      jobs: [defineWroteJob({ kind: 'later', title: 'Later', input: z.null().optional(), run: async () => {
+        ran = true
+      } })],
+      book: () => book,
+      publish: job => events.push(job),
+      now: () => clock,
+    })
+    await runner.enqueue('later', null, { delayMs: 5000 })
+    await runner.idle()
+    expect(ran).toBe(false)
+    clock = new Date(clock.getTime() + 5000)
+    await runner.start()
+    await runner.idle()
+    expect(ran).toBe(true)
+  })
 })

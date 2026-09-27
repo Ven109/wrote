@@ -1,10 +1,11 @@
 import { eq, inArray } from 'drizzle-orm'
 import { extractWikiLinks } from '#shared/utils/links'
 import { countWords } from '#shared/utils/word-count'
+import { chunkMarkdown } from '../search/chunk'
 import type { StoredEntry } from '../storage/entries'
 import type { BookRepository } from '../storage/repository'
 import type { IndexDb } from './client'
-import { entries, entryNames, links, tags } from './schema'
+import { chunks, entries, entryNames, links, tags } from './schema'
 
 function namesOf(entry: StoredEntry): string[] {
   const aliases = 'aliases' in entry.frontmatter ? entry.frontmatter.aliases as string[] : []
@@ -35,6 +36,9 @@ export async function indexEntry(db: IndexDb, entry: StoredEntry): Promise<void>
     await db.insert(links).values(found.map(link => ({ sourceId: id, target: link.target.toLowerCase(), label: link.label })))
   }
   await db.$client.execute({ sql: 'INSERT INTO entries_fts (id, title, body) VALUES (?, ?, ?)', args: [id, fm.title, entry.body] })
+  // Chunks only; their vectors are computed later by the background `embed` job.
+  const pieces = chunkMarkdown(fm.title, entry.body)
+  if (pieces.length) await db.insert(chunks).values(pieces.map(chunk => ({ entryId: id, seq: chunk.seq, hash: chunk.hash, text: chunk.text })))
 }
 
 async function removeEntryRows(db: IndexDb, ids: string[], path?: string) {

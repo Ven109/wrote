@@ -1,6 +1,8 @@
 <script setup lang="ts">
-const { open, groups } = useCommandPalette()
+const { open, searchTerm, groups } = useCommandPalette()
 const { toggleSidebar, toggleAssistant } = useAppLayout()
+const { bookId } = useAppNavigation()
+useBookSearch(bookId)
 
 defineShortcuts({
   meta_k: () => {
@@ -20,6 +22,7 @@ defineShortcuts({
   >
     <template #content>
       <UCommandPalette
+        v-model:search-term="searchTerm"
         :groups="groups"
         placeholder="Search or type a command…"
         close

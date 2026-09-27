@@ -20,6 +20,9 @@ so it cannot depend on an external broker (Redis, a cloud queue).
   (`UPDATE … RETURNING`), respects a per-kind concurrency limit, passes an `AbortSignal` for cancellation,
   and retries failures with exponential backoff up to `maxAttempts`. On start it re-queues jobs left `running`
   by a crash or shutdown; on shutdown it aborts running jobs without marking them cancelled, so they resume.
+- **Unique & scheduled jobs:** `enqueue(kind, input, { unique, delayMs })`. `unique` returns an already *queued* job of
+  the same kind and input instead of adding one (a running one does not count, so a change during a run still gets a
+  follow-up run); `delayMs` sets `run_after` for debouncing (like Oban's `unique` and `schedule_in`).
 - **Definitions:** `defineWroteJob({ kind, title, input (Zod), concurrency, maxAttempts, run })` in
   `server/jobs/`, registered in `WROTE_JOBS`. `run` gets the input, the book context, the signal and
   `progress(value, message)`.

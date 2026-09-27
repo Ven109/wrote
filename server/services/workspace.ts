@@ -12,11 +12,14 @@ import { createBookWatcher, type BookWatcher } from '../storage/watcher'
 import { publishBookEvent, publishJobEvent } from '../utils/book-events'
 import { openStateDb, type StateDb } from '../db/state/client'
 import { WROTE_JOBS } from '../jobs'
+import { scheduleEmbedding } from './embeddings'
 import { createJobRunner, type JobRunner } from './jobs'
 
 export interface BookContext {
   id: string
   root: string
+  /** Workspace the book was opened from (AI settings live there). */
+  workspaceDir: string
   repository: BookRepository
   watcher: BookWatcher
   db: IndexDb
@@ -126,10 +129,13 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
     void running.finally(() => pending.delete(running))
     return running
   }
+  // After the index, changed text is queued for background re-embedding (unique + debounced).
+  const reembed = () => scheduleEmbedding(context).then(() => {}, error => console.warn(`[wrote] ${bookId}: could not queue embedding`, error))
   const watcher = createBookWatcher(root, {
     onChange: event => track(async () => {
       await applyChange(db, repository, event)
       publishBookEvent(bookId, event)
+      void reembed()
     }),
   })
   repository.onWrite((path, hash) => {
@@ -137,15 +143,23 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
     void track(async () => {
       await applyChange(db, repository, { kind: 'changed', path })
       publishBookEvent(bookId, { kind: 'changed', path, hash })
+      void reembed()
     })
   })
   const state = await openStateDb(root)
   // Jobs receive the full context lazily; it exists before `start()` runs any job.
   const jobs = createJobRunner({ db: state, jobs: WROTE_JOBS, book: () => context, publish: job => publishJobEvent(bookId, job) })
-  const context: BookContext = { id: bookId, root, repository, watcher, db, state, jobs, settle: () => Promise.allSettled([...pending]).then(() => {}) }
+  const context: BookContext = { id: bookId, root, workspaceDir, repository, watcher, db, state, jobs, settle: () => Promise.allSettled([...pending]).then(() => {}) }
   contexts.set(bookId, context)
   await jobs.start()
+  // Catch up on text changed while the book was closed (or a model switched meanwhile).
+  await scheduleEmbedding(context, 0).catch(error => console.warn(`[wrote] ${bookId}: could not queue embedding`, error))
   return context
+}
+
+/** Books currently open in this process. */
+export function openBooks(): BookContext[] {
+  return [...contexts.values()]
 }
 
 async function shutdown(context: BookContext): Promise<void> {

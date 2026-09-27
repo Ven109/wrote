@@ -292,7 +292,7 @@ In Settings → Integrations, users connect external MCP servers which the in-ap
 | AI | Vercel **AI SDK** (`ai`, `@ai-sdk/vue`) | Streaming, tool calling, multi-provider |
 | MCP server | **`@nuxtjs/mcp-toolkit`** | Tools/resources/prompts defined inside the Nuxt app |
 | MCP client | `@modelcontextprotocol/sdk` / AI SDK MCP client | Connect external servers |
-| Database | **SQLite** (libSQL) + **Drizzle ORM** | Index, search (FTS5), vectors (`sqlite-vec`), settings, activity log |
+| Database | **SQLite** (libSQL) + **Drizzle ORM** | Index, search (FTS5), vectors (libSQL native vectors, ADR 0004), settings, activity log |
 | Files | Markdown + YAML frontmatter, file watcher | Source of truth, git-friendly |
 | Validation | Zod | Shared schemas for frontmatter, tools, API |
 | Export | Pandoc / Typst | EPUB, PDF, DOCX |

@@ -29,10 +29,15 @@ async function one(db: StateDb, sql: string, args: (string | number | null)[]): 
   return result.rows[0] ? toJob(result.rows[0] as Row) : null
 }
 
-export async function insertJob(db: StateDb, input: { kind: string, input: unknown, maxAttempts: number }, now: Date): Promise<Job> {
+export async function insertJob(db: StateDb, input: { kind: string, input: unknown, maxAttempts: number, runAfter?: Date }, now: Date): Promise<Job> {
   const at = now.toISOString()
   return (await one(db, `INSERT INTO jobs (id, kind, status, input, max_attempts, run_after, created_at)
-    VALUES (?, ?, 'queued', ?, ?, ?, ?) RETURNING *`, [createRecordId('job'), input.kind, JSON.stringify(input.input ?? null), input.maxAttempts, at, at]))!
+    VALUES (?, ?, 'queued', ?, ?, ?, ?) RETURNING *`, [createRecordId('job'), input.kind, JSON.stringify(input.input ?? null), input.maxAttempts, (input.runAfter ?? now).toISOString(), at]))!
+}
+
+/** A queued (not yet running) job of `kind` with exactly this input – for unique enqueueing. */
+export async function findQueuedJob(db: StateDb, kind: string, input: unknown): Promise<Job | null> {
+  return one(db, `SELECT * FROM jobs WHERE status = 'queued' AND kind = ? AND input = ? ORDER BY created_at LIMIT 1`, [kind, JSON.stringify(input ?? null)])
 }
 
 export async function getJob(db: StateDb, id: string): Promise<Job | null> {

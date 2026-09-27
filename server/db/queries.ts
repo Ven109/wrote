@@ -29,12 +29,10 @@ function placeholders(values: unknown[]) {
   return values.map(() => '?').join(', ')
 }
 
-/** Full-text search ranked by BM25 (title weighted higher) with highlighted snippets. */
-export async function searchEntries(db: IndexDb, text: string, options: SearchOptions = {}): Promise<SearchHit[]> {
-  const query = toFtsQuery(text)
-  if (!query) return []
-  const where = ['entries_fts MATCH ?']
-  const args: (string | number)[] = [query]
+/** SQL conditions on the `entries e` alias for the search filters (parameterized). */
+export function filterClause(options: SearchOptions): { sql: string, args: string[] } {
+  const where: string[] = []
+  const args: string[] = []
   if (options.types?.length) {
     where.push(`e.type IN (${placeholders(options.types)})`)
     args.push(...options.types)
@@ -47,6 +45,16 @@ export async function searchEntries(db: IndexDb, text: string, options: SearchOp
     where.push(`e.id IN (SELECT entry_id FROM tags WHERE tag IN (${placeholders(options.tags)}))`)
     args.push(...options.tags)
   }
+  return { sql: where.join(' AND '), args }
+}
+
+/** Full-text search ranked by BM25 (title weighted higher) with highlighted snippets. */
+export async function searchEntries(db: IndexDb, text: string, options: SearchOptions = {}): Promise<SearchHit[]> {
+  const query = toFtsQuery(text)
+  if (!query) return []
+  const filter = filterClause(options)
+  const where = ['entries_fts MATCH ?', ...(filter.sql ? [filter.sql] : [])]
+  const args: (string | number)[] = [query, ...filter.args]
   args.push(options.limit ?? 20)
   const result = await db.$client.execute({
     sql: `SELECT e.id, e.path, e.type, e.title,

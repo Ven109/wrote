@@ -43,12 +43,24 @@ export function parseModelRef(ref: string): { provider: AiProviderId, model: str
   return index > 0 && model && AI_PROVIDER_IDS.includes(provider) ? { provider, model } : null
 }
 
-/** Resolves a model reference with the configured provider, or `null` if it cannot be used. */
-export function resolveModel(config: AiConfig, ref: string | null | undefined) {
+function readyProvider(config: AiConfig, ref: string | null | undefined) {
   const parsed = ref ? parseModelRef(ref) : null
   if (!parsed || !providerReady(config, parsed.provider)) return null
   const provider = createProvider(parsed.provider, { apiKey: keyFor(config, parsed.provider).key, baseUrl: config.settings.providers[parsed.provider]?.baseUrl })
-  return provider.languageModel(parsed.model)
+  return { provider, parsed }
+}
+
+/** Resolves a model reference with the configured provider, or `null` if it cannot be used. */
+export function resolveModel(config: AiConfig, ref: string | null | undefined) {
+  const ready = readyProvider(config, ref)
+  return ready ? ready.provider.languageModel(ready.parsed.model) : null
+}
+
+/** Resolves an embedding model reference, or `null` if unusable (or the provider has no embeddings). */
+export function resolveEmbeddingModel(config: AiConfig, ref: string | null | undefined) {
+  const ready = readyProvider(config, ref)
+  if (!ready || PROVIDERS[ready.parsed.provider].embeddingModels === null) return null
+  return ready.provider.embeddingModel(ready.parsed.model)
 }
 
 /** The model reference used for a task (`fast` falls back to `chat`). */
@@ -75,6 +87,7 @@ export function aiSettingsView(config: AiConfig): AiSettingsView {
     }),
     models: config.settings.models,
     configured: resolveModel(config, modelRefFor(config.settings, 'chat')) !== null,
+    embeddings: resolveEmbeddingModel(config, config.settings.models.embedding) !== null,
   }
 }
 

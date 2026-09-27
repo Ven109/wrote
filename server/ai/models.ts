@@ -1,6 +1,6 @@
-import { generateText, type LanguageModel } from 'ai'
-import type { AiModelOption, AiProviderId, AiTask } from '#shared/schemas/ai'
-import { loadAiConfig, modelRefFor, parseModelRef, resolveModel, type AiConfig } from '../services/ai-settings'
+import { generateText, type EmbeddingModel, type LanguageModel } from 'ai'
+import type { AiModelOption, AiProviderId, AiTask, ModelPurpose } from '#shared/schemas/ai'
+import { loadAiConfig, modelRefFor, parseModelRef, resolveEmbeddingModel, resolveModel, type AiConfig } from '../services/ai-settings'
 import { PROVIDERS } from './providers'
 
 /**
@@ -10,6 +10,20 @@ import { PROVIDERS } from './providers'
 export async function getModel(workspaceDir: string, task: AiTask): Promise<LanguageModel | null> {
   const config = await loadAiConfig(workspaceDir)
   return resolveModel(config, modelRefFor(config.settings, task))
+}
+
+export interface ConfiguredEmbeddingModel {
+  model: EmbeddingModel
+  /** `provider:model` – stored with the vectors, which are only comparable within one model. */
+  ref: string
+}
+
+/** The configured embedding model (semantic search), or `null` when none is set up. */
+export async function getEmbeddingModel(workspaceDir: string): Promise<ConfiguredEmbeddingModel | null> {
+  const config = await loadAiConfig(workspaceDir)
+  const ref = config.settings.models.embedding
+  const model = resolveEmbeddingModel(config, ref)
+  return model && ref ? { model, ref } : null
 }
 
 export interface ConnectionResult {
@@ -49,18 +63,21 @@ async function discover(id: AiProviderId, baseUrl: string, apiKey: string | unde
 }
 
 /**
- * Models offered for a provider: the curated list plus, for local/OpenAI-compatible endpoints,
- * the models installed there (unreachable endpoints just return the curated list).
+ * Models offered for a provider and purpose: the curated list plus, for local/OpenAI-compatible
+ * endpoints, the models installed there (unreachable endpoints just return the curated list).
  */
-export async function listModels(config: AiConfig, id: AiProviderId, fetchFn: Fetch = fetch): Promise<AiModelOption[]> {
+export async function listModels(config: AiConfig, id: AiProviderId, fetchFn: Fetch = fetch, purpose: ModelPurpose = 'language'): Promise<AiModelOption[]> {
   const info = PROVIDERS[id]
+  const curated = purpose === 'embedding' ? info.embeddingModels : info.models
+  if (!curated) return []
   const baseUrl = config.settings.providers[id]?.baseUrl ?? info.defaultBaseUrl
-  if (!baseUrl || !['ollama', 'openai-compatible'].includes(id)) return info.models
+  if (!baseUrl || !['ollama', 'openai-compatible'].includes(id)) return curated
   try {
-    return [...info.models, ...await discover(id, baseUrl, config.keys[id], fetchFn)]
+    const known = new Set(curated.map(model => model.id))
+    return [...curated, ...(await discover(id, baseUrl, config.keys[id], fetchFn)).filter(model => !known.has(model.id))]
   }
   catch {
-    return info.models
+    return curated
   }
 }
 

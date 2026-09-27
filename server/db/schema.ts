@@ -1,4 +1,4 @@
-import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { blob, index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 /**
  * Index database (`.wrote/index.db`). Everything here is derived from the book's Markdown files
@@ -34,3 +34,23 @@ export const entryNames = sqliteTable('entry_names', {
   entryId: text('entry_id').notNull().references(() => entries.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
 }, table => [index('entry_names_name_idx').on(table.name)])
+
+/** Embedding-sized pieces of each entry (see `server/search/chunk.ts`). */
+export const chunks = sqliteTable('chunks', {
+  entryId: text('entry_id').notNull().references(() => entries.id, { onDelete: 'cascade' }),
+  seq: integer('seq').notNull(),
+  hash: text('hash').notNull(),
+  text: text('text').notNull(),
+}, table => [primaryKey({ columns: [table.entryId, table.seq] }), index('chunks_hash_idx').on(table.hash)])
+
+/** Float32 vectors per chunk hash, written by the background `embed` job (libSQL vector functions). */
+export const embeddings = sqliteTable('embeddings', {
+  hash: text('hash').primaryKey(),
+  vector: blob('vector').notNull(),
+})
+
+/** Key/value facts about the index, e.g. which embedding model produced the vectors. */
+export const indexMeta = sqliteTable('index_meta', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+})

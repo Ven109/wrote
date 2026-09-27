@@ -5,7 +5,7 @@ import { drizzle } from 'drizzle-orm/libsql'
 import * as schema from './schema'
 
 /** Bump when the index schema changes: the index is dropped and rebuilt from the Markdown files. */
-export const INDEX_SCHEMA_VERSION = 1
+export const INDEX_SCHEMA_VERSION = 2
 
 const DDL = [
   `CREATE TABLE entries (
@@ -28,6 +28,14 @@ const DDL = [
   )`,
   'CREATE INDEX entry_names_name_idx ON entry_names(name)',
   `CREATE VIRTUAL TABLE entries_fts USING fts5(id UNINDEXED, title, body, tokenize = 'unicode61 remove_diacritics 2')`,
+  `CREATE TABLE chunks (
+    entry_id TEXT NOT NULL REFERENCES entries(id) ON DELETE CASCADE, seq INTEGER NOT NULL,
+    hash TEXT NOT NULL, text TEXT NOT NULL, PRIMARY KEY (entry_id, seq)
+  )`,
+  'CREATE INDEX chunks_hash_idx ON chunks(hash)',
+  // Vectors are keyed by chunk hash: identical text is embedded once and survives unrelated edits.
+  'CREATE TABLE embeddings (hash TEXT PRIMARY KEY, vector BLOB NOT NULL)',
+  'CREATE TABLE index_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
 ]
 
 export type IndexDb = ReturnType<typeof drizzle<typeof schema>> & { $client: Client }

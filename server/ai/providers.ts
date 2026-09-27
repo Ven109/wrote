@@ -15,6 +15,8 @@ export interface ProviderInfo {
   defaultBaseUrl?: string
   /** Suggested models; any model id the provider accepts can also be entered. */
   models: AiModelOption[]
+  /** Suggested embedding models; `null` when the provider has no embedding API. */
+  embeddingModels: AiModelOption[] | null
 }
 
 export const PROVIDERS: Record<AiProviderId, ProviderInfo> = {
@@ -29,6 +31,7 @@ export const PROVIDERS: Record<AiProviderId, ProviderInfo> = {
       { id: 'claude-sonnet-5', label: 'Claude Sonnet 5' },
       { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
     ],
+    embeddingModels: null,
   },
   'openai': {
     id: 'openai',
@@ -37,6 +40,7 @@ export const PROVIDERS: Record<AiProviderId, ProviderInfo> = {
     needsKey: true,
     envKey: 'OPENAI_API_KEY',
     models: [{ id: 'gpt-5', label: 'GPT-5' }, { id: 'gpt-5-mini', label: 'GPT-5 mini' }],
+    embeddingModels: [{ id: 'text-embedding-3-small', label: 'Text Embedding 3 Small' }, { id: 'text-embedding-3-large', label: 'Text Embedding 3 Large' }],
   },
   'google': {
     id: 'google',
@@ -45,6 +49,7 @@ export const PROVIDERS: Record<AiProviderId, ProviderInfo> = {
     needsKey: true,
     envKey: 'GOOGLE_GENERATIVE_AI_API_KEY',
     models: [{ id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' }, { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' }],
+    embeddingModels: [{ id: 'gemini-embedding-001', label: 'Gemini Embedding' }],
   },
   'mistral': {
     id: 'mistral',
@@ -53,6 +58,7 @@ export const PROVIDERS: Record<AiProviderId, ProviderInfo> = {
     needsKey: true,
     envKey: 'MISTRAL_API_KEY',
     models: [{ id: 'mistral-large-latest', label: 'Mistral Large' }, { id: 'mistral-small-latest', label: 'Mistral Small' }],
+    embeddingModels: [{ id: 'mistral-embed', label: 'Mistral Embed' }],
   },
   'openrouter': {
     id: 'openrouter',
@@ -62,6 +68,7 @@ export const PROVIDERS: Record<AiProviderId, ProviderInfo> = {
     envKey: 'OPENROUTER_API_KEY',
     defaultBaseUrl: 'https://openrouter.ai/api/v1',
     models: [{ id: 'anthropic/claude-sonnet-5', label: 'Claude Sonnet 5 (via OpenRouter)' }],
+    embeddingModels: [{ id: 'openai/text-embedding-3-small', label: 'Text Embedding 3 Small (via OpenRouter)' }],
   },
   'ollama': {
     id: 'ollama',
@@ -70,6 +77,7 @@ export const PROVIDERS: Record<AiProviderId, ProviderInfo> = {
     needsKey: false,
     defaultBaseUrl: 'http://localhost:11434',
     models: [],
+    embeddingModels: [{ id: 'nomic-embed-text', label: 'nomic-embed-text (ollama pull nomic-embed-text)' }],
   },
   'openai-compatible': {
     id: 'openai-compatible',
@@ -78,6 +86,7 @@ export const PROVIDERS: Record<AiProviderId, ProviderInfo> = {
     needsKey: false,
     defaultBaseUrl: 'http://localhost:1234/v1',
     models: [],
+    embeddingModels: [],
   },
 }
 
@@ -86,7 +95,7 @@ export interface ProviderRuntimeConfig {
   baseUrl?: string
 }
 
-/** Creates an AI SDK provider instance for the given provider and runtime config. */
+/** Creates an AI SDK provider instance (language and, where supported, embedding models). */
 export function createProvider(id: AiProviderId, config: ProviderRuntimeConfig) {
   const baseURL = config.baseUrl ?? PROVIDERS[id].defaultBaseUrl
   switch (id) {
