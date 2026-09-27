@@ -5,8 +5,13 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  colorMode: {
+    preference: 'dark',
+    fallback: 'dark',
+  },
+
   ui: {
-    // Fonts are self-hosted (see theme); never fetch from remote providers.
+    // Fonts are self-hosted via @fontsource (see main.css); never fetch from remote providers.
     fonts: false,
   },
 
