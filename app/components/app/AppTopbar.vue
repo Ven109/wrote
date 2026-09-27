@@ -18,6 +18,7 @@ defineEmits<{
     <div class="flex min-w-0 flex-1 items-center gap-2">
       <slot />
     </div>
+    <slot name="actions" />
     <UButton
       icon="i-lucide-sparkles"
       color="neutral"

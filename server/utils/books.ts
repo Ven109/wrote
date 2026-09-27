@@ -6,6 +6,7 @@ const STATUS_BY_CODE: Record<string, number> = {
   not_found: 404,
   conflict: 409,
   invalid_path: 400,
+  invalid_input: 400,
   invalid_entry: 422,
 }
 

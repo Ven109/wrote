@@ -27,7 +27,7 @@ export default defineConfig({
   webServer: {
     command: `pnpm build && PORT=${PORT} node .output/server/index.mjs`,
     url: `http://localhost:${PORT}`,
-    env: { NUXT_WORKSPACE_DIR: workspaceDir },
+    env: { NUXT_WORKSPACE_DIR: workspaceDir, WROTE_TEST_JOBS: '1' },
     reuseExistingServer: false,
     timeout: 240_000,
   },
