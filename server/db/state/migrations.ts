@@ -76,4 +76,15 @@ export const STATE_MIGRATIONS: string[][] = [
     )`,
     'CREATE INDEX ai_context_snapshots_created_idx ON ai_context_snapshots(created_at)',
   ],
+  // 5: AI suggestions (tracked changes, WRO-54) – previously JSON files in .wrote/suggestions/
+  [
+    `CREATE TABLE suggestions (
+      id TEXT PRIMARY KEY,
+      entry_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      data TEXT NOT NULL
+    )`,
+    'CREATE INDEX suggestions_entry_status_idx ON suggestions(entry_id, status)',
+  ],
 ]

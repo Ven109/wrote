@@ -48,4 +48,32 @@ describe('MCP over HTTP', () => {
     const inbox = await $fetch<{ title: string }[]>('/api/books/sample-book/notes', { query: { filter: 'inbox' } })
     expect(inbox.map(n => n.title)).toContain('Agent note')
   })
+
+  it('stores MCP proposals as pending suggestions the author resolves via the API', async () => {
+    const { token } = await $fetch<{ token: string }>('/api/settings/mcp')
+    const client = await connect(token)
+    const proposal = await client.callTool({ name: 'propose_edit', arguments: { entryId: 'scn_themap0001', find: 'tired creases', replace: 'old creases', rationale: 'Fresher' } })
+    const insert = await client.callTool({ name: 'propose_edit', arguments: { entryId: 'scn_themap0001', find: 'in the drawer', replace: 'She did not touch it.', mode: 'insert_after' } })
+    const ambiguous = await client.callTool({ name: 'propose_edit', arguments: { entryId: 'scn_themap0001', find: 'the', replace: 'x' } })
+    await client.close()
+    expect(proposal.isError).toBeFalsy()
+    expect(ambiguous.isError).toBe(true)
+
+    type Listed = { id: string, kind: string, author: { kind: string, name: string }, stale: boolean }
+    const pending = await $fetch<Listed[]>('/api/books/sample-book/suggestions', { query: { entryId: 'scn_themap0001', status: 'pending' } })
+    expect(pending.map(s => [s.kind, s.author.kind, s.stale])).toEqual([['replace', 'mcp', false], ['insert', 'mcp', false]])
+    const body = await $fetch<{ body: string }>('/api/books/sample-book/document', { query: { path: 'manuscript/01-part-one/01-the-harbor/02-the-map.md' } })
+    expect(body.body).toContain('tired creases')
+    expect(JSON.stringify(insert)).toContain('sug_')
+
+    const resolve = (payload: unknown) => fetch('/api/books/sample-book/suggestions/resolve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
+    const accepted = await (await resolve({ ids: [pending[0]!.id], status: 'accepted', text: 'worn creases' })).json()
+    expect(accepted[0]).toMatchObject({ status: 'accepted', appliedText: 'worn creases' })
+    expect((await resolve({ ids: [pending[0]!.id], status: 'rejected' })).status).toBe(400)
+    expect((await resolve({ ids: ['sug_missing000'], status: 'rejected' })).status).toBe(404)
+    expect((await resolve({ ids: [pending[1]!.id], status: 'rejected', text: 'x' })).status).toBe(400)
+    expect((await resolve({ ids: [pending[1]!.id], status: 'rejected' })).status).toBe(200)
+    expect(await $fetch('/api/books/sample-book/suggestions', { query: { entryId: 'scn_themap0001', status: 'pending' } })).toEqual([])
+    expect((await fetch('/api/books/sample-book/suggestions?status=bogus')).status).toBe(400)
+  })
 })

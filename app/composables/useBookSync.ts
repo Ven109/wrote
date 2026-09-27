@@ -26,5 +26,9 @@ export function useBookSync(bookId: MaybeRefOrGetter<string | null>) {
       queryCache.setQueryData(bookKeys.jobs(id), upsertJob(queryCache.getQueryData<Job[]>(bookKeys.jobs(id)), job))
       if (job.status === 'succeeded') refreshBook(id)
     },
+    suggestion: ({ entryId }) => {
+      const id = toValue(bookId)
+      if (id) void queryCache.invalidateQueries({ key: bookKeys.entrySuggestions(id, entryId) })
+    },
   })
 }

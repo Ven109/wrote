@@ -13,6 +13,7 @@ import { publishBookEvent, publishJobEvent } from '../utils/book-events'
 import { openStateDb, type StateDb } from '../db/state/client'
 import { WROTE_JOBS } from '../jobs'
 import { scheduleEmbedding } from './embeddings'
+import { importLegacySuggestions } from './suggestions'
 import { scheduleSummaries } from './summary-jobs'
 import { createJobRunner, type JobRunner } from './jobs'
 
@@ -156,6 +157,7 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
   const jobs = createJobRunner({ db: state, jobs: WROTE_JOBS, book: () => context, publish: job => publishJobEvent(bookId, job) })
   const context: BookContext = { id: bookId, root, workspaceDir, repository, watcher, db, state, jobs, settle: () => Promise.allSettled([...pending]).then(() => {}) }
   contexts.set(bookId, context)
+  await importLegacySuggestions(context).catch(error => console.warn(`[wrote] ${bookId}: could not import old suggestions`, error))
   await jobs.start()
   // Catch up on text changed while the book was closed (or a model switched meanwhile).
   await scheduleEmbedding(context, 0).catch(warn('embedding'))
