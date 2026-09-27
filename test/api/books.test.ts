@@ -103,3 +103,29 @@ describe('manuscript structure API', () => {
     expect(res.status).toBe(400)
   })
 })
+
+describe('GET/PUT /api/books/:bookId/document', () => {
+  const path = 'manuscript/01-part-one/01-the-harbor/02-the-map.md'
+
+  it('reads and saves a document with conflict detection', async () => {
+    const doc = await $fetch<{ id: string, body: string, hash: string }>('/api/books/sample-book/document', { query: { path } })
+    expect(doc.id).toBe('scn_themap0001')
+    const saved = await $fetch<{ hash: string, body: string }>('/api/books/sample-book/document', {
+      method: 'PUT',
+      body: { path, body: 'A new first line.\n', expectedHash: doc.hash },
+    })
+    expect(saved.body).toBe('A new first line.\n')
+    const stale = await fetch('/api/books/sample-book/document', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path, body: 'Other', expectedHash: doc.hash }),
+    })
+    expect(stale.status).toBe(409)
+  })
+
+  it('validates paths', async () => {
+    expect((await fetch('/api/books/sample-book/document?path=wrote.json')).status).toBe(400)
+    expect((await fetch('/api/books/sample-book/document?path=manuscript/missing.md')).status).toBe(404)
+    expect((await fetch('/api/books/sample-book/document?path=..%2F..%2Fsecret.md')).status).toBe(400)
+  })
+})
