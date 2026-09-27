@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { copyFixtureBook } from '../../test/utils/fixture-book'
 import { hashContent } from './fs'
-import { createBookWatcher, type BookChangeEvent, type BookWatcher } from './watcher'
+import { createBookWatcher, mergeChangeKinds, type BookChangeEvent, type BookWatcher } from './watcher'
 
 function waitFor(predicate: () => boolean, timeout = 3000) {
   return new Promise<void>((resolve, reject) => {
@@ -16,6 +16,18 @@ function waitFor(predicate: () => boolean, timeout = 3000) {
     tick()
   })
 }
+
+describe('mergeChangeKinds', () => {
+  it.each([
+    ['added', 'changed', 'added'],
+    ['removed', 'added', 'changed'],
+    ['changed', 'removed', 'removed'],
+    ['added', 'removed', 'removed'],
+    ['changed', 'changed', 'changed'],
+  ] as const)('%s then %s is %s', (previous, next, expected) => {
+    expect(mergeChangeKinds(previous, next)).toBe(expected)
+  })
+})
 
 describe('book watcher', () => {
   let root: string

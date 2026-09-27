@@ -27,10 +27,17 @@ export function useAppNavigation() {
     return typeof param === 'string' && param ? param : null
   })
 
+  /** Book-relative path of the entry open in the editor (`/books/:book/write/<path>`). */
+  const activeEntryPath = computed(() => {
+    const param = route.params.path
+    const parts = Array.isArray(param) ? param : param ? [param] : []
+    return parts.length ? parts.join('/') : null
+  })
+
   const items = computed<NavigationMenuItem[][]>(() => {
     const global: NavigationMenuItem[] = [{ label: 'Library', icon: 'i-lucide-library-big', to: '/', exact: true }]
     return bookId.value ? [global, bookNavigationItems(bookId.value)] : [global]
   })
 
-  return { bookId, items }
+  return { bookId, activeEntryPath, items }
 }

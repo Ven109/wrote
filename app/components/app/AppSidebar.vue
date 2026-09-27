@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { default: true })
 const { open: paletteOpen } = useCommandPalette()
+const { bookId, activeEntryPath } = useAppNavigation()
 </script>
 
 <template>
@@ -37,6 +38,11 @@ const { open: paletteOpen } = useCommandPalette()
         </template>
       </UButton>
       <AppSidebarNav :collapsed="state === 'collapsed'" />
+      <ManuscriptTree
+        v-if="bookId && state !== 'collapsed'"
+        :book-id="bookId"
+        :active-path="activeEntryPath"
+      />
     </template>
 
     <template #footer="{ state }">

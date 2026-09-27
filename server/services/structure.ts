@@ -1,15 +1,8 @@
 import type { SceneStatus } from '#shared/schemas/entry'
+import type { StructureNode } from '#shared/schemas/manuscript'
 import type { IndexDb } from '../db/client'
 
-export interface StructureNode {
-  id: string
-  type: 'part' | 'chapter' | 'scene'
-  title: string
-  path: string
-  wordCount: number
-  status?: SceneStatus
-  children: StructureNode[]
-}
+export type { StructureNode } from '#shared/schemas/manuscript'
 
 interface Row { id: string, type: string, title: string, path: string, status: string | null, word_count: number }
 

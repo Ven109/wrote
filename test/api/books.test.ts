@@ -85,3 +85,21 @@ describe('library API', () => {
     expect(open.status).toBe(400)
   })
 })
+
+describe('manuscript structure API', () => {
+  it('creates, renames, moves and deletes nodes', async () => {
+    type Node = { id: string, title: string, children: Node[] }
+    const part = await $fetch<{ id: string }>('/api/books/sample-book/structure', { method: 'POST', body: { type: 'part', title: 'Part Two' } })
+    const chapter = await $fetch<{ id: string }>('/api/books/sample-book/structure', { method: 'POST', body: { type: 'chapter', title: 'Storm', parentId: part.id } })
+    await $fetch(`/api/books/sample-book/structure/${chapter.id}`, { method: 'PATCH', body: { title: 'The Storm' } })
+    const moved = await $fetch<Node[]>('/api/books/sample-book/structure/scn_meet1ng001/move', { method: 'POST', body: { parentId: chapter.id, index: 0 } })
+    expect(moved[1]!.children[0]).toMatchObject({ title: 'The Storm', children: [expect.objectContaining({ id: 'scn_meet1ng001' })] })
+    expect((await fetch(`/api/books/sample-book/structure/${part.id}`, { method: 'DELETE' })).status).toBe(204)
+    expect((await $fetch<Node[]>('/api/books/sample-book/structure')).map(p => p.title)).toEqual(['Part One'])
+  })
+
+  it('rejects invalid structure changes', async () => {
+    const res = await fetch('/api/books/sample-book/structure', { method: 'POST', body: JSON.stringify({ type: 'scene', title: 'x' }), headers: { 'content-type': 'application/json' } })
+    expect(res.status).toBe(400)
+  })
+})
