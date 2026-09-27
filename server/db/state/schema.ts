@@ -36,3 +36,16 @@ export const aiUsage = sqliteTable('ai_usage', {
   feature: text('feature').notNull(),
   tokens: integer('tokens').notNull().default(0),
 })
+
+/** Exactly what was sent with one AI request (see `server/ai/context/`). */
+export const aiContextSnapshots = sqliteTable('ai_context_snapshots', {
+  id: text('id').primaryKey(),
+  createdAt: text('created_at').notNull(),
+  feature: text('feature').notNull(),
+  model: text('model').notNull(),
+  budget: integer('budget').notNull(),
+  used: integer('used').notNull(),
+  items: text('items', { mode: 'json' }).notNull(),
+  omitted: text('omitted', { mode: 'json' }).notNull(),
+  system: text('system').notNull(),
+})

@@ -16,6 +16,11 @@ describe('toFtsQuery', () => {
     expect(toFtsQuery('title:"x" OR (NEAR)')).toBe('"title" "x" "or" "near"*')
     expect(toFtsQuery('!!!')).toBeNull()
   })
+
+  it('ORs meaningful words for retrieval from questions', () => {
+    expect(toFtsQuery('What does Mara fear about the lighthouse?', { anyTerm: true })).toBe('"mara" OR "fear" OR "lighthouse"')
+    expect(toFtsQuery('is it on?', { anyTerm: true })).toBeNull()
+  })
 })
 
 describe('book index', () => {

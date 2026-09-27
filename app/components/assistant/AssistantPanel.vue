@@ -1,7 +1,8 @@
 <script setup lang="ts">
 const props = defineProps<{ bookId: string }>()
 const assistant = useAssistant(() => props.bookId)
-const { messages, status, input, contextChips, threads, threadId, errorCode } = assistant
+const { messages, status, input, contextChips, threads, threadId, errorCode, overrides } = assistant
+const drawer = useContextDrawer(() => props.bookId, assistant)
 </script>
 
 <template>
@@ -42,6 +43,7 @@ const { messages, status, input, contextChips, threads, threadId, errorCode } = 
           <AssistantMessageParts
             :message="message"
             :book-id="bookId"
+            @context="drawer.show"
           />
         </template>
       </UChatMessages>
@@ -78,6 +80,17 @@ const { messages, status, input, contextChips, threads, threadId, errorCode } = 
             variant="subtle"
             size="sm"
           />
+          <UButton
+            v-if="overrides.pinned.length || overrides.removed.length"
+            :label="`${overrides.pinned.length} pinned · ${overrides.removed.length} left out`"
+            icon="i-lucide-x"
+            trailing
+            color="primary"
+            variant="subtle"
+            size="xs"
+            aria-label="Clear context changes"
+            @click="assistant.clearOverrides"
+          />
         </div>
       </template>
       <UChatPromptSubmit
@@ -86,5 +99,15 @@ const { messages, status, input, contextChips, threads, threadId, errorCode } = 
         @reload="assistant.regenerate"
       />
     </UChatPrompt>
+    <AssistantContextDrawer
+      v-model:open="drawer.open.value"
+      :snapshot="drawer.snapshot.value"
+      :groups="drawer.groups.value"
+      :omitted="drawer.omitted.value"
+      :changed="drawer.changed.value"
+      @pin="drawer.togglePin"
+      @remove="drawer.toggleRemove"
+      @rerun="drawer.rerun"
+    />
   </div>
 </template>

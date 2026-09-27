@@ -12,6 +12,14 @@ export async function getModel(workspaceDir: string, task: AiTask): Promise<Lang
   return resolveModel(config, modelRefFor(config.settings, task))
 }
 
+/** Like `getModel`, plus the `provider:model` reference (context budgets, snapshots). */
+export async function getModelWithRef(workspaceDir: string, task: AiTask): Promise<{ model: LanguageModel, ref: string } | null> {
+  const config = await loadAiConfig(workspaceDir)
+  const ref = modelRefFor(config.settings, task)
+  const model = resolveModel(config, ref)
+  return model && ref ? { model, ref } : null
+}
+
 export interface ConfiguredEmbeddingModel {
   model: EmbeddingModel
   /** `provider:model` – stored with the vectors, which are only comparable within one model. */

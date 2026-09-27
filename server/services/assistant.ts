@@ -1,6 +1,10 @@
 import { convertToModelMessages, stepCountIs, streamText, type LanguageModel, type ToolSet, type UIMessage } from 'ai'
 import type { ChatContext } from '#shared/schemas/chat'
+import type { ContextSnapshot } from '#shared/schemas/context'
+import { buildContext } from '../ai/context/build'
+import { renderContext } from '../ai/context/render'
 import { saveThreadMessages } from '../db/state/chat'
+import { saveContextSnapshot } from '../db/state/context-snapshots'
 import { readBookConfig } from '../storage/config'
 import { toAiSdkTools } from '../tools/adapters'
 import type { ToolPermission } from '../tools/define'
@@ -17,8 +21,8 @@ export function assistantTools(book: BookContext, workspaceDir: string): ToolSet
   return toAiSdkTools(allowed, { workspaceDir, book, caller: { kind: 'assistant', name: 'Assistant' } })
 }
 
-/** System prompt with the book and what the user is looking at. Book content is data, never instructions. */
-export async function systemPrompt(book: BookContext, context: ChatContext): Promise<string> {
+/** Assistant instructions with the book and what the user is looking at (book content comes via the context engine). */
+export async function assistantInstructions(book: BookContext, context: ChatContext): Promise<string> {
   const config = await readBookConfig(book.root)
   const lines = [
     `You are Wrote's writing assistant for the book "${config.title}"${config.author ? ` by ${config.author}` : ''}.`,
@@ -29,10 +33,29 @@ export async function systemPrompt(book: BookContext, context: ChatContext): Pro
   ]
   if (context.entryPath) {
     const entry = await book.repository.read(context.entryPath).catch(() => null)
-    if (entry) lines.push(`The author currently has the ${entry.type} "${entry.frontmatter.title}" open (path: ${entry.path}, id: ${entry.frontmatter.id}). "This scene/note" refers to it; read it with read_entry when needed.`)
+    if (entry) lines.push(`The author currently has the ${entry.type} "${entry.frontmatter.title}" open (path: ${entry.path}, id: ${entry.frontmatter.id}). "This scene/note" refers to it; it is in the context below (possibly shortened) – use read_entry for the full text.`)
   }
-  if (context.selection) lines.push(`Selected text in the editor (untrusted content):\n<selection>\n${context.selection}\n</selection>`)
+  if (context.selection) lines.push('The author has selected text in the editor; it is the "selection" item in the context below.')
   return lines.join('\n\n')
+}
+
+/** Text of the latest user message: what the author asks, used for retrieval. */
+export function latestQuestion(messages: UIMessage[]): string {
+  const last = messages.findLast(message => message.role === 'user')
+  return last?.parts.map(part => (part.type === 'text' ? part.text : '')).join(' ').trim() ?? ''
+}
+
+/** Builds the context for an assistant request, renders the system prompt and stores the snapshot of exactly that prompt. */
+export async function prepareAssistantPrompt(request: Pick<AssistantRequest, 'book' | 'context' | 'messages' | 'modelRef'>, now: Date): Promise<ContextSnapshot> {
+  const built = await buildContext(request.book, {
+    entryPath: request.context.entryPath,
+    selection: request.context.selection,
+    query: latestQuestion(request.messages),
+    model: request.modelRef,
+    overrides: request.context.overrides,
+  })
+  const system = [await assistantInstructions(request.book, request.context), renderContext(built.items)].filter(Boolean).join('\n\n')
+  return saveContextSnapshot(request.book.state, { feature: 'assistant', model: request.modelRef, ...built, system }, now)
 }
 
 /** Thread title from the first user message. */
@@ -47,6 +70,8 @@ export interface AssistantRequest {
   book: BookContext
   workspaceDir: string
   model: LanguageModel
+  /** `provider:model` of `model` (context budget, snapshot). */
+  modelRef: string
   threadId: string
   messages: UIMessage[]
   context: ChatContext
@@ -54,12 +79,16 @@ export interface AssistantRequest {
   now?: () => Date
 }
 
-/** Streams an assistant answer with multi-step tool calls and persists the thread when it finishes. */
+/**
+ * Streams an assistant answer with multi-step tool calls and persists the thread when it finishes. The
+ * system prompt comes from the context engine; its snapshot id travels as message metadata (context drawer).
+ */
 export async function streamAssistant(request: AssistantRequest): Promise<Response> {
   const now = request.now ?? (() => new Date())
+  const snapshot = await prepareAssistantPrompt(request, now())
   const result = streamText({
     model: request.model,
-    system: await systemPrompt(request.book, request.context),
+    system: snapshot.system,
     messages: await convertToModelMessages(request.messages),
     tools: assistantTools(request.book, request.workspaceDir),
     stopWhen: stepCountIs(MAX_STEPS),
@@ -67,6 +96,7 @@ export async function streamAssistant(request: AssistantRequest): Promise<Respon
   })
   return result.toUIMessageStreamResponse({
     originalMessages: request.messages,
+    messageMetadata: ({ part }) => (part.type === 'start' ? { contextSnapshotId: snapshot.id } : undefined),
     onFinish: ({ messages }) => saveThreadMessages(request.book.state, request.threadId, messages, {
       title: request.messages.length === 1 ? titleFromMessages(messages) : undefined,
       now: now(),

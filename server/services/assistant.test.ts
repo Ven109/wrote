@@ -3,7 +3,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createTestWorkspace } from '../../test/utils/workspace'
 import { scriptedModel } from '../../test/utils/mock-model'
 import { createThread, threadMessages } from '../db/state/chat'
-import { assistantTools, streamAssistant, systemPrompt, titleFromMessages } from './assistant'
+import { getContextSnapshot } from '../db/state/context-snapshots'
+import { assistantTools, latestQuestion, prepareAssistantPrompt, streamAssistant, titleFromMessages } from './assistant'
 import { closeAllBooks, openBook, type BookContext } from './workspace'
 
 let book: BookContext
@@ -37,12 +38,24 @@ describe('assistant', () => {
     expect(names).not.toContain('create_note')
   })
 
-  it('puts the book and the open entry into the system prompt', async () => {
-    const prompt = await systemPrompt(book, { entryPath: 'manuscript/01-part-one/01-the-harbor/01-arrival.md', selection: 'salt and tar' })
-    expect(prompt).toContain(`"${(await book.repository.readConfig()).title}"`)
-    expect(prompt).toContain('scene "Arrival"')
-    expect(prompt).toContain('<selection>\nsalt and tar\n</selection>')
-    expect(prompt).toMatch(/untrusted/)
+  it('builds the system prompt from the context engine and stores exactly that prompt', async () => {
+    const snapshot = await prepareAssistantPrompt({
+      book,
+      modelRef: 'ollama:tiny',
+      messages: [userMessage('What does Mara Velden remember?')],
+      context: { entryPath: 'manuscript/01-part-one/01-the-harbor/01-arrival.md', selection: 'salt and tar' },
+    }, new Date())
+    expect(snapshot.system).toContain(`"${(await book.repository.readConfig()).title}"`)
+    expect(snapshot.system).toContain('scene "Arrival"')
+    expect(snapshot.system).toMatch(/untrusted/)
+    expect(snapshot.items.map(item => item.id)).toEqual(expect.arrayContaining(['selection', 'entry:scn_arr1val001', 'codex:cdx_mara000001']))
+    for (const item of snapshot.items) expect(snapshot.system).toContain(item.text.slice(0, 40))
+    expect(await getContextSnapshot(book.state, snapshot.id)).toEqual(snapshot)
+  })
+
+  it('finds the latest question', () => {
+    expect(latestQuestion([userMessage('first'), { id: 'a', role: 'assistant', parts: [] }, userMessage('second')])).toBe('second')
+    expect(latestQuestion([])).toBe('')
   })
 
   it('answers with the search tool and persists the thread', async () => {
@@ -51,8 +64,13 @@ describe('assistant', () => {
       { toolCall: { name: 'search', input: { query: 'harbor' } } },
       { text: 'The harbor appears in "Arrival".' },
     ])
-    const response = await streamAssistant({ book, workspaceDir, model, threadId: thread.id, messages: [userMessage('Which scenes mention the harbor?')], context: {} })
+    const response = await streamAssistant({ book, workspaceDir, model, modelRef: 'ollama:tiny', threadId: thread.id, messages: [userMessage('Which scenes mention the harbor?')], context: {} })
     const message = await readFinalMessage(response)
+
+    // The model got the snapshot's system prompt, and the answer points to that snapshot.
+    const snapshotId = (message.metadata as { contextSnapshotId: string }).contextSnapshotId
+    const snapshot = await getContextSnapshot(book.state, snapshotId)
+    expect(JSON.stringify(model.prompts[0])).toContain(JSON.stringify(snapshot!.system).slice(1, -1))
 
     const tool = message.parts.find(part => part.type === 'tool-search') as { state: string, output: unknown } | undefined
     expect(tool?.state).toBe('output-available')
