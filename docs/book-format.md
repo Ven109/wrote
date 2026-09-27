@@ -89,6 +89,18 @@ Schemas live in `shared/schemas/` (Zod) and are the single source of truth for t
 - `[[Title]]` or `[[id|Label]]` links to any entry (notes, scenes, codex, research).
 - Custom editor blocks are stored as Markdown directives, e.g. `:::note … :::`, so files stay readable.
 
+## Body Markdown
+
+Bodies are GitHub-flavoured Markdown. The editor writes a canonical form, so saving an entry may normalize equivalent syntax once:
+
+| Written | Saved as |
+|---|---|
+| `***`, `___` (scene break) | `---` |
+| `* item` | `- item` |
+| `__bold__`, `_em_` | `**bold**`, `*em*` |
+
+Bodies end with exactly one newline. `[[Target]]` / `[[Target|Label]]` wiki links are kept verbatim. Known limitation: inline formatting wrapped around a wiki link (`**[[Target]]**`) is dropped by the editor.
+
 ## Book config – `wrote.json`
 
 ```json

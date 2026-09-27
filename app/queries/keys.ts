@@ -8,5 +8,6 @@ export const bookKeys = {
   summary: (bookId: string) => ['book', bookId, 'summary'] as const,
   structure: (bookId: string) => ['book', bookId, 'structure'] as const,
   entry: (bookId: string, entryId: string) => ['book', bookId, 'entry', entryId] as const,
+  document: (bookId: string, path: string) => ['book', bookId, 'document', path] as const,
   search: (bookId: string, query: string) => ['book', bookId, 'search', query] as const,
 }

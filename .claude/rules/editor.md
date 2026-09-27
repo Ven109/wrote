@@ -6,7 +6,7 @@ paths:
 
 # Editor (UEditor / TipTap)
 
-- The editor is `UEditor` wrapped in `WroteEditor`; configuration (extensions, menus) is composed in `useWroteEditor()`.
+- The editor is `UEditor` wrapped in `editor/WroteEditor.vue` (`<EditorWroteEditor>`); extensions come from `app/editor/extensions/index.ts` (`wroteExtensions()`), menu items are data in `app/editor/menus.ts`, block actions in `app/editor/block-actions.ts` (shared by both modes).
 - **One extension per file** in `app/editor/extensions/` (`scene-break.ts`, `wiki-link.ts`, `ai-suggestion.ts`, …). Each exports a factory and its Markdown (de)serialization.
 - Node views are Vue components in `app/components/editor/nodes/`; they stay view-only and receive node attrs as props.
 - Slash-menu, mention and toolbar items are data (arrays of item configs) registered via small registries, so features can add items without editing the editor core.

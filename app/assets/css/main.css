@@ -16,3 +16,13 @@
 .prose-manuscript {
   font-family: var(--font-serif);
 }
+
+.prose-manuscript .wiki-link {
+  color: var(--ui-primary);
+  border-bottom: 1px dashed currentColor;
+  cursor: default;
+}
+
+.prose-manuscript [data-placeholder]::before {
+  font-style: italic;
+}

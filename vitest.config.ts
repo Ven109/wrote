@@ -30,6 +30,8 @@ export default defineConfig({
           name: 'nuxt',
           environment: 'nuxt',
           include: ['{app,test}/**/*.nuxt.test.ts'],
+          // Booting Nuxt can exceed the 10s default on a cold dependency cache.
+          hookTimeout: 60_000,
           environmentOptions: {
             nuxt: { domEnvironment: 'happy-dom' },
           },
