@@ -77,7 +77,7 @@ Mara grew up in the port of [[Hollow Bay]]. She is afraid of deep water …
 
 ```
 my-novel/
-├── wrote.config.ts          # book settings (title, language, AI defaults)
+├── wrote.json               # book settings (title, language, AI defaults)
 ├── manuscript/
 │   ├── 01-part-one/
 │   │   ├── 01-the-harbor/
