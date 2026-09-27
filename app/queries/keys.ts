@@ -34,6 +34,7 @@ export const bookKeys = {
   provenance: (bookId: string) => ['book', bookId, 'provenance'] as const,
   entryProvenance: (bookId: string, entryId: string) => ['book', bookId, 'provenance', 'entry', entryId] as const,
   provenanceStats: (bookId: string) => ['book', bookId, 'provenance', 'stats'] as const,
+  approvals: (bookId: string) => ['book', bookId, 'approvals'] as const,
   contextSnapshot: (bookId: string, snapshotId: string) => ['book', bookId, 'context', snapshotId] as const,
   codex: (bookId: string) => ['book', bookId, 'codex'] as const,
   codexList: (bookId: string, query: CodexQuery) => ['book', bookId, 'codex', 'list', query.type ?? '', query.tag ?? '', query.q ?? ''] as const,

@@ -32,10 +32,11 @@ async function readFinalMessage(response: Response): Promise<UIMessage> {
 }
 
 describe('assistant', () => {
-  it('offers only read and propose tools', () => {
+  it('offers the tools its policy does not deny', () => {
     const names = Object.keys(assistantTools(book, workspaceDir))
-    expect(names).toEqual(expect.arrayContaining(['search', 'read_entry', 'propose_edit']))
-    expect(names).not.toContain('create_note')
+    expect(names).toEqual(expect.arrayContaining(['search', 'read_entry', 'propose_edit', 'create_note']))
+    const readOnly = Object.keys(assistantTools(book, workspaceDir, { read: 'allow', propose: 'allow', write: 'deny', destructive: 'deny' }))
+    expect(readOnly).not.toContain('create_note')
   })
 
   it('builds the system prompt from the context engine and stores exactly that prompt', async () => {

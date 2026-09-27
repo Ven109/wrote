@@ -22,7 +22,8 @@ book, or when the server was started for a book (`wrote mcp --book …`).
 ## Option 1: HTTP (Claude Code, Cursor, MCP Inspector)
 
 While Wrote runs, the endpoint is `http://localhost:3000/mcp` (Streamable HTTP). Open **Connect agents** in the
-sidebar to copy the endpoint, your token and ready-made configs.
+sidebar, give the agent a name (e.g. "Claude Code") and create a token. Each agent gets **its own token** and
+permissions; the token is shown **once** together with ready-made configs, so copy it right away.
 
 **Claude Code**
 
@@ -55,12 +56,33 @@ Runs without the Wrote app, directly on a book folder:
 with `pnpm build:cli` and use `"command": "node", "args": ["/path/to/wrote/dist/cli/wrote.mjs", "mcp", "--book", "…"]`.
 `--workspace <dir>` serves all books of a folder instead.
 
+## Permissions
+
+Every tool has a permission level. Each connected agent – and the built-in assistant – has a policy that decides per
+level whether a call is **allowed**, **asks you** first, or is **denied** (denied tools are not even offered):
+
+| Level | Tools | Default | Options |
+|---|---|---|---|
+| read | reading, search, structure | allow | allow, deny |
+| propose | `propose_edit` (suggestions you review) | allow | allow, deny |
+| write | `create_note` | ask | allow, ask, deny |
+| destructive | deleting or overwriting content (future tools) | ask | ask, deny |
+
+Change the policies in **Connect agents**. When a call needs approval, Wrote shows a card with the agent, the tool and
+its input (destructive calls open a blocking dialog). The agent waits for your answer; declining or not answering within
+two minutes counts as "no" and the agent gets an error saying so.
+
+Approvals need the running Wrote app: over **stdio** (`wrote mcp`) nobody can approve, so tools that would ask are
+refused with an explanation.
+
 ## Security
 
 - The HTTP endpoint only answers on **localhost** (requests with another `Host` or a foreign browser `Origin` are
   rejected – DNS-rebinding safe) and requires the **bearer token**.
-- The token is created on first use in `<workspace>/.wrote/mcp-token` (readable by your user only). Delete the file to
-  rotate it; reconnect your clients afterwards.
+- Tokens and policies live in `<workspace>/.wrote/mcp-clients.json` (readable by your user only). Only a hash of each
+  token is stored. **Revoke** an agent in **Connect agents** and its token stops working immediately; create a new one
+  to rotate.
+- A token from earlier versions (`.wrote/mcp-token`) is migrated to an agent named "Default client" and keeps working.
 - Book content returned to agents is marked as untrusted data in the server instructions. Agents cannot change the
   manuscript directly: `propose_edit` creates a suggestion you review.
 
@@ -74,7 +96,9 @@ with `pnpm build:cli` and use `"command": "node", "args": ["/path/to/wrote/dist/
 
 | Symptom | Fix |
 |---|---|
-| `401 Missing or invalid MCP token` | Copy the current token from **Connect agents**; it changes when `.wrote/mcp-token` is deleted |
+| `401 Missing or invalid MCP token` | The token was revoked or mistyped: create a new one in **Connect agents** |
+| "… is not allowed …" | The agent's policy denies that level: change it in **Connect agents** |
+| "… needs the author's approval …" | Approvals only work over HTTP with Wrote running; use HTTP or allow the level |
 | `403 MCP is only available on localhost` | Use `http://localhost:…` or `http://127.0.0.1:…`, not a LAN IP or hostname |
 | "Several books exist: pass bookId" | Call `list_books` and pass `bookId`, or start stdio with `--book` |
 | Claude Desktop shows no tools | Check the book path; run the command in a terminal – errors are printed to stderr |

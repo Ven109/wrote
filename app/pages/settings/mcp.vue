@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const mcp = useMcpSettings()
-const { data, configs, revealed, maskedToken } = mcp
+const { data, configs, created, newName } = mcp
 useSeoMeta({ title: 'Connect agents' })
 </script>
 
@@ -8,68 +8,97 @@ useSeoMeta({ title: 'Connect agents' })
   <div class="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:p-6">
     <BasePageHeader
       title="Connect agents"
-      description="Let AI agents like Claude Code, Claude Desktop or Cursor read your books and add notes via MCP. Manuscript changes arrive as suggestions you review."
+      description="Let AI agents like Claude Code, Claude Desktop or Cursor work with your books via MCP. Each agent gets its own token and permissions; manuscript changes always arrive as suggestions."
     />
-    <UCard
+    <UFormField
       v-if="data"
-      :ui="{ body: 'flex flex-col gap-3' }"
+      label="Endpoint"
     >
-      <UFormField label="Endpoint">
+      <UInput
+        :model-value="data.url"
+        readonly
+        class="w-full font-mono"
+      />
+    </UFormField>
+
+    <SettingsMcpNewToken
+      v-if="created"
+      :name="created.client.name"
+      :token="created.token"
+      :configs="configs"
+      @copy="mcp.copy"
+      @done="mcp.dismissToken"
+    />
+    <form
+      v-else
+      class="flex flex-col gap-2 sm:flex-row sm:items-end"
+      @submit.prevent="mcp.createClient"
+    >
+      <UFormField
+        label="Connect a new agent"
+        description="A name to recognise it, e.g. “Claude Code”."
+        class="flex-1"
+      >
         <UInput
-          :model-value="data.url"
-          readonly
-          class="w-full font-mono"
+          v-model="newName"
+          placeholder="Agent name"
+          aria-label="Agent name"
+          class="w-full"
         />
       </UFormField>
-      <UFormField
-        label="Token"
-        description="Only for agents on this computer. Anyone with the token can read your books."
-      >
-        <div class="flex gap-2">
-          <UInput
-            :model-value="maskedToken"
-            readonly
-            aria-label="MCP token"
-            class="min-w-0 flex-1 font-mono"
-          />
-          <UButton
-            :icon="revealed ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-            :aria-label="revealed ? 'Hide token' : 'Show token'"
-            color="neutral"
-            variant="outline"
-            @click="revealed = !revealed"
-          />
-          <UButton
-            icon="i-lucide-copy"
-            aria-label="Copy token"
-            color="neutral"
-            variant="outline"
-            @click="mcp.copy(data.token)"
-          />
-        </div>
-      </UFormField>
-    </UCard>
+      <UButton
+        type="submit"
+        label="Create token"
+        icon="i-lucide-key-round"
+        :loading="mcp.creating.value"
+        :disabled="!newName.trim()"
+        class="min-h-11"
+      />
+    </form>
+
     <section
-      class="flex flex-col gap-5"
+      class="flex flex-col gap-3"
       aria-labelledby="clients-heading"
     >
       <h2
         id="clients-heading"
         class="font-semibold text-highlighted"
       >
-        Client setup
+        Connected agents
       </h2>
-      <SettingsCodeSnippet
-        v-for="config in configs"
-        :key="config.id"
-        :label="config.label"
-        :hint="config.hint"
-        :code="config.snippet"
-        @copy="mcp.copy(config.snippet)"
+      <SettingsMcpClientCard
+        v-for="client in data?.clients ?? []"
+        :key="client.id"
+        :client="client"
+        @policy="mcp.setPolicy(client.id, $event)"
+        @revoke="mcp.revoke(client.id)"
       />
-      <p class="text-sm text-muted">
-        More details and troubleshooting: <code>docs/mcp.md</code>.
+      <p
+        v-if="data && !data.clients.length"
+        class="text-sm text-muted"
+      >
+        No agents yet. Create a token above and paste the config into your agent.
       </p>
+    </section>
+
+    <section
+      v-if="data"
+      class="flex flex-col gap-3"
+      aria-labelledby="assistant-heading"
+    >
+      <h2
+        id="assistant-heading"
+        class="font-semibold text-highlighted"
+      >
+        Assistant
+      </h2>
+      <UCard>
+        <SettingsPolicyForm
+          :policy="data.assistant"
+          who="Assistant"
+          @update="mcp.setAssistantPolicy"
+        />
+      </UCard>
     </section>
   </div>
 </template>

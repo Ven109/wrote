@@ -38,7 +38,7 @@ describe('Wrote MCP server', () => {
   })
 
   it('searches the only book without a bookId and creates notes in the inbox', async () => {
-    const c = await connect({ caller: { kind: 'mcp', name: 'Claude Code' } })
+    const c = await connect({ caller: { kind: 'mcp', name: 'Claude Code' }, policy: { read: 'allow', propose: 'allow', write: 'allow', destructive: 'ask' } })
     expect(text(await c.callTool({ name: 'search', arguments: { query: 'harbor' } }))).toContain('Arrival')
     const created = await c.callTool({ name: 'create_note', arguments: { title: 'From MCP', body: 'Hello from an agent.' } })
     expect(created.isError).toBeFalsy()
@@ -56,10 +56,18 @@ describe('Wrote MCP server', () => {
     expect(unknownBook.isError).toBe(true)
   })
 
-  it('can be restricted to read-only tools', async () => {
-    const c = await connect({ permissions: ['read'] })
+  it('offers only the levels the client\'s policy does not deny', async () => {
+    const c = await connect({ policy: { read: 'allow', propose: 'deny', write: 'deny', destructive: 'deny' } })
     const names = (await c.listTools()).tools.map(tool => tool.name)
+    expect(names).toContain('search')
     expect(names).not.toContain('create_note')
     expect(names).not.toContain('propose_edit')
+  })
+
+  it('refuses calls that need approval when it cannot be asked for (stdio)', async () => {
+    const c = await connect()
+    const result = await c.callTool({ name: 'create_note', arguments: { title: 'Needs approval' } })
+    expect(result.isError).toBe(true)
+    expect(text(result)).toMatch(/needs the author's approval/)
   })
 })

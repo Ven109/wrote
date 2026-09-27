@@ -11,7 +11,7 @@ test('an MCP agent proposes edits that appear live as tracked changes, and only 
   const bodyOnDisk = async () => ((await (await request.get(`/api/books/${book.id}/document`, { params: { path: firstScenePath } })).json()) as { body: string }).body
   await gotoHydrated(page, `/books/${book.id}/write/${firstScenePath}`)
 
-  const { token } = await (await request.get('/api/settings/mcp')).json() as { token: string }
+  const { token } = await (await request.post('/api/settings/mcp/clients', { data: { name: 'MCP client' } })).json() as { token: string }
   const client = new Client({ name: 'e2e-agent', version: '1.0.0' })
   await client.connect(new StreamableHTTPClientTransport(new URL('/mcp', baseURL), { requestInit: { headers: { Authorization: `Bearer ${token}` } } }))
   await client.callTool({ name: 'propose_edit', arguments: { bookId: book.id, entryId: scene.id, find: 'trimmed the wick', replace: 'trimmed the *last* wick', rationale: 'Raises the stakes' } })
