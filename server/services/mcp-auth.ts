@@ -1,19 +1,42 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
-import { readFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname } from 'node:path'
 import { settingsPath } from '../storage/app-settings'
-import { writeFileAtomic } from '../storage/fs'
 
 const TOKEN_FILE = 'mcp-token'
 const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]', '::1'])
 
-/** The workspace's MCP bearer token, created on first use (owner-only file `.wrote/mcp-token`). */
-export async function ensureMcpToken(workspaceDir: string): Promise<string> {
+const readToken = (path: string) => readFile(path, 'utf8').then(text => text.trim(), () => '')
+
+async function readOrCreateToken(workspaceDir: string): Promise<string> {
   const path = settingsPath(workspaceDir, TOKEN_FILE)
-  const existing = await readFile(path, 'utf8').then(text => text.trim(), () => '')
+  const existing = await readToken(path)
   if (existing) return existing
   const token = `wrote_${randomBytes(24).toString('hex')}`
-  await writeFileAtomic(path, `${token}\n`, { mode: 0o600 })
-  return token
+  await mkdir(dirname(path), { recursive: true })
+  try {
+    // Exclusive create: if another process got there first, its token wins and is read back.
+    await writeFile(path, `${token}\n`, { mode: 0o600, flag: 'wx' })
+    return token
+  }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+    return readToken(path)
+  }
+}
+
+const creating = new Map<string, Promise<string>>()
+
+/**
+ * The workspace's MCP bearer token, created on first use (owner-only file `.wrote/mcp-token`). Concurrent
+ * first calls share one creation, so no caller ever holds a token that was overwritten.
+ */
+export function ensureMcpToken(workspaceDir: string): Promise<string> {
+  const pending = creating.get(workspaceDir)
+  if (pending) return pending
+  const task = readOrCreateToken(workspaceDir).finally(() => creating.delete(workspaceDir))
+  creating.set(workspaceDir, task)
+  return task
 }
 
 function hostnameOf(value: string): string | null {

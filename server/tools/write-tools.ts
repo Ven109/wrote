@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { EntryIdSchema } from '#shared/schemas/entry'
-import { getEntry } from '../services/entries'
 import { createSuggestion, listSuggestions } from '../services/suggestions'
+import { InvalidInputError } from '../storage/errors'
 import { defineWroteTool, ToolError } from './define'
 
 export const createNoteTool = defineWroteTool({
@@ -30,33 +30,35 @@ export const createNoteTool = defineWroteTool({
 export const proposeEditTool = defineWroteTool({
   name: 'propose_edit',
   title: 'Propose an edit',
-  description: 'Proposes a change to an entry\'s text without applying it. `find` must be an exact, unique passage currently in the entry body; `replace` is the new text. The author sees it as a suggestion to accept or reject. Always use this instead of rewriting manuscript text directly.',
+  description: 'Proposes a change to an entry\'s text without applying it – the author sees it as a tracked change to accept, edit or reject. `find` must be an exact, unique passage currently in the entry body (Markdown, as read_entry returns it). mode "replace" (default) replaces `find` with `replace`; mode "insert_after" adds `replace` as new paragraph(s) after the paragraph containing `find`. Keep `find` short but unique. Always use this instead of rewriting manuscript text directly.',
   permission: 'propose',
   input: z.object({
     entryId: EntryIdSchema,
-    find: z.string().min(1).describe('Exact existing text to replace (must occur exactly once)'),
-    replace: z.string().describe('Proposed replacement text'),
+    find: z.string().min(1).describe('Exact existing text: the passage to replace, or (insert_after) text in the paragraph to insert after. Must occur exactly once'),
+    replace: z.string().describe('Proposed replacement text, or the new paragraph(s) to insert (Markdown)'),
+    mode: z.enum(['replace', 'insert_after']).default('replace'),
     rationale: z.string().max(2000).optional().describe('Why this change improves the text'),
   }),
   async handler(input, { book, caller }) {
-    const entry = await getEntry(book!.db, book!.repository, { id: input.entryId })
-    const occurrences = entry.body.split(input.find).length - 1
-    if (occurrences !== 1) {
-      throw new ToolError(occurrences === 0 ? '`find` text does not occur in the entry' : '`find` text occurs more than once – include more context', 'anchor_not_unique')
+    try {
+      const suggestion = await createSuggestion(book!, { entryId: input.entryId, find: input.find, replace: input.replace, rationale: input.rationale, kind: input.mode === 'insert_after' ? 'insert' : 'replace', author: caller })
+      return { suggestionId: suggestion.id, status: suggestion.status }
     }
-    const suggestion = await createSuggestion(book!.root, { ...input, author: caller })
-    return { suggestionId: suggestion.id, status: suggestion.status }
+    catch (error) {
+      if (error instanceof InvalidInputError) throw new ToolError(error.message, 'anchor_not_unique')
+      throw error
+    }
   },
 })
 
 export const listSuggestionsTool = defineWroteTool({
   name: 'list_suggestions',
   title: 'List suggestions',
-  description: 'Lists proposed edits (suggestions) for the book or one entry, with their status (pending, accepted, rejected, stale).',
+  description: 'Lists proposed edits (suggestions) for the book or one entry: status (pending, accepted, rejected), author, rationale, and `stale` when the text they refer to has since changed.',
   permission: 'read',
   input: z.object({
     entryId: EntryIdSchema.optional(),
     status: z.enum(['pending', 'accepted', 'rejected', 'stale']).optional(),
   }),
-  handler: (input, { book }) => listSuggestions(book!.root, input),
+  handler: (input, { book }) => listSuggestions(book!, input),
 })

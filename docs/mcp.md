@@ -12,9 +12,9 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 | `get_summaries` | Whole-book summary and outline with chapter/part (optionally scene) summaries | read |
 | `get_codex` | Characters, places, … | read |
 | `get_progress` | Word counts and goals | read |
-| `list_suggestions` | Pending edit suggestions | read |
+| `list_suggestions` | Edit suggestions with status, author and `stale` (text changed since) | read |
 | `create_note` | Adds a note to the inbox | write |
-| `propose_edit` | Suggests a change to a scene – **never applied directly**; you accept or reject it in Wrote | propose |
+| `propose_edit` | Suggests a change (replace a passage, or `mode: "insert_after"` to add paragraphs) – **never applied directly**; it appears live as a tracked change you accept, edit or reject in Wrote | propose |
 
 Tools that work on a book take an optional `bookId` (from `list_books`). It can be omitted when you have only one
 book, or when the server was started for a book (`wrote mcp --book …`).

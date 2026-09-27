@@ -49,3 +49,12 @@ export const aiContextSnapshots = sqliteTable('ai_context_snapshots', {
   omitted: text('omitted', { mode: 'json' }).notNull(),
   system: text('system').notNull(),
 })
+
+/** AI suggestions; `data` holds the full `Suggestion` (JSON), the columns are for filtering. */
+export const suggestions = sqliteTable('suggestions', {
+  id: text('id').primaryKey(),
+  entryId: text('entry_id').notNull(),
+  status: text('status').notNull(),
+  createdAt: text('created_at').notNull(),
+  data: text('data', { mode: 'json' }).notNull(),
+})

@@ -18,6 +18,13 @@ describe('checkMcpAccess', () => {
   const token = 'wrote_secret'
   const ok = { host: 'localhost:3000', authorization: `Bearer ${token}` }
 
+  it('gives concurrent first callers the same token', async () => {
+    const workspace = await mkdtemp(join(tmpdir(), 'wrote-mcp-'))
+    const tokens = await Promise.all(Array.from({ length: 8 }, () => ensureMcpToken(workspace)))
+    expect(new Set(tokens).size).toBe(1)
+    expect(await ensureMcpToken(workspace)).toBe(tokens[0])
+  })
+
   it('accepts local requests with the token', () => {
     expect(checkMcpAccess(ok, token)).toEqual({ ok: true })
     expect(checkMcpAccess({ ...ok, host: '127.0.0.1:3000', origin: 'http://localhost:5173' }, token)).toEqual({ ok: true })

@@ -54,6 +54,7 @@ const extensions = wroteExtensions({ wikiLink: WikiLinkView })
       v-if="codex"
       :editor="editor"
     />
+    <EditorSuggestions :editor="editor" />
     <template v-if="mode === 'block'">
       <EditorBlockHandle
         :editor="editor"

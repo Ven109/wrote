@@ -8,5 +8,6 @@ export function useSceneEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefO
   useCodexMentions(bookId)
   const { backlinks } = useBacklinks(bookId, () => entry.document.value?.id)
   const summary = useSummary(bookId, entry.document)
-  return { entry, autosave, words, meta, links, backlinks, summary }
+  const suggestions = useSuggestions(bookId, entry.document)
+  return { entry, autosave, words, meta, links, backlinks, summary, suggestions }
 }

@@ -2,7 +2,7 @@
 const bookId = useRouteBookId()
 const { activeEntryPath } = useAppNavigation()
 const { book } = useBook(bookId)
-const { entry, autosave, words, meta, backlinks, summary } = useSceneEditor(bookId, activeEntryPath)
+const { entry, autosave, words, meta, backlinks, summary, suggestions } = useSceneEditor(bookId, activeEntryPath)
 const { document, status, draft } = entry
 useSeoMeta({ title: () => document.value?.title ?? book.value?.title ?? 'Write' })
 defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
@@ -27,6 +27,16 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
           <EditorWordCount
             :counts="words.counts.value"
             :session-words="words.sessionWords.value"
+          />
+          <UButton
+            v-if="suggestions.suggestions.value.length"
+            icon="i-lucide-sparkles"
+            :label="String(suggestions.suggestions.value.length)"
+            color="primary"
+            variant="soft"
+            :aria-label="`${suggestions.suggestions.value.length} ${suggestions.suggestions.value.length === 1 ? 'suggestion' : 'suggestions'}`"
+            class="min-h-11"
+            @click="suggestions.panelOpen.value = true"
           />
           <UButton
             v-if="document?.type === 'scene'"
@@ -69,6 +79,20 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
         icon="i-lucide-file-x"
         title="This entry could not be opened"
         description="It may have been moved or deleted."
+      />
+      <EditorSuggestionsPanel
+        v-model:open="suggestions.panelOpen.value"
+        v-model:draft="suggestions.draft.value"
+        :suggestions="suggestions.suggestions.value"
+        :editing-id="suggestions.editingId.value"
+        :busy="suggestions.busy.value"
+        @accept="suggestions.accept"
+        @reject="suggestions.reject"
+        @edit="suggestions.edit"
+        @cancel="suggestions.cancelEdit"
+        @jump="suggestions.jumpTo"
+        @accept-all="suggestions.acceptAll"
+        @reject-all="suggestions.rejectAll"
       />
       <EditorScenePanel
         v-model:open="meta.open.value"

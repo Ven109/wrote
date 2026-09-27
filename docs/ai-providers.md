@@ -102,3 +102,18 @@ changes**; your choices stay active for the book until you clear them (chip abov
 For developers: build prompts with `buildContext()` + `renderContext()` and save a snapshot; a test fails when a
 server file calls a model without it (`server/ai/context/no-bypass.test.ts` lists the justified exceptions, such as
 background summaries). Book content is wrapped as untrusted reference material with its tags escaped.
+
+## Suggestions (tracked changes)
+
+AI never changes your text on its own. The assistant and connected MCP clients can only **propose** edits
+(`propose_edit`); you decide.
+
+- A suggestion either replaces a passage or adds new paragraph(s) after one. It is anchored on the exact text it
+  refers to plus the text around it, so it stays attached while you edit elsewhere; if the passage itself changes,
+  it is marked **Text changed** (stale) and can only be rejected.
+- In the editor, the original is struck through and the proposal highlighted, with **✓ accept**, **✕ reject** and
+  **✎ edit** next to it. New suggestions appear live, even from an agent working over MCP.
+- The **✦ n** button above the text opens the list of the entry's suggestions: who proposed it and why, jump to it,
+  edit the proposal before accepting, **Accept all** / **Reject all**.
+- Accepting applies the text as a normal edit: undo with ⌘Z, saved by autosave. The decision (and your edited
+  text, if any) is recorded in `.wrote/state.db`.
