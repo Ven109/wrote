@@ -2,6 +2,8 @@ import { mkdir, readdir } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { BOOK_CONFIG_FILE } from '#shared/schemas/book'
+import { openIndexDb, type IndexDb } from '../db/client'
+import { applyChange, syncIndex } from '../db/indexer'
 import { NotFoundError } from '../storage/errors'
 import { readTextIfExists } from '../storage/fs'
 import { createBookRepository, type BookRepository } from '../storage/repository'
@@ -13,6 +15,7 @@ export interface BookContext {
   root: string
   repository: BookRepository
   watcher: BookWatcher
+  db: IndexDb
 }
 
 /** Directory holding the user's books. Configurable via `NUXT_WORKSPACE_DIR`. */
@@ -44,14 +47,30 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
   }
   const root = join(workspaceDir, bookId)
   const repository = createBookRepository(root)
-  const watcher = createBookWatcher(root, { onChange: event => publishBookEvent(bookId, event) })
-  repository.onWrite((path, hash) => watcher.ignoreOwnWrite(path, hash))
-  const context = { id: bookId, root, repository, watcher }
+  const db = await openIndexDb(root)
+  await syncIndex(db, repository)
+
+  // Keep the index current before notifying clients, for external edits and our own writes alike.
+  const watcher = createBookWatcher(root, {
+    onChange: async (event) => {
+      await applyChange(db, repository, event)
+      publishBookEvent(bookId, event)
+    },
+  })
+  repository.onWrite(async (path, hash) => {
+    watcher.ignoreOwnWrite(path, hash)
+    await applyChange(db, repository, { kind: 'changed', path })
+    publishBookEvent(bookId, { kind: 'changed', path, hash })
+  })
+  const context = { id: bookId, root, repository, watcher, db }
   contexts.set(bookId, context)
   return context
 }
 
 export async function closeAllBooks(): Promise<void> {
-  await Promise.all([...contexts.values()].map(context => context.watcher.close()))
+  await Promise.all([...contexts.values()].map(async (context) => {
+    await context.watcher.close()
+    context.db.$client.close()
+  }))
   contexts.clear()
 }

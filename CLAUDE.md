@@ -78,6 +78,7 @@ Every change that adds or changes logic ships with tests.
 |---|---|---|
 | Pure utils, services, storage, tools | colocated `*.test.ts` | node |
 | Composables, components | colocated `*.nuxt.test.ts` | nuxt (`@nuxt/test-utils`) |
+| API endpoints (real server, temp workspace) | `test/api/*.test.ts` | node (`@nuxt/test-utils/e2e`) |
 | User flows | `test/e2e/*.spec.ts` | Playwright |
 | Fixture book | `test/fixtures/sample-book/` | shared |
 

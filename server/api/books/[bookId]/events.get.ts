@@ -7,6 +7,8 @@ export default defineEventHandler(async (event) => {
   const unsubscribe = subscribeBookEvents(book.id, (change) => {
     void stream.push({ event: 'change', data: JSON.stringify(change) })
   })
+  // Flush headers immediately so clients know the stream is live.
+  void stream.push({ event: 'ready', data: JSON.stringify({ bookId: book.id }) })
   stream.onClosed(async () => {
     unsubscribe()
     await stream.close()

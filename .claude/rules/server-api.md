@@ -13,4 +13,4 @@ paths:
 - Errors: throw `createError({ statusCode, statusMessage, data })` with a stable error code; never leak stack traces or file system paths outside the book.
 - Return plain serializable objects; types come from `shared/`.
 - Streaming (SSE, AI chat) uses `createEventStream` / AI SDK stream helpers and supports abort.
-- Every endpoint has an integration test (`*.test.ts` using `@nuxt/test-utils` `$fetch`) for the happy path and validation errors.
+- Every endpoint has an integration test in `test/api/*.test.ts` (`@nuxt/test-utils/e2e` `setup` + `$fetch`, workspace from `createTestWorkspace()`) for the happy path and validation errors.

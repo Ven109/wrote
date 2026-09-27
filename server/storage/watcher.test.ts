@@ -26,7 +26,9 @@ describe('book watcher', () => {
   beforeEach(async () => {
     ({ root, cleanup } = await copyFixtureBook())
     events = []
-    watcher = createBookWatcher(root, { onChange: e => events.push(e), debounceMs: 30 })
+    watcher = createBookWatcher(root, { onChange: (e) => {
+      events.push(e)
+    }, debounceMs: 30 })
     await watcher.ready
   })
   afterEach(async () => {

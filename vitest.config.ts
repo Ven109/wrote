@@ -13,7 +13,16 @@ export default defineConfig({
           name: 'unit',
           environment: 'node',
           include: ['{app,server,shared,test}/**/*.test.ts'],
-          exclude: ['**/*.nuxt.test.ts', '**/node_modules/**', 'test/e2e/**'],
+          exclude: ['**/*.nuxt.test.ts', '**/node_modules/**', 'test/e2e/**', 'test/api/**'],
+        },
+      },
+      {
+        test: {
+          name: 'api',
+          environment: 'node',
+          include: ['test/api/**/*.test.ts'],
+          testTimeout: 30_000,
+          hookTimeout: 240_000,
         },
       },
       await defineVitestProject({
