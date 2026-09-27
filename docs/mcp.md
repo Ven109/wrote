@@ -75,6 +75,15 @@ two minutes counts as "no" and the agent gets an error saying so.
 Approvals need the running Wrote app: over **stdio** (`wrote mcp`) nobody can approve, so tools that would ask are
 refused with an explanation.
 
+## Activity & undo
+
+Every tool call that can change data (propose, write, destructive) by the assistant or an agent is logged in the
+book's **Activity** page: who, which tool, when, its input and the files it changed with their content before and
+after. Filter by who, tool and time, open a diff, and **Undo** any change in one click – the files are restored to
+their before-state and the undo itself is logged. If a file was edited after the change, Wrote asks before
+discarding those edits. Proposals (`propose_edit`) change no files; resolve them as suggestions instead. The log lives
+in `.wrote/state.db` of the book.
+
 ## Security
 
 - The HTTP endpoint only answers on **localhost** (requests with another `Host` or a foreign browser `Origin` are

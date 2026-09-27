@@ -1,6 +1,7 @@
 import type { z } from 'zod'
 import { DEFAULT_TOOL_POLICY, type PermissionDecision, type ToolPermissionLevel, type ToolPolicy } from '#shared/schemas/permissions'
 import type { Actor } from '#shared/schemas/suggestion'
+import { recordChanges, recordToolCall } from '../services/activity'
 import type { BookContext } from '../services/workspace'
 
 /** How much a tool may change: drives the permission model (`read` < `propose` < `write` < `destructive`). */
@@ -66,5 +67,29 @@ export async function runTool<I extends z.ZodType, O>(tool: WroteTool<I, O>, raw
   const parsed = tool.input.safeParse(rawInput)
   if (!parsed.success) throw new ToolError(`Invalid input for ${tool.name}: ${parsed.error.message}`, 'invalid_input')
   await authorize(tool as unknown as WroteTool, parsed.data, context)
-  return tool.handler(parsed.data, context)
+  if (tool.permission === 'read' || !context.book) return tool.handler(parsed.data, context)
+  return runLogged(tool, parsed.data, context, context.book)
+}
+
+/**
+ * Runs a tool that may change data with its file changes recorded, and logs the call to the activity log
+ * (with before/after states, so the author can review and undo it). Partial changes of a failing call are
+ * logged too.
+ */
+async function runLogged<I extends z.ZodType, O>(tool: WroteTool<I, O>, input: z.infer<I>, context: ToolContext, book: BookContext): Promise<O> {
+  const recorder = recordChanges(book.repository)
+  const log = async (output: unknown) => {
+    const changes = await recorder.changes()
+    await recordToolCall(book, { actor: context.caller, tool: tool.name, toolTitle: tool.title, permission: tool.permission, input, output, changes, undoable: recorder.undoable() })
+      .catch(error => console.warn(`[activity] could not log ${tool.name}:`, error))
+  }
+  try {
+    const output = await tool.handler(input, { ...context, book: { ...book, repository: recorder.repository } })
+    await log(output)
+    return output
+  }
+  catch (error) {
+    if ((await recorder.changes()).length) await log({ error: error instanceof Error ? error.message : String(error) })
+    throw error
+  }
 }

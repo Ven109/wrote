@@ -58,3 +58,12 @@ export const suggestions = sqliteTable('suggestions', {
   createdAt: text('created_at').notNull(),
   data: text('data', { mode: 'json' }).notNull(),
 })
+
+/** Activity log (WRO-61); `data` holds the full `ActivityEntry` (JSON), the columns are for filtering. */
+export const activityLog = sqliteTable('activity_log', {
+  id: text('id').primaryKey(),
+  createdAt: text('created_at').notNull(),
+  actorKind: text('actor_kind').notNull(),
+  tool: text('tool').notNull(),
+  data: text('data', { mode: 'json' }).notNull(),
+})

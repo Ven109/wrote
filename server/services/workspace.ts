@@ -145,10 +145,10 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
     }),
   })
   repository.onWrite((path, hash) => {
-    watcher.ignoreOwnWrite(path, hash)
+    if (hash) watcher.ignoreOwnWrite(path, hash)
     void track(async () => {
-      await applyChange(db, repository, { kind: 'changed', path })
-      publishBookEvent(bookId, { kind: 'changed', path, hash })
+      await applyChange(db, repository, { kind: hash ? 'changed' : 'removed', path })
+      publishBookEvent(bookId, hash ? { kind: 'changed', path, hash } : { kind: 'removed', path })
       afterIndexed(path)
     })
   })
