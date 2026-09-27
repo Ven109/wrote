@@ -47,7 +47,7 @@ Workspace
     ├── Manuscript        Parts → Chapters → Scenes (ordered, the actual book)
     ├── Notes             Free-form notes, inbox, links & backlinks
     ├── Codex             Story bible: Characters, Places, Items, Lore, Glossary, Timeline
-    ├── Research          Sources, clippings, PDFs, quotes, citations
+    ├── Research          Sources, clippings, PDFs, interviews (audio + transcript), quotes
     ├── Outline           Beats / plot points, linked to scenes (board + tree view)
     ├── Style Guide       Voice, tense, POV, banned words, sample passages
     ├── Snapshots         Named versions of scenes/chapters (diffable)
@@ -108,6 +108,25 @@ The folder is the **source of truth**. `.wrote/` holds a SQLite index (full-text
 - **Capture via MCP** — "Claude, save this idea to my book's inbox" from any MCP client.
 - **AI triage** of the inbox: suggests tags, links to existing codex entries, "this belongs to chapter 7".
 
+### 4.1b Research — interviews *(planned for a later version)*
+Record interviews directly in Wrote and turn them into searchable, quotable research.
+
+- **Record** in the browser (`MediaRecorder`) or **upload** existing audio/video (mp3, m4a, wav, mp4).
+- **Transcribe** with timestamps and **speaker labels** (diarization) — via cloud speech-to-text (e.g. OpenAI, Deepgram, AssemblyAI through the AI SDK) or **fully local** with whisper.cpp for sensitive interviews.
+- **Interview view**: audio player synced with the transcript — click a sentence to jump to that moment, correct transcript text in the block editor, rename speakers.
+- **AI on top**: summary, key topics, notable quotes, follow-up questions for the next interview, suggested links to codex entries and chapters.
+- **Quote into the book**: select transcript text → *Insert as quote* creates a `quote-source` block that keeps a link to interview + timestamp (and becomes a citation / footnote on export for non-fiction).
+- **Interview prep**: a question-list note per interview, which the AI can help draft from your outline and open questions.
+- **Consent & privacy**: consent checkbox/record before recording, audio stored inside the book folder (`research/interviews/`), per-interview choice of local vs. cloud transcription.
+- **MCP**: `list_interviews`, `search_transcripts`, `get_quote` — e.g. *"Claude, find everything my interviewees said about the flood of 1953."*
+
+```
+research/interviews/2026-10-02-anna-berger/
+├── interview.md        # metadata (people, date, consent), prep questions, AI summary
+├── transcript.md       # speaker-labelled, timestamped transcript
+└── audio.m4a
+```
+
 ### 4.2 Organize — build the world
 - Codex with templates per type (character, place, faction, …).
 - Backlinks panel and a lightweight graph view.
@@ -120,10 +139,30 @@ The folder is the **source of truth**. `.wrote/` holds a SQLite index (full-text
 - **Timeline** of in-world events, linked to scenes.
 - AI: "Suggest three ways to get from beat 4 to beat 5", "Find plot holes in this outline".
 
-### 4.4 Write — the editor
-Built on Nuxt UI's `UEditor` (TipTap), Markdown in / Markdown out.
+### 4.4 Write — the block editor
+Built on Nuxt UI's **`UEditor`** (TipTap 3), Markdown in / Markdown out, with a **Notion-style block layout**:
+
+- **Everything is a block** — paragraph, heading, quote, list, image, scene break, callout, plus Wrote-specific blocks (see below).
+- **Drag handle** (`UEditorDragHandle`) — hover a block to grab it, move it, or open its block menu (turn into…, duplicate, delete, ✦ AI actions on this block).
+- **Slash menu** (`UEditorSuggestionMenu`) — `/` inserts any block type or AI action.
+- **Mentions** (`UEditorMentionMenu`) — `@` links a codex entry (character, place, …), `[[` links any note.
+- **Bubble toolbar** (`UEditorToolbar`) on selection — formatting + inline AI.
 - Distraction-free / focus / typewriter modes, per-session word goals.
-- `/` slash commands (insert scene break, note, codex link, AI action).
+
+**Custom Wrote blocks** (TipTap node extensions rendered with Vue components):
+
+| Block | Purpose | Exported to book? |
+|---|---|---|
+| `scene-break` | `* * *` separator between scenes | yes |
+| `note` | Author's margin note / TODO inside the text | no |
+| `codex-card` | Embedded codex entry (character sheet, place) | no |
+| `quote-source` | Quote pulled from research/interview, linked back to its source & timestamp | text yes, link → citation |
+| `ai-suggestion` | Pending AI proposal (accept / reject / edit) | no |
+| `beat` | Outline beat shown inline while drafting | no |
+
+"Working" blocks (notes, cards, suggestions) live alongside the prose while writing but are stripped on export. In Markdown they are stored as directives (e.g. `:::note … :::`) so files stay readable in any editor.
+
+The same block editor is used everywhere — manuscript, notes, codex entries, research — so there's one editing experience across the app.
 - **Inline AI** on selection: *continue, rephrase, expand, tighten, show-don't-tell, change tone, translate*.
 - **Ghost text** autocomplete (opt-in, off by default).
 - AI output appears as **suggestions** (tracked-change style: accept / reject / edit), never as silent edits.
@@ -233,7 +272,8 @@ In Settings → Integrations, users connect external MCP servers which the in-ap
 | Framework | **Nuxt 4** (4.5+) | Full-stack Vue, server routes (Nitro), great DX |
 | UI | **Nuxt UI 4** (4.11+) | Dashboard layouts, `UEditor` (TipTap), `UChat*` components, command palette, Tailwind v4 |
 | Theme | `primary: yellow`, `neutral: zinc` | See §8 |
-| Editor | `UEditor` + TipTap 3 extensions | Markdown round-trip, mentions, suggestions, drag handle |
+| Editor | `UEditor` + TipTap 3 extensions | Block layout (drag handle, slash menu), Markdown round-trip, mentions, custom Wrote blocks |
+| Speech-to-text (later) | AI SDK transcription providers / whisper.cpp (local) | Interview transcription with timestamps & speakers |
 | AI | Vercel **AI SDK** (`ai`, `@ai-sdk/vue`) | Streaming, tool calling, multi-provider |
 | MCP server | **`@nuxtjs/mcp-toolkit`** | Tools/resources/prompts defined inside the Nuxt app |
 | MCP client | `@modelcontextprotocol/sdk` / AI SDK MCP client | Connect external servers |
@@ -355,7 +395,7 @@ Built from Nuxt UI building blocks: `UDashboardGroup`, `UDashboardSidebar`, `UDa
 ### v0.1 — Foundation (MVP)
 - [ ] Nuxt 4 + Nuxt UI 4 scaffold, theme, dashboard shell
 - [ ] Book folder format, file repo, watcher, SQLite index (Drizzle)
-- [ ] Manuscript tree + `UEditor` with Markdown round-trip, autosave, word count
+- [ ] Manuscript tree + block editor (`UEditor`: drag handle, slash menu, mentions), Markdown round-trip, autosave, word count
 - [ ] Notes with inbox, tags, `[[links]]`, backlinks
 - [ ] Assistant panel (AI SDK) with BYO API key / Ollama
 - [ ] MCP server with read tools + `create_note` + `propose_edit`
@@ -375,6 +415,11 @@ Built from Nuxt UI building blocks: `UDashboardGroup`, `UDashboardSidebar`, `UDa
 ### v0.4 — Publish & polish
 - [ ] Export EPUB / PDF / DOCX, snapshots & diffs, goals & streaks
 - [ ] Web clipper / PWA share target, voice notes
+
+### v0.5 — Interviews
+- [ ] Record / upload interviews, transcription (cloud or local whisper.cpp) with speakers & timestamps
+- [ ] Synced audio + transcript view, AI summaries & quote extraction
+- [ ] `quote-source` blocks linking manuscript quotes to interview timestamps, citations on export
 - [ ] Docker image & `npx wrote`
 
 ### Later
