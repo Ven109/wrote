@@ -3,6 +3,8 @@ import type { JobEvent } from '#shared/schemas/jobs'
 import type { SuggestionEvent } from '#shared/schemas/suggestion'
 
 export interface BookEventHandlers {
+  /** The stream is (re)connected – events sent while it was not are missed, so resync. */
+  ready?: () => void
   /** File changes (external edits, other tools, MCP clients). */
   change?: (event: BookChangeEvent) => void
   /** Background job updates (queued, progress, finished). */
@@ -26,6 +28,7 @@ export function useBookEvents(bookId: MaybeRefOrGetter<string | null>, handlers:
     close()
     if (!id) return
     source = new EventSource(`/api/books/${encodeURIComponent(id)}/events`)
+    source.addEventListener('ready', () => handlers.ready?.())
     source.addEventListener('change', (message) => {
       handlers.change?.(JSON.parse((message as MessageEvent<string>).data) as BookChangeEvent)
     })

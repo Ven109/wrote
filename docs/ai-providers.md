@@ -134,3 +134,16 @@ instruction.
 - **Autocomplete** (Settings → AI models → *Autocomplete while writing*, off by default): after a short pause at the end
   of a paragraph, the **fast** model suggests the rest of the sentence as grey ghost text. **Tab** accepts, **Esc** or
   typing dismisses it. When it is off, the editor makes no requests at all.
+
+## Provenance: which text is AI-assisted
+
+When you accept an AI suggestion (from the assistant, an inline action or an MCP client), Wrote remembers that the
+accepted passage was AI-written – in a sidecar file, `.wrote/provenance/<entry id>.json`, never in your prose.
+
+- **Highlight AI-assisted text** (the highlighter button above the editor) shows those passages with a subtle
+  underline; hover for who wrote it, the model and the date.
+- The **word count** popover shows the AI-assisted share of the scene, its chapter and the book.
+- Passages are found again by their text and surroundings, so provenance survives reloads and edits elsewhere –
+  also edits made in another editor.
+- Rewrite a passage yourself and it stops counting as AI-assisted once more than half of its words changed
+  (`provenanceThreshold` in `.wrote/ai-settings.json`, 0.1–1, default 0.5).

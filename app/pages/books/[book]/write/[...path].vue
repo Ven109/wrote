@@ -2,7 +2,7 @@
 const bookId = useRouteBookId()
 const { activeEntryPath } = useAppNavigation()
 const { book } = useBook(bookId)
-const { entry, autosave, words, meta, backlinks, summary, suggestions, ai } = useSceneEditor(bookId, activeEntryPath)
+const { entry, autosave, words, meta, backlinks, summary, suggestions, ai, provenance } = useSceneEditor(bookId, activeEntryPath)
 const { document, status, draft } = entry
 useSeoMeta({ title: () => document.value?.title ?? book.value?.title ?? 'Write' })
 defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
@@ -27,6 +27,16 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
           <EditorWordCount
             :counts="words.counts.value"
             :session-words="words.sessionWords.value"
+            :ai-shares="provenance.shares.value"
+          />
+          <UButton
+            icon="i-lucide-highlighter"
+            color="neutral"
+            :variant="provenance.highlight.value ? 'soft' : 'ghost'"
+            :aria-pressed="provenance.highlight.value"
+            aria-label="Highlight AI-assisted text"
+            class="size-11 justify-center lg:size-auto"
+            @click="provenance.toggle"
           />
           <UButton
             v-if="suggestions.suggestions.value.length"

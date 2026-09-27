@@ -90,6 +90,7 @@ export function aiSettingsView(config: AiConfig): AiSettingsView {
     embeddings: resolveEmbeddingModel(config, config.settings.models.embedding) !== null,
     summaries: config.settings.summaries,
     autocomplete: config.settings.autocomplete,
+    provenanceThreshold: config.settings.provenanceThreshold,
   }
 }
 
@@ -125,6 +126,7 @@ async function applyAiSettingsPatch(workspaceDir: string, input: UpdateAiSetting
     models: { ...config.settings.models, ...input.models },
     summaries: { ...config.settings.summaries, ...input.summaries },
     autocomplete: input.autocomplete ?? config.settings.autocomplete,
+    provenanceThreshold: input.provenanceThreshold ?? config.settings.provenanceThreshold,
   }
   await writeSettingsFile(workspaceDir, SETTINGS_FILE, settings)
   if (input.keys) {

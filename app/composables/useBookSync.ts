@@ -16,6 +16,11 @@ export function useBookSync(bookId: MaybeRefOrGetter<string | null>) {
   }
 
   useBookEvents(bookId, {
+    // Changes published before the stream connected (or while it reconnected) were missed: refresh.
+    ready: () => {
+      const id = toValue(bookId)
+      if (id) refreshBook(id)
+    },
     change: () => {
       const id = toValue(bookId)
       if (id) refreshBook(id)

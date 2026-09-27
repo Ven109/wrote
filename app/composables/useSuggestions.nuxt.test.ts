@@ -10,7 +10,7 @@ import { useSuggestions } from './useSuggestions'
 
 const author = { kind: 'assistant' as const, name: 'Assistant' }
 const make = (id: string, find: string, replace: string, kind: 'replace' | 'insert' = 'replace'): SuggestionView =>
-  ({ id, entryId: 'scn_1', kind, find, replace, before: '', after: '', author, status: 'pending', createdAt: '2026-09-27T00:00:00.000Z', stale: false })
+  ({ id, entryId: 'scn_1', kind, find, replace, before: '', after: '', author, model: null, status: 'pending', createdAt: '2026-09-27T00:00:00.000Z', stale: false })
 let pending: SuggestionView[] = []
 const resolved: unknown[] = []
 registerEndpoint('/api/books/demo/suggestions', () => pending)

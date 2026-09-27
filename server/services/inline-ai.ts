@@ -44,6 +44,7 @@ export async function streamInlineAction(book: BookContext, input: InlineAiReque
         replace: text.trim(),
         rationale: input.param ? `${label}: ${input.param}` : label,
         author: { kind: 'assistant', name: `AI · ${label}` },
+        model: configured.ref,
       }).catch(error => console.warn('[wrote] inline action: could not store the suggestion', error))
     },
   })
