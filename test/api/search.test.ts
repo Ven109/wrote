@@ -1,16 +1,17 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { $fetch, setup } from '@nuxt/test-utils/e2e'
+import { $fetch } from '@nuxt/test-utils/e2e'
 import { afterAll, describe, expect, it } from 'vitest'
 import type { Job } from '#shared/schemas/jobs'
 import { startFakeOpenAi } from '../utils/fake-openai'
+import { setupApiServer } from '../utils/api-server'
 import { createTestWorkspace } from '../utils/workspace'
 
 const workspace = await createTestWorkspace()
 const ollama = await startFakeOpenAi()
 afterAll(() => ollama.close())
 
-await setup({ server: true, nuxtConfig: { runtimeConfig: { workspaceDir: workspace } } })
+await setupApiServer(workspace, import.meta.url)
 
 const book = '/api/books/sample-book'
 type Hit = { id: string, title: string, match: 'text' | 'meaning' | 'both', snippet: string }

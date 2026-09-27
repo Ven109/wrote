@@ -1,8 +1,9 @@
-import { $fetch, fetch, setup } from '@nuxt/test-utils/e2e'
+import { $fetch, fetch } from '@nuxt/test-utils/e2e'
 import { afterAll, describe, expect, it } from 'vitest'
 import type { Job } from '#shared/schemas/jobs'
 import type { Summary } from '#shared/schemas/summaries'
 import { startFakeOpenAi } from '../utils/fake-openai'
+import { setupApiServer } from '../utils/api-server'
 import { createTestWorkspace } from '../utils/workspace'
 
 const workspace = await createTestWorkspace()
@@ -13,7 +14,7 @@ const ollama = await startFakeOpenAi((messages) => {
 })
 afterAll(() => ollama.close())
 
-await setup({ server: true, nuxtConfig: { runtimeConfig: { workspaceDir: workspace } } })
+await setupApiServer(workspace, import.meta.url)
 
 const book = '/api/books/sample-book'
 const summaries = () => $fetch<Summary[]>(`${book}/summaries`)
