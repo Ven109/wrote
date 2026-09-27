@@ -9,6 +9,8 @@ describe('countWords', () => {
     ['# Heading\n\nSome *emphasis* here.', 4],
     ['don\'t stop — well-known', 3],
     ['Über Straße, naïve café', 4],
+    ['私は猫が好きです。', 6],
+    ['Mara 去了 港口', 3],
   ])('counts %j as %i words', (text, expected) => {
     expect(countWords(text)).toBe(expected)
   })
