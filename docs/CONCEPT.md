@@ -111,7 +111,7 @@ The folder is the **source of truth**. `.wrote/` holds a SQLite index (full-text
 ### 4.1b Research — interviews *(planned for a later version)*
 Record interviews directly in Wrote and turn them into searchable, quotable research.
 
-- **Record** in the browser (`MediaRecorder`) or **upload** existing audio/video (mp3, m4a, wav, mp4).
+- **Record** in the **Electron desktop app** (reliable mic access, long recordings streamed to disk, optional system-audio capture for online calls, choice of input device) or **upload** existing audio/video (mp3, m4a, wav, mp4). Browser recording (`MediaRecorder`) as a lightweight fallback in the web version.
 - **Transcribe** with timestamps and **speaker labels** (diarization) — via cloud speech-to-text (e.g. OpenAI, Deepgram, AssemblyAI through the AI SDK) or **fully local** with whisper.cpp for sensitive interviews.
 - **Interview view**: audio player synced with the transcript — click a sentence to jump to that moment, correct transcript text in the block editor, rename speakers.
 - **AI on top**: summary, key topics, notable quotes, follow-up questions for the next interview, suggested links to codex entries and chapters.
@@ -282,7 +282,7 @@ In Settings → Integrations, users connect external MCP servers which the in-ap
 | Validation | Zod | Shared schemas for frontmatter, tools, API |
 | Export | Pandoc / Typst | EPUB, PDF, DOCX |
 | Collaboration (later) | Yjs (TipTap Collaboration) | Real-time co-writing |
-| Distribution | Docker image, `npx wrote`, later desktop (Tauri) | Self-host or run locally |
+| Distribution | Docker image, `npx wrote`, later **Electron** desktop app | Self-host or run locally; desktop for mic recording, local files & local whisper.cpp |
 
 ### Architecture
 
@@ -416,7 +416,9 @@ Built from Nuxt UI building blocks: `UDashboardGroup`, `UDashboardSidebar`, `UDa
 - [ ] Export EPUB / PDF / DOCX, snapshots & diffs, goals & streaks
 - [ ] Web clipper / PWA share target, voice notes
 
-### v0.5 — Interviews
+### v0.5 — Desktop & Interviews
+- [ ] Electron shell around the Nuxt app (local server, book folders on disk, auto-update)
+- [ ] Native mic recording (device picker, streamed to disk, optional system audio)
 - [ ] Record / upload interviews, transcription (cloud or local whisper.cpp) with speakers & timestamps
 - [ ] Synced audio + transcript view, AI summaries & quote extraction
 - [ ] `quote-source` blocks linking manuscript quotes to interview timestamps, citations on export
@@ -424,7 +426,7 @@ Built from Nuxt UI building blocks: `UDashboardGroup`, `UDashboardSidebar`, `UDa
 
 ### Later
 - Real-time collaboration (Yjs), comments & roles for editors/beta readers
-- Desktop app (Tauri), mobile capture app
+- Mobile capture app
 - Plugin marketplace for templates, agents, and export themes
 
 ---
