@@ -54,6 +54,7 @@ Dependencies only point downward. Components never call `$fetch`; API handlers n
 - **Size limits (guidelines):** components ≤ ~150 lines, composables/services ≤ ~200 lines, functions ≤ ~40 lines. Split before exceeding.
 - **Naming:** files `kebab-case.ts` except Vue components (`PascalCase.vue`) and composables (`useThing.ts`). Named exports only (no default exports outside Vue SFCs and Nuxt config files).
 - **AI never silently edits.** Any AI/MCP change to book content goes through the suggestion flow and the permission model.
+- **Mobile responsive.** Every screen works from 360px up. Design mobile-first with Tailwind breakpoints; sidebars become slideovers below `lg`; touch targets ≥ 44px. The editor uses *document mode* on mobile/touch (no drag handle, bottom toolbar + action sheet), *block mode* on desktop – see `.claude/rules/editor.md`.
 - **Accessibility:** keyboard-first, labelled controls, respect reduced motion.
 
 ## Tests

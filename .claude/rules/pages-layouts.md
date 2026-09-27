@@ -15,4 +15,4 @@ paths:
   - Right: `USidebar side="right"` for the assistant (offcanvas, toggle shortcut).
   - Open/collapsed state comes from `useAppLayout()`; shell pieces are components in `app/components/app/` (`AppSidebar`, `AppSidebarNav`, `AppMain`, `AppAssistantSidebar`).
 - Handle loading, empty and error states on every page (use `Base*` components for them).
-- Pages must work at phone width (sidebars become slideovers).
+- Pages must work from 360px width: sidebars become slideovers, no horizontal scroll, sticky actions reachable with the thumb. Check every page at phone, tablet and desktop widths.

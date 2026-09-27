@@ -15,5 +15,6 @@ paths:
 - Prefer slots over boolean props for variations; max ~5 props per component before considering a split.
 - Keep components ≤ ~150 lines. Split into subcomponents instead of long templates.
 - No hardcoded colors or sizes: use theme tokens / Tailwind utilities (`text-muted`, `bg-elevated`, `text-primary`). AI-related UI uses the sparkles icon + primary tint.
+- **Mobile-first & responsive:** base styles for phones, enhance with `sm:`/`md:`/`lg:`; no hover-only or drag-only interactions (always a tap alternative); touch targets ≥ 44px; use `UDrawer`/`USlideover` instead of popovers for complex menus on small screens (via a `useBreakpoint`-style composable, not duplicated markup).
 - Accessibility: every icon-only button has `aria-label`; interactive elements are reachable by keyboard.
 - Test behaviour (not markup) in a colocated `*.nuxt.test.ts` with `mountSuspended` when the component has interactions.

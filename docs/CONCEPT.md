@@ -27,6 +27,7 @@ Writing a book is a long, messy process: scattered notes, research, character sh
 | **AI-native, not AI-bolted** | Context retrieval, agents, and tools are part of the core data model — not a chat sidebar on top. |
 | **Protocol over plugins** | Extensibility via MCP first. Anything Wrote can do, an agent can do through MCP. |
 | **Calm UI** | A quiet, focused writing surface. Zinc neutrals, a single yellow accent, dark mode first. |
+| **Mobile-ready** | Fully responsive: every screen works on a phone. Sidebars become slideovers, the editor switches to a touch-friendly document mode. |
 
 ---
 
@@ -163,6 +164,20 @@ Built on Nuxt UI's **`UEditor`** (TipTap 3), Markdown in / Markdown out, with a 
 "Working" blocks (notes, cards, suggestions) live alongside the prose while writing but are stripped on export. In Markdown they are stored as directives (e.g. `:::note … :::`) so files stay readable in any editor.
 
 The same block editor is used everywhere — manuscript, notes, codex entries, research — so there's one editing experience across the app.
+
+**Mobile / touch: document mode.** Drag & drop of blocks doesn't work reliably on touch screens, so below the `lg` breakpoint (or on coarse pointers) the editor switches from *block mode* to *document mode*:
+
+| | Desktop (block mode) | Mobile / touch (document mode) |
+|---|---|---|
+| Layout | Block gutter with drag handle | Plain continuous document, no gutter or drag handle |
+| Reorder blocks | Drag & drop, ⌥⇧↑/↓ | "Move up / down" in the block action sheet |
+| Block menu | Drag-handle menu | `⋯` button in a bottom toolbar → `UDrawer` action sheet for the block at the cursor (turn into, duplicate, delete, ✦ AI) |
+| Formatting | Bubble toolbar on selection | Sticky bottom toolbar above the keyboard |
+| Insert blocks | `/` slash menu | `/` slash menu + `+` button in the bottom toolbar |
+| AI actions | Bubble toolbar / block menu | Bottom toolbar ✦ button → action sheet |
+| Suggestions | Inline accept / reject | Inline + full-width accept / reject bar |
+
+Both modes edit the same document and Markdown; only the chrome differs. The mode comes from a `useEditorMode()` composable (breakpoint + pointer type), so it can also be toggled manually (e.g. tablet with keyboard).
 - **Inline AI** on selection: *continue, rephrase, expand, tighten, show-don't-tell, change tone, translate*.
 - **Ghost text** autocomplete (opt-in, off by default).
 - AI output appears as **suggestions** (tracked-change style: accept / reject / edit), never as silent edits.
@@ -426,7 +441,7 @@ Built from Nuxt UI building blocks: an app shell with `USidebar` (`variant="inse
 
 ### Later
 - Real-time collaboration (Yjs), comments & roles for editors/beta readers
-- Mobile capture app
+- Native mobile capture app (the web app itself is fully responsive from v0.1)
 - Plugin marketplace for templates, agents, and export themes
 
 ---
