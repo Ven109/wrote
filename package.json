@@ -1,0 +1,55 @@
+{
+  "name": "wrote",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Open-source, AI-native workspace for writing books.",
+  "license": "AGPL-3.0-only",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint . --cache",
+    "lint:fix": "eslint . --cache --fix",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "prepare": "simple-git-hooks"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^4.11.2",
+    "nuxt": "^4.5.2",
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.137",
+    "@nuxt/eslint": "^1.17.0",
+    "@nuxt/test-utils": "^4.3.2",
+    "@vue/test-utils": "^2.5.1",
+    "eslint": "^10.11.0",
+    "happy-dom": "^20.14.5",
+    "lint-staged": "^17.6.0",
+    "simple-git-hooks": "^2.14.0",
+    "typescript": "^6.0.0",
+    "vitest": "^5.0.2",
+    "vue-router": "5.3.1",
+    "vue-tsc": "^3.3.11"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged",
+    "pre-push": "pnpm typecheck && pnpm test"
+  },
+  "lint-staged": {
+    "*.{ts,mts,js,mjs,vue}": [
+      "eslint --fix --cache",
+      "vitest related --run --passWithNoTests"
+    ]
+  }
+}
