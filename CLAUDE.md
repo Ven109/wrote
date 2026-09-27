@@ -9,7 +9,7 @@ Open-source, AI-native book writing app. Concept: `docs/CONCEPT.md`. Backlog: Pl
 - Layout: `USidebar` app shell (`variant="inset"`, `collapsible="icon"`, `rail`) + right `USidebar` for the assistant. **Never** use `UDashboard*` components.
 - Editor: `UEditor` (TipTap 3) block editor, Markdown in/out
 - AI: Vercel AI SDK (`ai`, `@ai-sdk/vue`), provider-agnostic incl. Ollama
-- MCP: `@nuxtjs/mcp-toolkit` (server), AI SDK MCP client (client)
+- MCP: `@modelcontextprotocol/sdk` server generated from the shared tools (HTTP `/mcp` + `wrote mcp` stdio, see ADR 0003), AI SDK MCP client (client)
 - Data: book folders of Markdown + frontmatter are the source of truth; SQLite (libSQL + Drizzle, FTS5, sqlite-vec) in `.wrote/` is a rebuildable index
 - Client data: **Pinia Colada** (`useQuery`/`useMutation`) for server state, **Pinia** stores for shared client state
 - Validation: Zod (schemas in `shared/`)

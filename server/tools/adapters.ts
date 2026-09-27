@@ -19,6 +19,8 @@ export interface McpToolDefinition {
   description: string
   inputSchema: z.ZodType
   jsonSchema: Record<string, unknown>
+  requiresBook: boolean
+  permission: WroteTool['permission']
   annotations: { readOnlyHint: boolean, destructiveHint: boolean, idempotentHint: boolean, openWorldHint: boolean }
   run: (input: unknown, context: ToolContext) => Promise<unknown>
 }
@@ -31,6 +33,8 @@ export function toMcpTools(tools: readonly WroteTool[]): McpToolDefinition[] {
     description: t.description,
     inputSchema: t.input,
     jsonSchema: z.toJSONSchema(t.input, { io: 'input' }) as Record<string, unknown>,
+    requiresBook: t.requiresBook,
+    permission: t.permission,
     annotations: {
       readOnlyHint: t.permission === 'read',
       destructiveHint: t.permission === 'destructive',
