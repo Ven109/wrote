@@ -11,6 +11,7 @@ Open-source, AI-native book writing app. Concept: `docs/CONCEPT.md`. Backlog: Pl
 - AI: Vercel AI SDK (`ai`, `@ai-sdk/vue`), provider-agnostic incl. Ollama
 - MCP: `@nuxtjs/mcp-toolkit` (server), AI SDK MCP client (client)
 - Data: book folders of Markdown + frontmatter are the source of truth; SQLite (libSQL + Drizzle, FTS5, sqlite-vec) in `.wrote/` is a rebuildable index
+- Client data: **Pinia Colada** (`useQuery`/`useMutation`) for server state, **Pinia** stores for shared client state
 - Validation: Zod (schemas in `shared/`)
 - Tests: Vitest + `@nuxt/test-utils`, Playwright for e2e
 - Desktop (later): Electron in `desktop/`
@@ -45,7 +46,8 @@ When a hook reports a failure, fix the cause – never bypass hooks (`--no-verif
 ```
 app/pages, app/layouts        thin: compose components, no logic
 app/components                view only: props in, events out
-app/composables               all client logic & state (use*)
+app/composables               all client logic & state (use*); wrap Pinia Colada + Pinia
+app/queries, app/stores       query keys/options (Pinia Colada), Pinia stores
 ────────────── $fetch / SSE ──────────────
 server/api                    thin handlers: validate → call service → return
 server/tools                  tool definitions (defineWroteTool) shared by assistant + MCP

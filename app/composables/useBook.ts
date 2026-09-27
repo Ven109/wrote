@@ -1,16 +1,21 @@
+import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
 import type { BookSummary, UpdateBookInput } from '#shared/schemas/library'
+import { bookSummaryQuery } from '~/queries/books'
+import { bookKeys } from '~/queries/keys'
 
 /** One book's summary and settings. */
 export function useBook(bookId: MaybeRefOrGetter<string>) {
-  const url = computed(() => `/api/books/${encodeURIComponent(toValue(bookId))}`)
-  const { data: book, status, error, refresh } = useFetch<BookSummary>(url, { key: computed(() => `book:${toValue(bookId)}`) })
+  const queryCache = useQueryCache()
+  const { data: book, status, error, refresh } = useQuery(() => bookSummaryQuery(toValue(bookId)))
 
-  async function update(changes: UpdateBookInput): Promise<BookSummary> {
-    const updated = await $fetch<BookSummary>(url.value, { method: 'PATCH', body: changes })
-    book.value = updated
-    await refreshNuxtData('books')
-    return updated
-  }
+  const { mutateAsync: update } = useMutation({
+    mutation: (changes: UpdateBookInput) =>
+      $fetch<BookSummary>(`/api/books/${encodeURIComponent(toValue(bookId))}`, { method: 'PATCH', body: changes }),
+    onSuccess(updated) {
+      queryCache.setQueryData(bookKeys.summary(toValue(bookId)), updated)
+    },
+    onSettled: () => queryCache.invalidateQueries({ key: bookKeys.list() }),
+  })
 
   return { book, status, error, refresh, update }
 }

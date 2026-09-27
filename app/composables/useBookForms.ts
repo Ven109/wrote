@@ -2,11 +2,6 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import type { z } from 'zod'
 import { CreateBookSchema, OpenFolderSchema } from '#shared/schemas/library'
 
-function errorMessage(error: unknown): string {
-  const data = (error as { data?: { statusMessage?: string, message?: string } })?.data
-  return data?.statusMessage ?? data?.message ?? (error instanceof Error ? error.message : 'Something went wrong')
-}
-
 /** State and submit handler for the "new book" form. Navigates into the first scene on success. */
 export function useCreateBookForm(onDone?: () => void) {
   const { createBook } = useBooks()
@@ -22,7 +17,7 @@ export function useCreateBookForm(onDone?: () => void) {
       await navigateTo(writeRoute(book.id, firstScenePath))
     }
     catch (error) {
-      toast.add({ title: 'Could not create book', description: errorMessage(error), color: 'error' })
+      toast.add({ title: 'Could not create book', description: apiErrorMessage(error), color: 'error' })
     }
     finally {
       pending.value = false
@@ -47,7 +42,7 @@ export function useOpenFolderForm(onDone?: () => void) {
       await navigateTo(writeRoute(book.id))
     }
     catch (error) {
-      toast.add({ title: 'Could not open folder', description: errorMessage(error), color: 'error' })
+      toast.add({ title: 'Could not open folder', description: apiErrorMessage(error), color: 'error' })
     }
     finally {
       pending.value = false
