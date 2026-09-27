@@ -7,7 +7,7 @@ paths:
 
 # Tests
 
-- **Vitest** projects: `unit` (node env, `*.test.ts`) and `nuxt` (`@nuxt/test-utils` env, `*.nuxt.test.ts`). **Playwright** for e2e in `test/e2e/*.spec.ts`.
+- **Vitest** projects: `unit` (node env, `*.test.ts`), `nuxt` (`@nuxt/test-utils` env, `*.nuxt.test.ts`) and `api` (built server against a temp workspace, `test/api/*.test.ts`). **Playwright** for e2e in `test/e2e/*.spec.ts`.
 - Colocate unit/nuxt tests next to the file under test. Name tests by behaviour: `it('moves a scene to another chapter and renumbers siblings')`.
 - Arrange–act–assert; one behaviour per test; no logic (loops/conditionals) in tests beyond table-driven `it.each`.
 - Use the fixture book `test/fixtures/sample-book/`, copied to a temp dir per test for anything that writes. Never write to the real fixture.

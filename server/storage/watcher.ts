@@ -7,7 +7,7 @@ import { relativeToBook } from './paths'
 export type { BookChangeEvent, BookChangeKind } from '#shared/schemas/events'
 
 export interface WatcherOptions {
-  onChange: (event: BookChangeEvent) => void
+  onChange: (event: BookChangeEvent) => void | Promise<void>
   debounceMs?: number
 }
 
@@ -32,7 +32,7 @@ export function createBookWatcher(root: string, { onChange, debounceMs = 150 }: 
         return
       }
     }
-    onChange({ kind, path })
+    await onChange({ kind, path })
   }
 
   function schedule(kind: BookChangeKind, absolute: string) {
