@@ -41,6 +41,13 @@ useSeoMeta({ title: 'AI models' })
         :items="ai.modelItems(ai.settings.value?.models.fast)"
         @update:model-value="ai.setModel('fast', $event)"
       />
+      <SettingsAiModelField
+        :model-value="ai.settings.value?.models.embedding ?? null"
+        label="Embeddings"
+        description="Semantic search: find passages by meaning. Runs in the background after edits. A local model (e.g. Ollama nomic-embed-text) keeps it offline."
+        :items="ai.embeddingItems(ai.settings.value?.models.embedding)"
+        @update:model-value="ai.setModel('embedding', $event)"
+      />
     </section>
     <section
       class="flex flex-col gap-3"

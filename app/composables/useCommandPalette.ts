@@ -10,12 +10,12 @@ type CommandGroupSource = () => CommandPaletteGroup<CommandPaletteItem>
  */
 export function useCommandPalette() {
   const store = useCommandsStore()
-  const { open, groups } = storeToRefs(store)
+  const { open, searchTerm, groups } = storeToRefs(store)
 
   function registerGroup(id: string, source: CommandGroupSource) {
     store.register(id, source)
     if (getCurrentScope()) onScopeDispose(() => store.unregister(id))
   }
 
-  return { open, groups, registerGroup, unregisterGroup: store.unregister }
+  return { open, searchTerm, groups, registerGroup, unregisterGroup: store.unregister }
 }

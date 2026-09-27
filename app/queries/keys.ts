@@ -1,3 +1,4 @@
+import type { ModelPurpose } from '#shared/schemas/ai'
 import type { CodexQuery } from '#shared/schemas/codex'
 import type { NotesQuery } from '#shared/schemas/notes'
 
@@ -7,7 +8,8 @@ import type { NotesQuery } from '#shared/schemas/notes'
  */
 export const settingsKeys = {
   ai: () => ['settings', 'ai'] as const,
-  aiModels: () => ['settings', 'ai', 'models'] as const,
+  /** Without a purpose: the prefix of both model lists (for invalidation). */
+  aiModels: (purpose?: ModelPurpose) => (purpose ? ['settings', 'ai', 'models', purpose] as const : ['settings', 'ai', 'models'] as const),
   mcp: () => ['settings', 'mcp'] as const,
 }
 

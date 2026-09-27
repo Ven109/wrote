@@ -1,7 +1,7 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
-import { readBody } from 'h3'
+import { getQuery, readBody } from 'h3'
 import type { AiSettingsView } from '#shared/schemas/ai'
 import { useAiSettings, useAiStatus } from './useAiSettings'
 
@@ -9,6 +9,7 @@ let view: AiSettingsView = {
   providers: [{ id: 'ollama', label: 'Ollama', local: true, needsKey: false, enabled: false, baseUrl: null, defaultBaseUrl: 'http://localhost:11434', hasKey: false, keySource: null }],
   models: {},
   configured: false,
+  embeddings: false,
 }
 const patches: unknown[] = []
 registerEndpoint('/api/settings/ai', { method: 'GET', handler: () => view })
@@ -26,7 +27,9 @@ registerEndpoint('/api/settings/ai', {
     return view
   },
 })
-registerEndpoint('/api/settings/ai/models', () => [{ provider: 'ollama', models: [{ id: 'tiny', label: 'tiny' }] }])
+registerEndpoint('/api/settings/ai/models', event => getQuery(event).purpose === 'embedding'
+  ? [{ provider: 'ollama', models: [{ id: 'nomic-embed-text', label: 'nomic' }] }]
+  : [{ provider: 'ollama', models: [{ id: 'tiny', label: 'tiny' }] }])
 registerEndpoint('/api/settings/ai/test', { method: 'POST', handler: () => ({ ok: true, message: 'OK', latencyMs: 12 }) })
 
 async function mountAi() {
@@ -53,6 +56,13 @@ describe('useAiSettings', () => {
     await api.setModel('chat', 'ollama:tiny')
     expect(status.configured.value).toBe(true)
     expect(patches).toEqual([{ providers: { ollama: { enabled: true } } }, { models: { chat: 'ollama:tiny' } }])
+  })
+
+  it('offers embedding models separately and sets the embedding model', async () => {
+    const { api } = await mountAi()
+    await vi.waitFor(() => expect(api.embeddingItems()[0]?.[1]).toEqual({ label: 'nomic', value: 'ollama:nomic-embed-text' }))
+    await api.setModel('embedding', 'ollama:nomic-embed-text')
+    expect(patches.at(-1)).toEqual({ models: { embedding: 'ollama:nomic-embed-text' } })
   })
 
   it('runs a connection test per provider', async () => {

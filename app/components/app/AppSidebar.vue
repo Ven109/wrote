@@ -2,6 +2,13 @@
 const open = defineModel<boolean>('open', { default: true })
 const { open: paletteOpen } = useCommandPalette()
 const { bookId, activeEntryPath } = useAppNavigation()
+const { isMobile } = useBreakpoint()
+
+// On mobile the sidebar is a slideover: close it, or its overlay would sit on top of the palette.
+function openSearch(closeSidebar: () => void) {
+  if (isMobile.value) closeSidebar()
+  paletteOpen.value = true
+}
 </script>
 
 <template>
@@ -16,7 +23,7 @@ const { bookId, activeEntryPath } = useAppNavigation()
       <AppLogo :collapsed="state === 'collapsed'" />
     </template>
 
-    <template #default="{ state }">
+    <template #default="{ state, close }">
       <UButton
         icon="i-lucide-search"
         :label="state === 'collapsed' ? undefined : 'Search'"
@@ -25,7 +32,7 @@ const { bookId, activeEntryPath } = useAppNavigation()
         :square="state === 'collapsed'"
         block
         aria-label="Search and commands"
-        @click="paletteOpen = true"
+        @click="openSearch(close)"
       >
         <template
           v-if="state !== 'collapsed'"
