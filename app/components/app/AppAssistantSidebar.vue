@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { default: false })
+const { configured } = useAiStatus()
 </script>
 
 <template>
@@ -24,7 +25,15 @@ const open = defineModel<boolean>('open', { default: false })
     <BaseEmptyState
       icon="i-lucide-sparkles"
       title="Your writing assistant"
-      description="Ask questions about your book, brainstorm or get feedback. Connect an AI provider in settings to start."
-    />
+      :description="configured ? 'Ask questions about your book, brainstorm or get feedback.' : 'Connect an AI provider – a cloud API key or a local model with Ollama – to start.'"
+    >
+      <UButton
+        v-if="!configured"
+        to="/settings/ai"
+        label="Set up AI"
+        icon="i-lucide-settings-2"
+        class="min-h-11 sm:min-h-0"
+      />
+    </BaseEmptyState>
   </USidebar>
 </template>

@@ -41,7 +41,10 @@ export function useAppNavigation() {
   const badges = computed(() => ({ notes: noteCounts.value?.inbox ?? 0 }))
 
   const items = computed<NavigationMenuItem[][]>(() => {
-    const global: NavigationMenuItem[] = [{ label: 'Library', icon: 'i-lucide-library-big', to: '/', exact: true }]
+    const global: NavigationMenuItem[] = [
+      { label: 'Library', icon: 'i-lucide-library-big', to: '/', exact: true },
+      { label: 'AI models', icon: 'i-lucide-sparkles', to: '/settings/ai' },
+    ]
     return bookId.value ? [global, bookNavigationItems(bookId.value, badges.value)] : [global]
   })
 
