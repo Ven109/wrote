@@ -12,3 +12,8 @@ export const aiModelsQuery = defineQueryOptions({
   key: settingsKeys.aiModels(),
   query: () => $fetch<{ provider: AiProviderId, models: AiModelOption[] }[]>('/api/settings/ai/models'),
 })
+
+export const mcpSettingsQuery = defineQueryOptions({
+  key: settingsKeys.mcp(),
+  query: () => $fetch<{ url: string, token: string }>('/api/settings/mcp'),
+})

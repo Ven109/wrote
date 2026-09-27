@@ -7,6 +7,7 @@ import type { NotesQuery } from '#shared/schemas/notes'
 export const settingsKeys = {
   ai: () => ['settings', 'ai'] as const,
   aiModels: () => ['settings', 'ai', 'models'] as const,
+  mcp: () => ['settings', 'mcp'] as const,
 }
 
 export const bookKeys = {
