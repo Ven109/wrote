@@ -1,6 +1,7 @@
 import { useMutation, useQueryCache } from '@pinia/colada'
 import type { EntryDocument, EntryMeta, EntryMetaResult } from '#shared/schemas/document'
 import { bookKeys } from '~/queries/keys'
+import { useDocumentSessionStore } from '~/stores/document-session'
 
 /** Patches an entry's frontmatter (title, tags, pin, scene details) and refreshes what depends on it. */
 export function useEntryMeta(bookId: MaybeRefOrGetter<string>, document: Ref<EntryDocument | undefined>) {
@@ -9,11 +10,19 @@ export function useEntryMeta(bookId: MaybeRefOrGetter<string>, document: Ref<Ent
   const { notify } = useLinkUpdateNotice()
   const id = () => toValue(bookId)
 
+  const session = useDocumentSessionStore()
   const { mutateAsync, isLoading: saving } = useMutation({
-    mutation: (input: { path: string, meta: EntryMeta }) =>
-      $fetch<EntryMetaResult>(`/api/books/${encodeURIComponent(id())}/document`, { method: 'PATCH', body: input }),
-    onSuccess: ({ updatedLinks, ...saved }) => {
-      queryCache.setQueryData(bookKeys.document(id(), saved.path), saved)
+    mutation: async (input: { path: string, meta: EntryMeta }) => {
+      // Queued with the document's other writes (autosave) so they never race each other.
+      let updatedLinks: EntryMetaResult['updatedLinks'] = []
+      await session.mutate(id(), input.path, async () => {
+        const result = await $fetch<EntryMetaResult>(`/api/books/${encodeURIComponent(id())}/document`, { method: 'PATCH', body: input })
+        updatedLinks = result.updatedLinks
+        return result
+      })
+      return { updatedLinks }
+    },
+    onSuccess: ({ updatedLinks }) => {
       // Other entries changed on disk: refresh everything of the book (open documents, links).
       if (updatedLinks.length) void queryCache.invalidateQueries({ key: bookKeys.book(id()) })
     },

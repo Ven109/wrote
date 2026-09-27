@@ -206,3 +206,29 @@ describe('/api/books/:bookId/jobs', () => {
     expect((await fetch('/api/books/sample-book/jobs/job_missing/cancel', { method: 'POST' })).status).toBe(404)
   })
 })
+
+describe('/api/books/:bookId/codex', () => {
+  it('lists, creates, updates entries and manages custom types', async () => {
+    const places = await $fetch<{ title: string }[]>('/api/books/sample-book/codex', { query: { type: 'place' } })
+    expect(places.map(p => p.title)).toEqual(['Hollow Bay'])
+    const types = await $fetch<{ types: { id: string }[] }>('/api/books/sample-book/codex/types')
+    expect(types.types.map(t => t.id)).toContain('glossary')
+
+    await $fetch('/api/books/sample-book/codex/types', { method: 'POST', body: { id: 'ship', label: 'Ship', plural: 'Ships', folder: 'ships', fields: [{ key: 'captain', label: 'Captain', kind: 'entry' }] } })
+    const ship = await $fetch<{ path: string }>('/api/books/sample-book/codex', { method: 'POST', body: { type: 'ship', title: 'The Gull' } })
+    expect(ship.path).toBe('codex/ships/the-gull.md')
+    const updated = await $fetch<{ frontmatter: Record<string, unknown> }>('/api/books/sample-book/codex/entry', {
+      method: 'PATCH',
+      body: { path: ship.path, fields: { captain: 'cdx_mara000001' }, aliases: ['Gull'] },
+    })
+    expect(updated.frontmatter).toMatchObject({ codexType: 'ship', captain: 'cdx_mara000001', aliases: ['Gull'] })
+  })
+
+  it('validates input', async () => {
+    const badField = await fetch('/api/books/sample-book/codex/entry', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: 'codex/places/hollow-bay.md', fields: { nope: 'x' } }) })
+    expect(badField.status).toBe(400)
+    const builtIn = await fetch('/api/books/sample-book/codex/types', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: 'place', label: 'P', plural: 'P', folder: 'p' }) })
+    expect(builtIn.status).toBe(409)
+    expect((await fetch('/api/books/sample-book/codex', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ type: 'dragon', title: 'x' }) })).status).toBe(400)
+  })
+})

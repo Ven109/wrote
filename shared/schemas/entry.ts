@@ -8,8 +8,9 @@ export const SCENE_STATUSES = ['idea', 'draft', 'revised', 'final'] as const
 export const SceneStatusSchema = z.enum(SCENE_STATUSES)
 export type SceneStatus = z.infer<typeof SceneStatusSchema>
 
+/** Built-in codex types; books can add custom ones (see `shared/schemas/codex.ts`). */
 export const CODEX_TYPES = ['character', 'place', 'item', 'faction', 'lore', 'glossary'] as const
-export const CodexTypeSchema = z.enum(CODEX_TYPES)
+export const CodexTypeSchema = z.string().regex(/^[a-z][a-z0-9-]{0,39}$/)
 export type CodexType = z.infer<typeof CodexTypeSchema>
 
 export const EntryIdSchema = z.string().regex(/^[a-z]+_[a-z0-9]{6,}$/, 'Expected an id like "scn_k3j9x2m1q0"')

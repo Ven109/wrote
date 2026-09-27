@@ -1,5 +1,6 @@
 import type { WroteTool } from './define'
-import { getCodexTool, getProgressTool, getStructureTool, listBooksTool, readEntryTool, searchTool } from './read-tools'
+import { getCodexEntryTool, getCodexTool } from './codex-tools'
+import { getProgressTool, getStructureTool, listBooksTool, readEntryTool, searchTool } from './read-tools'
 import { createNoteTool, listSuggestionsTool, proposeEditTool } from './write-tools'
 
 /** All tools available to the assistant and MCP clients. */
@@ -9,6 +10,7 @@ export const WROTE_TOOLS = [
   readEntryTool,
   getStructureTool,
   getCodexTool,
+  getCodexEntryTool,
   getProgressTool,
   listSuggestionsTool,
   createNoteTool,

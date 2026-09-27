@@ -4,7 +4,8 @@ import { closeAllBooks, openBook } from '../services/workspace'
 import { toAiSdkTools, toMcpTools } from './adapters'
 import { runTool, ToolError, type ToolContext } from './define'
 import { WROTE_TOOLS } from './index'
-import { getCodexTool, getProgressTool, getStructureTool, listBooksTool, readEntryTool, searchTool } from './read-tools'
+import { getCodexEntryTool, getCodexTool } from './codex-tools'
+import { getProgressTool, getStructureTool, listBooksTool, readEntryTool, searchTool } from './read-tools'
 import { createNoteTool, listSuggestionsTool, proposeEditTool } from './write-tools'
 
 let context: ToolContext
@@ -55,7 +56,18 @@ describe('read tools', () => {
     const places = await runTool(getCodexTool, { codexType: 'place' }, context)
     expect(places.map(e => e.title)).toEqual(['Hollow Bay'])
     const all = await runTool(getCodexTool, {}, context)
-    expect(all.find(e => e.title === 'Mara Velden')?.frontmatter.eyes).toBe('grey')
+    expect(all.find(e => e.title === 'Mara Velden')?.fields).toMatchObject({ eyes: 'grey', role: 'protagonist' })
+    expect((await runTool(getCodexTool, { name: 'the cartographer' }, context)).map(e => e.title)).toEqual(['Mara Velden'])
+  })
+
+  it('gets one codex entry by id or alias with its type template', async () => {
+    const mara = await runTool(getCodexEntryTool, { name: 'The Cartographer' }, context)
+    expect(mara).toMatchObject({ id: 'cdx_mara000001', codexType: 'character', fields: { eyes: 'grey' } })
+    expect(mara.template?.fields.map(f => f.key)).toContain('relationships')
+    expect(mara.body).toContain('afraid of deep water')
+    expect((await runTool(getCodexEntryTool, { id: 'cdx_h0llowbay1' }, context)).title).toBe('Hollow Bay')
+    await expect(runTool(getCodexEntryTool, { name: 'Nobody' }, context)).rejects.toThrow(/No codex entry/)
+    await expect(runTool(getCodexEntryTool, {}, context)).rejects.toThrow()
   })
 
   it('reports progress', async () => {
