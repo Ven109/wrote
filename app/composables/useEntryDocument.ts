@@ -4,8 +4,6 @@ import { bodiesDiffer, toStoredBody } from '~/editor/markdown'
 import { documentQuery } from '~/queries/documents'
 import { useDocumentSessionStore, type SaveResult } from '~/stores/document-session'
 
-export type { SaveResult }
-
 /**
  * One entry opened in the editor: the stored document, a local `draft` bound to the editor, and `save()`
  * with optimistic concurrency. Guarantees against lost edits (state lives in the document session store,
