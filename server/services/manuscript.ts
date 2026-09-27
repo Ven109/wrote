@@ -42,6 +42,7 @@ export async function createNode(book: BookContext, input: { type: StructureNode
 export async function renameNode(book: BookContext, id: string, title: string) {
   const entry = await book.repository.read(await pathForId(book.db, id))
   const saved = await book.repository.write(entry.path, { frontmatter: { ...entry.frontmatter, title, updated: new Date().toISOString() }, body: entry.body }, entry.hash)
+  await applyChange(book.db, book.repository, { kind: 'changed', path: entry.path })
   return { id, title: saved.frontmatter.title }
 }
 
