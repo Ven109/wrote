@@ -11,6 +11,17 @@ export interface WatcherOptions {
   debounceMs?: number
 }
 
+/**
+ * Combines two events for the same file within the debounce window:
+ * add→change stays `added`, remove→add (atomic save) becomes `changed`, anything→remove is `removed`.
+ */
+export function mergeChangeKinds(previous: BookChangeKind, next: BookChangeKind): BookChangeKind {
+  if (next === 'removed') return 'removed'
+  if (previous === 'added') return 'added'
+  if (previous === 'removed') return 'changed'
+  return next
+}
+
 const IGNORED = /(^|[/\\])(\.wrote|\.git|node_modules)([/\\]|$)|\.tmp$|[/\\]\.reorder-/
 
 /**
@@ -40,8 +51,7 @@ export function createBookWatcher(root: string, { onChange, debounceMs = 150 }: 
     if (!entryTypeFromPath(path)) return
     const previous = pending.get(path)
     if (previous) clearTimeout(previous.timer)
-    // A removal followed by an add within the debounce window is a change (e.g. atomic save).
-    const merged: BookChangeKind = previous && previous.kind !== kind ? 'changed' : kind
+    const merged = previous ? mergeChangeKinds(previous.kind, kind) : kind
     pending.set(path, { kind: merged, timer: setTimeout(() => void flush(path, merged), debounceMs) })
   }
 
