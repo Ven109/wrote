@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryCache } from '@pinia/colada'
+import type { LinkRef } from '#shared/schemas/links'
 import type { StructureNode } from '#shared/schemas/manuscript'
 import { locateNode, moveInTree, type NodeType } from '#shared/utils/manuscript-tree'
 import { bookKeys } from '~/queries/keys'
@@ -13,6 +14,7 @@ export interface MoveTarget {
 export function useManuscript(bookId: MaybeRefOrGetter<string>) {
   const queryCache = useQueryCache()
   const toast = useToast()
+  const { notify } = useLinkUpdateNotice()
   const id = () => toValue(bookId)
   const base = () => `/api/books/${encodeURIComponent(id())}/structure`
   const key = () => bookKeys.structure(id())
@@ -42,14 +44,21 @@ export function useManuscript(bookId: MaybeRefOrGetter<string>) {
 
   const { mutateAsync: renameNode } = useMutation({
     mutation: ({ nodeId, title }: { nodeId: string, title: string }) =>
-      $fetch(`${base()}/${nodeId}`, { method: 'PATCH', body: { title } }),
-    onMutate: ({ nodeId, title }) => optimistic((current) => {
-      const next = structuredClone(current)
-      const found = locateNode(next, nodeId)
-      if (!found) return null
-      found.node.title = title
-      return next
-    }),
+      $fetch<{ updatedLinks: LinkRef[] }>(`${base()}/${nodeId}`, { method: 'PATCH', body: { title } }),
+    onMutate: ({ nodeId, title }) => {
+      const oldTitle = locateNode(queryCache.getQueryData<StructureNode[]>(key()) ?? [], nodeId)?.node.title
+      const context = optimistic((current) => {
+        const next = structuredClone(current)
+        const found = locateNode(next, nodeId)
+        if (!found) return null
+        found.node.title = title
+        return next
+      })
+      return { ...context, oldTitle }
+    },
+    onSuccess: ({ updatedLinks }, { nodeId }, context) => {
+      if (context?.oldTitle) notify(updatedLinks, () => renameNode({ nodeId, title: context.oldTitle! }))
+    },
     onError: (error, _vars, context) => rollback(error, context),
     onSettled: settle,
   })

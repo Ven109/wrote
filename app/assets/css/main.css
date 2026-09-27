@@ -26,3 +26,12 @@
 .prose-manuscript [data-placeholder]::before {
   font-style: italic;
 }
+
+.prose-manuscript .wiki-link {
+  cursor: pointer;
+}
+
+.prose-manuscript .wiki-link--broken {
+  color: var(--ui-text-muted);
+  border-bottom-style: dotted;
+}

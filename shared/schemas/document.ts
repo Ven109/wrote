@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { SceneStatusSchema, type EntryType } from './entry'
+import type { LinkRef } from './links'
 
 /** Book-relative POSIX path of a Markdown entry. Traversal is rejected server-side by `resolveInBook`. */
 export const EntryPathSchema = z.string().trim().min(1).max(500).regex(/\.md$/, 'Expected a Markdown file path')
@@ -47,3 +48,8 @@ export const UpdateDocumentMetaSchema = z.object({
   meta: EntryMetaSchema,
 })
 export type UpdateDocumentMetaInput = z.infer<typeof UpdateDocumentMetaSchema>
+
+/** Result of a metadata patch: the saved document plus entries whose links were rewritten by a rename. */
+export interface EntryMetaResult extends EntryDocument {
+  updatedLinks: LinkRef[]
+}

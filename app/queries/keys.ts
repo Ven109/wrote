@@ -14,5 +14,9 @@ export const bookKeys = {
   notes: (bookId: string) => ['book', bookId, 'notes'] as const,
   noteList: (bookId: string, query: NotesQuery) => ['book', bookId, 'notes', 'list', query.filter, query.tag ?? '', query.q ?? ''] as const,
   noteCounts: (bookId: string) => ['book', bookId, 'notes', 'counts'] as const,
+  links: (bookId: string) => ['book', bookId, 'links'] as const,
+  entryLinks: (bookId: string, entryId: string) => ['book', bookId, 'links', 'entry', entryId] as const,
+  linkTargets: (bookId: string) => ['book', bookId, 'links', 'targets'] as const,
+  resolvedLinks: (bookId: string, targets: string[]) => ['book', bookId, 'links', 'resolve', ...targets] as const,
   search: (bookId: string, query: string) => ['book', bookId, 'search', query] as const,
 }

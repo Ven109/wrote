@@ -7,6 +7,8 @@ export function useNoteEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefOr
   const autosave = useAutosave(entry)
   const { update, saving: savingMeta } = useEntryMeta(bookId, entry.document)
   const { fileNote } = useNotes(bookId)
+  useWikiLinks(bookId, entry.draft)
+  const { backlinks } = useBacklinks(bookId, () => entry.document.value?.id)
 
   const frontmatter = computed(() => entry.document.value?.frontmatter ?? {})
   const title = computed(() => entry.document.value?.title ?? '')
@@ -19,9 +21,18 @@ export function useNoteEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefOr
     await update(meta)
   }
 
+  // Enter and the following blur both submit the title: ignore a rename that is already in flight.
+  let renaming: string | null = null
   async function rename(next: string) {
     const trimmed = next.trim()
-    if (trimmed && trimmed !== title.value) await updateMeta({ title: trimmed })
+    if (!trimmed || trimmed === title.value || trimmed === renaming) return
+    renaming = trimmed
+    try {
+      await updateMeta({ title: trimmed })
+    }
+    finally {
+      renaming = null
+    }
   }
 
   /** Moves the note from the inbox into `notes/` and opens it at its new path. */
@@ -36,6 +47,7 @@ export function useNoteEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefOr
   return {
     entry,
     autosave,
+    backlinks,
     title,
     tags,
     pinned,

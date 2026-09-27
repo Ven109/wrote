@@ -29,3 +29,31 @@ export function matchWikiLinkAt(source: string): { raw: string, link: WikiLink }
 export function formatWikiLink(link: WikiLink): string {
   return link.label ? `[[${link.target}|${link.label}]]` : `[[${link.target}]]`
 }
+
+/**
+ * Rewrites links whose target equals `from` (case-insensitive) to point to `to`, keeping labels.
+ * Returns the new Markdown and how many links changed.
+ */
+export function renameWikiLinks(markdown: string, from: string, to: string): { markdown: string, count: number } {
+  const needle = from.trim().toLowerCase()
+  let count = 0
+  const next = markdown.replace(WIKI_LINK, (raw, target: string, label?: string) => {
+    if (target.trim().toLowerCase() !== needle) return raw
+    count++
+    return formatWikiLink({ target: to, label: label?.trim() || null })
+  })
+  return { markdown: next, count }
+}
+
+/** Text around the first link to any of `names` (lower-case), for backlink previews. */
+export function linkContext(markdown: string, names: string[], radius = 60): string | null {
+  const wanted = new Set(names)
+  for (const match of markdown.matchAll(WIKI_LINK)) {
+    if (!wanted.has(match[1]!.trim().toLowerCase())) continue
+    const start = Math.max(0, match.index! - radius)
+    const end = Math.min(markdown.length, match.index! + match[0].length + radius)
+    const text = markdown.slice(start, end).replace(/\s+/g, ' ').trim()
+    return `${start > 0 ? '…' : ''}${text}${end < markdown.length ? '…' : ''}`
+  }
+  return null
+}

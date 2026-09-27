@@ -87,6 +87,8 @@ Schemas live in `shared/schemas/` (Zod) and are the single source of truth for t
 ## Links
 
 - `[[Title]]` or `[[id|Label]]` links to any entry (notes, scenes, codex, research).
+- Targets resolve case-insensitively by id, title or codex alias. A link to a missing entry is kept as written ("broken"); following it creates a note with that title.
+- Renaming an entry (in the app or via the API) rewrites `[[Old title]]` links in all other files to the new title, keeping labels. It is skipped if another entry still has the old title or alias. The app offers an undo.
 - Custom editor blocks are stored as Markdown directives, e.g. `:::note … :::`, so files stay readable.
 
 ## Body Markdown

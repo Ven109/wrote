@@ -1,3 +1,4 @@
+import type { LinkRef } from '#shared/schemas/links'
 import type { EntryType } from '#shared/schemas/entry'
 import type { IndexDb } from './client'
 
@@ -66,12 +67,7 @@ export async function searchEntries(db: IndexDb, text: string, options: SearchOp
   }))
 }
 
-export interface LinkRef {
-  id: string
-  path: string
-  type: EntryType
-  title: string
-}
+export type { LinkRef }
 
 /** Entries linking to `entryId` (by id, title or alias). */
 export async function backlinks(db: IndexDb, entryId: string): Promise<LinkRef[]> {

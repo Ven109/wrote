@@ -50,6 +50,7 @@ export const useDocumentSessionStore = defineStore('document-session', () => {
       }
       finally {
         void queryCache.invalidateQueries({ key: bookKeys.structure(bookId) })
+        void queryCache.invalidateQueries({ key: bookKeys.links(bookId) })
       }
     })
   }

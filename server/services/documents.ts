@@ -1,6 +1,7 @@
-import type { EntryDocument, SaveDocumentInput, EntryMeta, UpdateDocumentMetaInput } from '#shared/schemas/document'
+import type { EntryDocument, EntryMeta, EntryMetaResult, SaveDocumentInput, UpdateDocumentMetaInput } from '#shared/schemas/document'
 import { applyChange } from '../db/indexer'
 import type { StoredEntry } from '../storage/entries'
+import { updateLinksForRename } from './links'
 import type { BookContext } from './workspace'
 
 function toDocument(entry: StoredEntry): EntryDocument {
@@ -41,10 +42,11 @@ export function applyMetaPatch(frontmatter: Record<string, unknown>, meta: Entry
 }
 
 /** Updates frontmatter fields (scene metadata) without touching the body. */
-export async function updateDocumentMeta(book: BookContext, input: UpdateDocumentMetaInput, now = new Date()): Promise<EntryDocument> {
+export async function updateDocumentMeta(book: BookContext, input: UpdateDocumentMetaInput, now = new Date()): Promise<EntryMetaResult> {
   const entry = await book.repository.read(input.path)
   const frontmatter = { ...applyMetaPatch(entry.frontmatter, input.meta), updated: now.toISOString() }
   const saved = await book.repository.write(entry.path, { frontmatter: frontmatter as typeof entry.frontmatter, body: entry.body }, entry.hash)
   await applyChange(book.db, book.repository, { kind: 'changed', path: entry.path })
-  return toDocument(saved)
+  const updatedLinks = input.meta.title ? await updateLinksForRename(book, entry.frontmatter.id, entry.frontmatter.title, input.meta.title) : []
+  return { ...toDocument(saved), updatedLinks }
 }
