@@ -1,0 +1,116 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { createTestWorkspace } from '../../test/utils/workspace'
+import { closeAllBooks, openBook } from '../services/workspace'
+import { toAiSdkTools, toMcpTools } from './adapters'
+import { runTool, ToolError, type ToolContext } from './define'
+import { WROTE_TOOLS } from './index'
+import { getCodexTool, getProgressTool, getStructureTool, listBooksTool, readEntryTool, searchTool } from './read-tools'
+import { createNoteTool, listSuggestionsTool, proposeEditTool } from './write-tools'
+
+let context: ToolContext
+
+beforeAll(async () => {
+  const workspaceDir = await createTestWorkspace()
+  const book = await openBook(workspaceDir, 'sample-book')
+  context = { workspaceDir, book, caller: { kind: 'assistant', name: 'Test' } }
+})
+afterAll(() => closeAllBooks())
+
+describe('tool registry', () => {
+  it('has unique names and a permission level for every tool', () => {
+    const names = WROTE_TOOLS.map(t => t.name)
+    expect(new Set(names).size).toBe(names.length)
+    for (const t of WROTE_TOOLS) expect(['read', 'propose', 'write', 'destructive']).toContain(t.permission)
+  })
+})
+
+describe('read tools', () => {
+  it('lists books', async () => {
+    expect(await runTool(listBooksTool, {}, context)).toEqual([
+      { id: 'sample-book', title: 'The Cartographer of Hollow Bay', author: 'Sample Author' },
+    ])
+  })
+
+  it('searches', async () => {
+    const hits = await runTool(searchTool, { query: 'harbor', types: ['scene'] }, context)
+    expect(hits.map(h => h.id)).toEqual(['scn_arr1val001'])
+  })
+
+  it('reads entries by id or path with pagination', async () => {
+    const full = await runTool(readEntryTool, { id: 'scn_arr1val001' }, context)
+    expect(full).toMatchObject({ path: 'manuscript/01-part-one/01-the-harbor/01-arrival.md', nextOffset: null })
+    const page = await runTool(readEntryTool, { path: full.path, maxChars: 500, offset: 0 }, context)
+    expect(page.body).toBe(full.body.slice(0, 500))
+  })
+
+  it('returns the manuscript structure with word counts', async () => {
+    const [part] = await runTool(getStructureTool, {}, context)
+    expect(part).toMatchObject({ title: 'Part One', type: 'part' })
+    expect(part!.children.map(c => c.title)).toEqual(['The Harbor', 'The Drowned Guild'])
+    expect(part!.children[0]!.children.map(s => s.status)).toEqual(['draft', 'idea'])
+    expect(part!.wordCount).toBe(part!.children.reduce((sum, c) => sum + c.wordCount, 0))
+  })
+
+  it('filters the codex by type', async () => {
+    const places = await runTool(getCodexTool, { codexType: 'place' }, context)
+    expect(places.map(e => e.title)).toEqual(['Hollow Bay'])
+    const all = await runTool(getCodexTool, {}, context)
+    expect(all.find(e => e.title === 'Mara Velden')?.frontmatter.eyes).toBe('grey')
+  })
+
+  it('reports progress', async () => {
+    const progress = await runTool(getProgressTool, {}, context)
+    expect(progress).toMatchObject({ scenes: 3, notes: 2, inbox: 1, codexEntries: 2 })
+    expect(progress.totalWords).toBeGreaterThan(20)
+  })
+
+  it('rejects invalid input with a ToolError', async () => {
+    await expect(runTool(readEntryTool, {}, context)).rejects.toThrow(ToolError)
+  })
+
+  it('requires a book for book tools', async () => {
+    await expect(runTool(searchTool, { query: 'x' }, { ...context, book: null })).rejects.toThrow(/needs an open book/)
+  })
+})
+
+describe('write tools', () => {
+  it('creates notes in the inbox', async () => {
+    const note = await runTool(createNoteTool, { title: 'Lighthouse keeper', body: 'He drew the map.' }, context)
+    expect(note.path).toBe('notes/inbox/lighthouse-keeper.md')
+  })
+
+  it('stores proposed edits as pending suggestions without changing the entry', async () => {
+    const before = await runTool(readEntryTool, { id: 'scn_themap0001' }, context)
+    const result = await runTool(proposeEditTool, { entryId: 'scn_themap0001', find: 'tired creases', replace: 'soft, tired creases', rationale: 'texture' }, context)
+    expect(result.status).toBe('pending')
+    const after = await runTool(readEntryTool, { id: 'scn_themap0001' }, context)
+    expect(after.body).toBe(before.body)
+    const suggestions = await runTool(listSuggestionsTool, { entryId: 'scn_themap0001' }, context)
+    expect(suggestions).toEqual([expect.objectContaining({ find: 'tired creases', author: { kind: 'assistant', name: 'Test' } })])
+  })
+
+  it('rejects anchors that are missing or ambiguous', async () => {
+    await expect(runTool(proposeEditTool, { entryId: 'scn_themap0001', find: 'nonexistent', replace: 'x' }, context)).rejects.toThrow(/does not occur/)
+  })
+})
+
+describe('adapters', () => {
+  it('exposes tools to the AI SDK and runs them', async () => {
+    const tools = toAiSdkTools(WROTE_TOOLS, context)
+    expect(Object.keys(tools)).toContain('search')
+    const hits = await tools.search!.execute!({ query: 'lighthouse', limit: 5 }, { toolCallId: '1', messages: [] } as never)
+    expect(hits).toHaveLength(2)
+  })
+
+  it('omits book tools when no book is open', () => {
+    expect(Object.keys(toAiSdkTools(WROTE_TOOLS, { ...context, book: null }))).toEqual(['list_books'])
+  })
+
+  it('describes tools for MCP with JSON schema and annotations', () => {
+    const mcp = toMcpTools(WROTE_TOOLS)
+    const search = mcp.find(t => t.name === 'search')!
+    expect(search.annotations.readOnlyHint).toBe(true)
+    expect(search.jsonSchema).toMatchObject({ type: 'object', required: ['query'] })
+    expect(mcp.find(t => t.name === 'create_note')!.annotations.readOnlyHint).toBe(false)
+  })
+})
