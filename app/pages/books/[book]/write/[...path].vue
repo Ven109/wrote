@@ -2,7 +2,7 @@
 const bookId = useRouteBookId()
 const { activeEntryPath } = useAppNavigation()
 const { book } = useBook(bookId)
-const { entry, autosave, words, meta, backlinks } = useSceneEditor(bookId, activeEntryPath)
+const { entry, autosave, words, meta, backlinks, summary } = useSceneEditor(bookId, activeEntryPath)
 const { document, status, draft } = entry
 useSeoMeta({ title: () => document.value?.title ?? book.value?.title ?? 'Write' })
 defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
@@ -44,6 +44,19 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
         <EditorWroteEditor
           :key="document.path"
           v-model="draft"
+        />
+        <EditorSummary
+          v-if="summary.visible.value"
+          v-model:draft="summary.draft.value"
+          :summary="summary.summary.value"
+          :enabled="summary.enabled.value"
+          :editing="summary.editing.value"
+          :saving="summary.saving.value"
+          @edit="summary.edit"
+          @save="summary.save"
+          @cancel="summary.cancel"
+          @reset="summary.reset"
+          @synopsis="summary.useAsSynopsis"
         />
         <EditorBacklinks :backlinks="backlinks" />
       </template>

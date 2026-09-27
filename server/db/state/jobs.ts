@@ -35,6 +35,11 @@ export async function insertJob(db: StateDb, input: { kind: string, input: unkno
     VALUES (?, ?, 'queued', ?, ?, ?, ?) RETURNING *`, [createRecordId('job'), input.kind, JSON.stringify(input.input ?? null), input.maxAttempts, (input.runAfter ?? now).toISOString(), at]))!
 }
 
+/** Moves a queued job's run time earlier (never later). */
+export async function advanceJob(db: StateDb, id: string, runAfter: Date): Promise<Job | null> {
+  return one(db, `UPDATE jobs SET run_after = MIN(run_after, ?) WHERE id = ? AND status = 'queued' RETURNING *`, [runAfter.toISOString(), id])
+}
+
 /** A queued (not yet running) job of `kind` with exactly this input – for unique enqueueing. */
 export async function findQueuedJob(db: StateDb, kind: string, input: unknown): Promise<Job | null> {
   return one(db, `SELECT * FROM jobs WHERE status = 'queued' AND kind = ? AND input = ? ORDER BY created_at LIMIT 1`, [kind, JSON.stringify(input ?? null)])

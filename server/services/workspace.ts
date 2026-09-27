@@ -13,6 +13,7 @@ import { publishBookEvent, publishJobEvent } from '../utils/book-events'
 import { openStateDb, type StateDb } from '../db/state/client'
 import { WROTE_JOBS } from '../jobs'
 import { scheduleEmbedding } from './embeddings'
+import { scheduleSummaries } from './summary-jobs'
 import { createJobRunner, type JobRunner } from './jobs'
 
 export interface BookContext {
@@ -129,13 +130,17 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
     void running.finally(() => pending.delete(running))
     return running
   }
-  // After the index, changed text is queued for background re-embedding (unique + debounced).
-  const reembed = () => scheduleEmbedding(context).then(() => {}, error => console.warn(`[wrote] ${bookId}: could not queue embedding`, error))
+  // After the index, changed text is queued for background AI work: embeddings and summaries (unique + debounced).
+  const warn = (what: string) => (error: unknown) => console.warn(`[wrote] ${bookId}: could not queue ${what}`, error)
+  const afterIndexed = (path: string) => {
+    void scheduleEmbedding(context).catch(warn('embedding'))
+    void scheduleSummaries(context, { path }).catch(warn('summaries'))
+  }
   const watcher = createBookWatcher(root, {
     onChange: event => track(async () => {
       await applyChange(db, repository, event)
       publishBookEvent(bookId, event)
-      void reembed()
+      afterIndexed(event.path)
     }),
   })
   repository.onWrite((path, hash) => {
@@ -143,7 +148,7 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
     void track(async () => {
       await applyChange(db, repository, { kind: 'changed', path })
       publishBookEvent(bookId, { kind: 'changed', path, hash })
-      void reembed()
+      afterIndexed(path)
     })
   })
   const state = await openStateDb(root)
@@ -153,7 +158,8 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
   contexts.set(bookId, context)
   await jobs.start()
   // Catch up on text changed while the book was closed (or a model switched meanwhile).
-  await scheduleEmbedding(context, 0).catch(error => console.warn(`[wrote] ${bookId}: could not queue embedding`, error))
+  await scheduleEmbedding(context, 0).catch(warn('embedding'))
+  await scheduleSummaries(context).catch(warn('summaries'))
   return context
 }
 

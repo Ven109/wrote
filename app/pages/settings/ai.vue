@@ -50,6 +50,22 @@ useSeoMeta({ title: 'AI models' })
       />
     </section>
     <section
+      v-if="ai.settings.value"
+      class="flex flex-col gap-3"
+      aria-labelledby="background-heading"
+    >
+      <h2
+        id="background-heading"
+        class="font-semibold text-highlighted"
+      >
+        Background AI
+      </h2>
+      <SettingsAiSummaries
+        :settings="ai.settings.value.summaries"
+        @update="ai.setSummaries"
+      />
+    </section>
+    <section
       class="flex flex-col gap-3"
       aria-labelledby="providers-heading"
     >

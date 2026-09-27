@@ -184,4 +184,25 @@ describe('job runner', () => {
     await runner.idle()
     expect(ran).toBe(true)
   })
+
+  it('brings a queued unique job forward when an urgent request joins it, never back', async () => {
+    const clock = new Date('2026-01-01T00:00:00Z')
+    let runs = 0
+    runner = createJobRunner({
+      db,
+      jobs: [defineWroteJob({ kind: 'debounced', title: 'Debounced', input: z.null().optional(), run: async () => {
+        runs++
+      } })],
+      book: () => book,
+      publish: job => events.push(job),
+      now: () => clock,
+    })
+    const queued = await runner.enqueue('debounced', null, { unique: true, delayMs: 60_000 })
+    expect((await runner.enqueue('debounced', null, { unique: true, delayMs: 120_000 })).id).toBe(queued.id)
+    await runner.idle()
+    expect(runs).toBe(0)
+    expect((await runner.enqueue('debounced', null, { unique: true })).id).toBe(queued.id)
+    await runner.idle()
+    expect(runs).toBe(1)
+  })
 })

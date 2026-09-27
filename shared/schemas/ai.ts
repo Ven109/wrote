@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SummarySettingsPatchSchema, SummarySettingsSchema } from './summaries'
 
 export const AI_PROVIDER_IDS = ['anthropic', 'openai', 'google', 'mistral', 'openrouter', 'ollama', 'openai-compatible'] as const
 export const AiProviderIdSchema = z.enum(AI_PROVIDER_IDS)
@@ -31,6 +32,8 @@ export const ProviderSettingsSchema = z.object({
 export const AiSettingsSchema = z.object({
   providers: z.partialRecord(AiProviderIdSchema, ProviderSettingsSchema).default({}),
   models: z.partialRecord(AiModelSlotSchema, ModelRefSchema.nullable()).default({}),
+  /** Rolling scene/chapter/book summaries (WRO-48), written in the background with the fast model. */
+  summaries: SummarySettingsSchema.default({ enabled: false, dailyTokenBudget: 100_000 }),
 })
 export type AiSettings = z.infer<typeof AiSettingsSchema>
 
@@ -43,6 +46,7 @@ export const ProviderPatchSchema = z.object({
 export const UpdateAiSettingsSchema = z.object({
   providers: z.partialRecord(AiProviderIdSchema, ProviderPatchSchema).optional(),
   models: z.partialRecord(AiModelSlotSchema, ModelRefSchema.nullable()).optional(),
+  summaries: SummarySettingsPatchSchema.optional(),
   /** Write-only: a new key, or `null` to delete it. Keys are never returned. */
   keys: z.partialRecord(AiProviderIdSchema, z.string().trim().min(1).max(500).nullable()).optional(),
 })
@@ -71,6 +75,7 @@ export interface AiSettingsView {
   configured: boolean
   /** True when an embedding model resolves: semantic search is on. */
   embeddings: boolean
+  summaries: z.infer<typeof SummarySettingsSchema>
 }
 
 export interface AiModelOption {

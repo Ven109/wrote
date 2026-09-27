@@ -9,6 +9,7 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 | `search` | Full-text search in a book | read |
 | `read_entry` | Reads a scene, note, codex or research entry (paginated) | read |
 | `get_structure` | Parts, chapters, scenes with word counts | read |
+| `get_summaries` | Whole-book summary and outline with chapter/part (optionally scene) summaries | read |
 | `get_codex` | Characters, places, … | read |
 | `get_progress` | Word counts and goals | read |
 | `list_suggestions` | Pending edit suggestions | read |

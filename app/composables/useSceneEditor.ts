@@ -1,4 +1,4 @@
-/** Everything the write page needs for one entry: document + autosave + word counts + metadata + links. */
+/** Everything the write page needs for one entry: document + autosave + word counts + metadata + links + summary. */
 export function useSceneEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefOrGetter<string | null>) {
   const entry = useEntryDocument(bookId, path)
   const autosave = useAutosave(entry)
@@ -7,5 +7,6 @@ export function useSceneEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefO
   const links = useWikiLinks(bookId, entry.draft)
   useCodexMentions(bookId)
   const { backlinks } = useBacklinks(bookId, () => entry.document.value?.id)
-  return { entry, autosave, words, meta, links, backlinks }
+  const summary = useSummary(bookId, entry.document)
+  return { entry, autosave, words, meta, links, backlinks, summary }
 }
