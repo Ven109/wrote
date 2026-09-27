@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { sidebarOpen, assistantOpen, toggleSidebar, toggleAssistant } = useAppLayout()
 useAppCommands()
+useBookSync(useAppNavigation().bookId)
 </script>
 
 <template>
