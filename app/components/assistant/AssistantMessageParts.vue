@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { UIMessage } from 'ai'
+import type { AssistantMessageMetadata } from '#shared/schemas/chat'
 import { renderMarkdown } from '~/utils/markdown-html'
 import { describeToolPart, isToolPart } from '~/utils/tool-parts'
 
-defineProps<{ message: UIMessage, bookId: string }>()
+const props = defineProps<{ message: UIMessage, bookId: string }>()
+defineEmits<{ context: [snapshotId: string] }>()
+const snapshotId = computed(() => (props.message.metadata as AssistantMessageMetadata | undefined)?.contextSnapshotId)
 </script>
 
 <template>
@@ -31,5 +34,16 @@ defineProps<{ message: UIMessage, bookId: string }>()
         :call="describeToolPart(bookId, part)"
       />
     </template>
+    <UButton
+      v-if="message.role === 'assistant' && snapshotId"
+      label="Context"
+      icon="i-lucide-layers"
+      color="neutral"
+      variant="ghost"
+      size="xs"
+      class="min-h-11 self-start"
+      aria-label="Show the context sent with this answer"
+      @click="$emit('context', snapshotId)"
+    />
   </div>
 </template>

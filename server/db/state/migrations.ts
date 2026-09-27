@@ -61,4 +61,19 @@ export const STATE_MIGRATIONS: string[][] = [
       PRIMARY KEY (day, feature)
     )`,
   ],
+  // 4: the exact context sent with each AI request (context drawer, WRO-52)
+  [
+    `CREATE TABLE ai_context_snapshots (
+      id TEXT PRIMARY KEY,
+      created_at TEXT NOT NULL,
+      feature TEXT NOT NULL,
+      model TEXT NOT NULL,
+      budget INTEGER NOT NULL,
+      used INTEGER NOT NULL,
+      items TEXT NOT NULL,
+      omitted TEXT NOT NULL,
+      system TEXT NOT NULL
+    )`,
+    'CREATE INDEX ai_context_snapshots_created_idx ON ai_context_snapshots(created_at)',
+  ],
 ]

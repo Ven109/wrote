@@ -41,6 +41,12 @@ describe('assistant chat API', () => {
     expect(JSON.stringify(toolMessage)).toContain('Arrival')
 
     await expect.poll(async () => (await $fetch<unknown[]>(`${base}/threads/${thread.id}/messages`)).length).toBe(2)
+
+    // The answer carries the id of the stored context snapshot, which matches what the model received.
+    const snapshotId = stream.match(/"contextSnapshotId":"(ctx_[a-z0-9]+)"/)?.[1]
+    const snapshot = await $fetch<{ system: string, items: { id: string }[] }>(`/api/books/sample-book/context/${snapshotId}`)
+    expect(ollama.requests.at(-1)!.messages[0]!.content).toBe(snapshot.system)
+    expect(snapshot.items.length).toBeGreaterThan(0)
     const threads = await $fetch<{ id: string, title: string }[]>(`${base}/threads`)
     expect(threads.find(t => t.id === thread.id)?.title).toBe('Which scenes mention the harbor?')
   })
@@ -49,5 +55,7 @@ describe('assistant chat API', () => {
     const bad = await fetch(base, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ threadId: 'nope', messages: [] }) })
     expect(bad.status).toBe(400)
     expect((await ask('thr_missing', 'x')).status).toBe(404)
+    expect((await fetch('/api/books/sample-book/context/ctx_missing0000')).status).toBe(404)
+    expect((await fetch('/api/books/sample-book/context/nope')).status).toBe(400)
   })
 })

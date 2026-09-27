@@ -81,6 +81,34 @@ test('assistant answers with the search tool, knows the open scene and keeps the
   await expect(page.getByText('The harbor appears in')).toBeVisible()
 })
 
+test('the context drawer shows exactly what was sent, and leaving an item out changes the next answer\'s prompt', async ({ page }) => {
+  const { bookId, scenePath } = await createBookWithHarbor(page, `Context ${Date.now()}`)
+  await gotoHydrated(page, `/books/${bookId}/write/${scenePath}`)
+  await page.getByRole('button', { name: 'Toggle assistant' }).click()
+  const prompt = page.getByPlaceholder('Ask about your book…')
+  await prompt.fill('Which scenes mention the harbor?')
+  await prompt.press('Enter')
+  await expect(page.getByText('The harbor appears in')).toBeVisible()
+  const sentSystem = () => String(model.requests.at(-1)!.messages[0]!.content)
+  expect(sentSystem()).toContain('The harbor smelled of salt.')
+
+  await page.getByRole('button', { name: 'Show the context sent with this answer' }).click()
+  const drawer = page.getByRole('dialog', { name: 'Context sent' })
+  const working = drawer.getByRole('region', { name: 'What you are working on' })
+  await expect(working).toContainText('Scene “Opening” (open)')
+  await expect(working).toContainText('The harbor smelled of salt.')
+  await drawer.getByRole('button', { name: 'Show the full prompt' }).click()
+  await expect(drawer.locator('pre')).toContainText('<book_context>')
+
+  const requestsBefore = model.requests.length
+  await drawer.getByRole('button', { name: 'Leave out Scene “Opening” (open)' }).click()
+  await drawer.getByRole('button', { name: 'Answer again with these changes' }).click()
+  await expect(page.getByRole('button', { name: 'Clear context changes' })).toContainText('0 pinned · 1 left out')
+  await expect.poll(() => model.requests.length).toBeGreaterThan(requestsBefore)
+  await expect(page.getByText('The harbor appears in')).toBeVisible()
+  expect(sentSystem()).not.toContain('The harbor smelled of salt.')
+})
+
 test('the (closed) assistant does not steal keyboard focus from the page', async ({ page }) => {
   const { bookId, scenePath } = await createBookWithHarbor(page, `Focus ${Date.now()}`)
   await gotoHydrated(page, `/books/${bookId}/write/${scenePath}`)

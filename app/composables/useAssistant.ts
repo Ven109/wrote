@@ -2,6 +2,7 @@ import { Chat } from '@ai-sdk/vue'
 import { useQuery, useQueryCache } from '@pinia/colada'
 import { DefaultChatTransport, type UIMessage } from 'ai'
 import type { ChatThread } from '#shared/schemas/chat'
+import type { ContextOverrides } from '#shared/schemas/context'
 import { chatThreadsQuery } from '~/queries/chat'
 import { documentQuery } from '~/queries/documents'
 import { bookKeys } from '~/queries/keys'
@@ -29,6 +30,8 @@ export function useAssistant(bookId: MaybeRefOrGetter<string>) {
   const refreshThreads = () => queryCache.invalidateQueries({ key: bookKeys.chatThreads(id()) })
   const { book } = useBook(id)
   const { data: openEntry } = useQuery(() => documentQuery({ bookId: id(), path: activeEntryPath.value ?? '' }))
+  /** Context items the author pinned or removed in the context drawer; sent with every message. */
+  const overrides = computed(() => store.overridesFor(id()))
   /** What the assistant knows about without being told (shown above the prompt). */
   const contextChips = computed(() => [
     ...(book.value ? [{ icon: 'i-lucide-book', label: book.value.title }] : []),
@@ -42,7 +45,7 @@ export function useAssistant(bookId: MaybeRefOrGetter<string>) {
       transport: new DefaultChatTransport({
         api: base(),
         prepareSendMessagesRequest: ({ messages: all }) => ({
-          body: { threadId: thread, messages: all, context: { entryPath: activeEntryPath.value ?? undefined } },
+          body: { threadId: thread, messages: all, context: { entryPath: activeEntryPath.value ?? undefined, overrides: overrides.value } },
         }),
       }),
       onFinish: () => void refreshThreads(),
@@ -92,8 +95,17 @@ export function useAssistant(bookId: MaybeRefOrGetter<string>) {
     return message.includes('ai_not_configured') || message.includes('No AI model') ? 'ai_not_configured' : chat.value?.error ? 'error' : null
   })
 
+  /** Applies new context overrides and answers the last question again with them. */
+  async function rerun(next: ContextOverrides) {
+    store.setOverrides(id(), next)
+    await chat.value?.regenerate()
+  }
+
   return {
     contextChips,
+    overrides,
+    rerun,
+    clearOverrides: () => store.setOverrides(id(), { pinned: [], removed: [] }),
     threads,
     threadId,
     input,

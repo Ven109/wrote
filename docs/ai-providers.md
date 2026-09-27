@@ -77,3 +77,28 @@ so the assistant can grasp the story without reading every scene (`get_summaries
   entry's `synopsis` frontmatter – only when you click it.
 - Summaries and token usage live in `.wrote/state.db` (they are not derived from the files, so they survive index
   rebuilds).
+
+## Context engine and the context drawer
+
+Every AI request that answers you with book content builds its prompt with the context engine
+(`server/ai/context/`), in four layers:
+
+| Layer | What |
+|---|---|
+| Always included | the style guide, the open entry's synopsis, items you pinned |
+| What you are working on | your selection and the open entry (a window around the selection when long) |
+| Found for this question | codex entries named in the text or question (titles and aliases), search hits for the question |
+| Summaries | the book summary, the open entry's chapter/part and neighbouring scenes |
+
+The items are fitted into a **token budget per model** (about a third of the model's context window, at most 24k
+tokens; unknown local models are assumed to have 8k). Under pressure, search hits and neighbouring summaries go
+first, then codex entries and the book summary; the selection, open entry and pinned items are kept longest.
+
+Each answer stores a **snapshot** of exactly the prompt it was generated from (`.wrote/state.db`, kept 90 days).
+The **Context** button under an answer opens the drawer: every item by layer with its token count, what was left
+out and why, and the full prompt. Pin an item to always include it, leave items out, and **Answer again with these
+changes**; your choices stay active for the book until you clear them (chip above the prompt).
+
+For developers: build prompts with `buildContext()` + `renderContext()` and save a snapshot; a test fails when a
+server file calls a model without it (`server/ai/context/no-bypass.test.ts` lists the justified exceptions, such as
+background summaries). Book content is wrapped as untrusted reference material with its tags escaped.

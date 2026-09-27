@@ -7,6 +7,8 @@ export interface SearchOptions {
   tags?: string[]
   status?: string[]
   limit?: number
+  /** Match entries containing any of the words (ranked by BM25) instead of all – for retrieval from questions. */
+  anyTerm?: boolean
 }
 
 export interface SearchHit {
@@ -18,10 +20,20 @@ export interface SearchHit {
   score: number
 }
 
-/** Turns free text into a safe FTS5 query: quoted terms, prefix match on the last term. */
-export function toFtsQuery(text: string): string | null {
+/** Function words that carry no meaning for retrieval (English; other languages rely on BM25's IDF). */
+const STOPWORDS = new Set('the and for are but not you all any can had her was one our out has him his how its who why what when where which does did with that this from have they will would there their them then than been into about over also some such only other more most very just your were should could'.split(' '))
+
+/**
+ * Turns free text into a safe FTS5 query: quoted terms, prefix match on the last term. With `anyTerm`,
+ * words of 3+ letters that are not stopwords are OR-ed, so a question matches entries sharing some words.
+ */
+export function toFtsQuery(text: string, options: { anyTerm?: boolean } = {}): string | null {
   const terms = text.toLowerCase().match(/[\p{L}\p{N}]+/gu)
   if (!terms?.length) return null
+  if (options.anyTerm) {
+    const words = [...new Set(terms.filter(term => term.length >= 3 && !STOPWORDS.has(term)))]
+    return words.length ? words.map(word => `"${word}"`).join(' OR ') : null
+  }
   return terms.map((term, i) => `"${term}"${i === terms.length - 1 ? '*' : ''}`).join(' ')
 }
 
@@ -50,7 +62,7 @@ export function filterClause(options: SearchOptions): { sql: string, args: strin
 
 /** Full-text search ranked by BM25 (title weighted higher) with highlighted snippets. */
 export async function searchEntries(db: IndexDb, text: string, options: SearchOptions = {}): Promise<SearchHit[]> {
-  const query = toFtsQuery(text)
+  const query = toFtsQuery(text, { anyTerm: options.anyTerm })
   if (!query) return []
   const filter = filterClause(options)
   const where = ['entries_fts MATCH ?', ...(filter.sql ? [filter.sql] : [])]
