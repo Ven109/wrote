@@ -8,7 +8,7 @@ test('creates a book and opens it', async ({ page }, testInfo) => {
   await page.getByLabel('Title').fill(title)
   await page.getByRole('button', { name: 'Create book' }).click()
   await expect(page).toHaveURL(/\/books\/e2e-.+\/write\/manuscript\//)
-  await expect(page.getByRole('heading', { name: title })).toBeVisible()
+  await expect(page.getByRole('navigation', { name: /breadcrumb/i }).getByText('Opening')).toBeVisible()
 
   await gotoHydrated(page, '/')
   await expect(page.getByText(title)).toBeVisible()

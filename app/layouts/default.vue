@@ -1,5 +1,12 @@
 <script setup lang="ts">
 const { sidebarOpen, assistantOpen, toggleSidebar, toggleAssistant } = useAppLayout()
+const { isMobile } = useBreakpoint()
+const route = useRoute()
+
+// On phones the sidebar is a slideover: close it once the user navigated somewhere.
+watch(() => route.fullPath, () => {
+  if (isMobile.value) sidebarOpen.value = false
+})
 useAppCommands()
 useBookSync(useAppNavigation().bookId)
 </script>

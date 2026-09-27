@@ -114,26 +114,13 @@ async function remove() {
       </div>
     </UCard>
 
-    <UModal
+    <BaseConfirmModal
       v-model:open="confirmRemove"
       title="Remove this book?"
       :description="`“${book?.title}” will be removed from the library.`"
-    >
-      <template #footer>
-        <div class="flex w-full justify-end gap-2">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            label="Cancel"
-            @click="confirmRemove = false"
-          />
-          <UButton
-            color="error"
-            label="Remove"
-            @click="remove"
-          />
-        </div>
-      </template>
-    </UModal>
+      confirm-label="Remove"
+      danger
+      @confirm="remove"
+    />
   </div>
 </template>
