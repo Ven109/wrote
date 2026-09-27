@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { EntryType } from './entry'
+import { SceneStatusSchema, type EntryType } from './entry'
 
 /** Book-relative POSIX path of a Markdown entry. Traversal is rejected server-side by `resolveInBook`. */
 export const EntryPathSchema = z.string().trim().min(1).max(500).regex(/\.md$/, 'Expected a Markdown file path')
@@ -23,4 +23,25 @@ export interface EntryDocument {
   title: string
   body: string
   hash: string
+  /** Validated frontmatter (unknown keys preserved). */
+  frontmatter: Record<string, unknown>
 }
+
+const optionalText = (max: number) => z.string().trim().max(max).nullable().optional()
+
+/** Editable scene metadata. `null` clears a field; omitted fields are left unchanged. */
+export const SceneMetaSchema = z.object({
+  status: SceneStatusSchema.optional(),
+  pov: optionalText(200),
+  location: optionalText(200),
+  timeline: optionalText(200),
+  synopsis: optionalText(5000),
+  tags: z.array(z.string().trim().min(1).max(60)).max(50).optional(),
+})
+export type SceneMeta = z.infer<typeof SceneMetaSchema>
+
+export const UpdateDocumentMetaSchema = z.object({
+  path: EntryPathSchema,
+  meta: SceneMetaSchema,
+})
+export type UpdateDocumentMetaInput = z.infer<typeof UpdateDocumentMetaSchema>

@@ -15,7 +15,7 @@ async function storedBody(request: APIRequestContext, bookId: string, path: stri
 
 const editorContent = (page: Page) => page.locator('.ProseMirror')
 
-test('edits a scene and saves Markdown with Mod+S', async ({ page, request }, testInfo) => {
+test('edits a scene and saves Markdown with Mod+S (before autosave fires)', async ({ page, request }, testInfo) => {
   const { bookId, path } = await bookWithScene(request, `Edit ${testInfo.project.name} ${Date.now()}`, 'First line with [[Harbor]].\n')
   await gotoHydrated(page, `/books/${bookId}/write/${path}`)
   const content = editorContent(page)
@@ -26,9 +26,8 @@ test('edits a scene and saves Markdown with Mod+S', async ({ page, request }, te
   await page.keyboard.press('ControlOrMeta+End')
   await page.keyboard.press('Enter')
   await page.keyboard.type('Second line.')
-  await expect(page.getByText('Unsaved')).toBeVisible()
   await page.keyboard.press('ControlOrMeta+s')
-  await expect(page.getByText('Unsaved')).toBeHidden()
+  await expect(page.getByRole('status').getByText('Saved')).toBeVisible()
   await expect.poll(() => storedBody(request, bookId, path)).toBe('First line with [[Harbor]].\n\nSecond line.\n')
 })
 

@@ -129,3 +129,20 @@ describe('GET/PUT /api/books/:bookId/document', () => {
     expect((await fetch('/api/books/sample-book/document?path=..%2F..%2Fsecret.md')).status).toBe(400)
   })
 })
+
+describe('PATCH /api/books/:bookId/document', () => {
+  it('updates scene metadata and validates it', async () => {
+    const path = 'manuscript/01-part-one/01-the-harbor/01-arrival.md'
+    const saved = await $fetch<{ frontmatter: Record<string, unknown> }>('/api/books/sample-book/document', {
+      method: 'PATCH',
+      body: { path, meta: { pov: 'Mara', location: 'The Lantern' } },
+    })
+    expect(saved.frontmatter).toMatchObject({ pov: 'Mara', location: 'The Lantern' })
+    const invalid = await fetch('/api/books/sample-book/document', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path, meta: { status: 'bogus' } }),
+    })
+    expect(invalid.status).toBe(400)
+  })
+})

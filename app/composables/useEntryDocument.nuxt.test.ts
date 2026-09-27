@@ -6,7 +6,7 @@ import type { EntryDocument } from '#shared/schemas/document'
 import { useEntryDocument } from './useEntryDocument'
 
 const PATH = 'manuscript/a/b/01-x.md'
-let stored: EntryDocument = { id: 'scn_x00000001', path: PATH, type: 'scene', title: 'X', body: 'Hello\n', hash: 'h1' }
+let stored: EntryDocument = { id: 'scn_x00000001', path: PATH, type: 'scene', title: 'X', body: 'Hello\n', hash: 'h1', frontmatter: {} }
 let saves: { body: string, expectedHash?: string }[] = []
 
 registerEndpoint('/api/books/demo/document', { method: 'GET', handler: () => stored })
@@ -15,7 +15,7 @@ registerEndpoint('/api/books/demo/document', {
   async handler(event) {
     const input = await readBody<{ body: string, expectedHash?: string }>(event)
     saves.push(input)
-    if (input.expectedHash !== stored.hash) throw createError({ statusCode: 409, statusMessage: 'Conflict' })
+    if (input.expectedHash !== undefined && input.expectedHash !== stored.hash) throw createError({ statusCode: 409, statusMessage: 'Conflict' })
     stored = { ...stored, body: input.body, hash: `h${saves.length + 1}` }
     return stored
   },
@@ -63,15 +63,27 @@ describe('useEntryDocument', () => {
     const api = await mountDocument()
     stored = { ...stored, hash: 'changed-elsewhere' }
     api.draft.value = 'My edit'
-    await api.save()
+    expect(await api.save()).toBe('conflict')
     expect(api.draft.value).toBe('My edit')
     expect(api.dirty.value).toBe(true)
+  })
+
+  it('resolves conflicts by forcing or reloading', async () => {
+    const api = await mountDocument()
+    stored = { ...stored, body: 'Disk\n', hash: 'disk' }
+    api.draft.value = 'Mine'
+    expect(await api.save({ force: true })).toBe('saved')
+    expect(stored.body).toBe('Mine\n')
+    stored = { ...stored, body: 'Theirs\n', hash: 'theirs' }
+    api.draft.value = 'Mine again'
+    await api.reload()
+    expect(api.draft.value).toBe('Theirs')
   })
 })
 
 describe('useEntryDocument when switching entries', () => {
   it('saves unsaved edits of the previous entry', async () => {
-    const other: EntryDocument = { id: 'scn_y00000001', path: 'manuscript/a/b/02-y.md', type: 'scene', title: 'Y', body: 'Other\n', hash: 'y1' }
+    const other: EntryDocument = { id: 'scn_y00000001', path: 'manuscript/a/b/02-y.md', type: 'scene', title: 'Y', body: 'Other\n', hash: 'y1', frontmatter: {} }
     registerEndpoint('/api/books/demo2/document', { method: 'GET', handler: event => (getQuery(event).path === other.path ? other : { ...stored, hash: 'x1' }) })
     const puts: string[] = []
     registerEndpoint('/api/books/demo2/document', {
