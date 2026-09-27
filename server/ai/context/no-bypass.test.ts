@@ -12,6 +12,7 @@ const MODEL_CALL = /\b(streamText|generateText|streamObject|generateObject)\s*\(
  */
 const ALLOWED: Record<string, { reason: string, mustUse?: RegExp }> = {
   'services/assistant.ts': { reason: 'assistant – prompt from the context engine', mustUse: /prepareAssistantPrompt|buildContext/ },
+  'services/inline-ai.ts': { reason: 'inline actions and autocomplete – prompts from the context engine', mustUse: /buildContext/ },
   'services/summary-jobs.ts': { reason: 'background summaries – no request from the author; prompts in ai/summary-prompts.ts' },
 }
 

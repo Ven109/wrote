@@ -117,3 +117,20 @@ AI never changes your text on its own. The assistant and connected MCP clients c
   edit the proposal before accepting, **Accept all** / **Reject all**.
 - Accepting applies the text as a normal edit: undo with ⌘Z, saved by autosave. The decision (and your edited
   text, if any) is recorded in `.wrote/state.db`.
+
+## Inline AI actions and autocomplete
+
+Select text (or use a block's menu) and pick **✦ AI**: *Continue writing*, *Rephrase*, *Expand*, *Tighten*,
+*Show, don't tell*, *Change tone* (warmer, darker, more tense, …), *Translate*, or *Ask AI…* with your own
+instruction.
+
+- Available from the bubble toolbar (selection), the block menu (drag handle / ⋯ on phones), the ✦ button of the
+  mobile toolbar and the `/` menu (*Continue writing*, *Rephrase*, *Tighten*, *Expand*, *Ask AI…* for the block at
+  the cursor; on an empty line, *Continue writing* continues the paragraph above).
+- The answer streams in as a live preview (with **Stop**) and then arrives as a **suggestion** – struck original and
+  highlighted proposal, or a new block for *Continue* – that you accept, edit or reject. Nothing is inserted directly.
+- Every action builds its prompt with the context engine (style guide, the scene, codex entries named in the passage,
+  summaries), uses the **chat** model and stores a context snapshot.
+- **Autocomplete** (Settings → AI models → *Autocomplete while writing*, off by default): after a short pause at the end
+  of a paragraph, the **fast** model suggests the rest of the sentence as grey ghost text. **Tab** accepts, **Esc** or
+  typing dismisses it. When it is off, the editor makes no requests at all.

@@ -2,6 +2,7 @@ import type { AnyExtension } from '@tiptap/core'
 import { AiSuggestions } from './ai-suggestions'
 import { BlockMove } from './block-move'
 import { CodexMentions } from './codex-mentions'
+import { GhostText } from './ghost-text'
 import { WikiLink } from './wiki-link'
 
 /**
@@ -9,5 +10,5 @@ import { WikiLink } from './wiki-link'
  * `wikiLink` swaps in the interactive node view in the browser.
  */
 export function wroteExtensions(options: { wikiLink?: AnyExtension } = {}): AnyExtension[] {
-  return [options.wikiLink ?? WikiLink, BlockMove, CodexMentions, AiSuggestions]
+  return [options.wikiLink ?? WikiLink, BlockMove, CodexMentions, AiSuggestions, GhostText]
 }

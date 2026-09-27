@@ -2,7 +2,7 @@
 const bookId = useRouteBookId()
 const { activeEntryPath } = useAppNavigation()
 const { book } = useBook(bookId)
-const { entry, autosave, words, meta, backlinks, summary, suggestions } = useSceneEditor(bookId, activeEntryPath)
+const { entry, autosave, words, meta, backlinks, summary, suggestions, ai } = useSceneEditor(bookId, activeEntryPath)
 const { document, status, draft } = entry
 useSeoMeta({ title: () => document.value?.title ?? book.value?.title ?? 'Write' })
 defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
@@ -79,6 +79,17 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
         icon="i-lucide-file-x"
         title="This entry could not be opened"
         description="It may have been moved or deleted."
+      />
+      <EditorAiProgress
+        v-if="ai.running.value"
+        :label="ai.running.value"
+        :preview="ai.preview.value"
+        @stop="ai.stop"
+      />
+      <EditorAiPrompt
+        v-model:open="ai.asking.value"
+        v-model:prompt="ai.prompt.value"
+        @submit="ai.submitPrompt"
       />
       <EditorSuggestionsPanel
         v-model:open="suggestions.panelOpen.value"

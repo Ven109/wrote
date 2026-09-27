@@ -12,6 +12,8 @@ let model: FakeOpenAi
 test.beforeAll(async () => {
   model = await startFakeOpenAi((messages) => {
     const lastUser = [...messages].reverse().find(message => message.role === 'user')
+    const system = JSON.stringify(messages[0]?.content ?? '')
+    if (system.includes('manuscript editor')) return { text: JSON.stringify(lastUser?.content).includes('Continue after') ? 'The gulls rose over the pier.' : 'The harbor reeked of brine.' }
     if (JSON.stringify(lastUser?.content).includes('inject')) return { text: 'Look: <img src=x onerror="window.__xss=1"> **done**' }
     return messages.some(message => message.role === 'tool')
       ? { text: 'The harbor appears in **Opening**.' }
@@ -107,6 +109,31 @@ test('the context drawer shows exactly what was sent, and leaving an item out ch
   await expect.poll(() => model.requests.length).toBeGreaterThan(requestsBefore)
   await expect(page.getByText('The harbor appears in')).toBeVisible()
   expect(sentSystem()).not.toContain('The harbor smelled of salt.')
+})
+
+test('inline AI actions stream into suggestions: rephrase a selection, continue from the slash menu', async ({ page }) => {
+  const { bookId, scenePath } = await createBookWithHarbor(page, `Inline ${Date.now()}`)
+  const body = async () => ((await (await page.request.get(`/api/books/${bookId}/document`, { params: { path: scenePath } })).json()) as { body: string }).body
+  await gotoHydrated(page, `/books/${bookId}/write/${scenePath}`)
+  const editor = page.locator('.ProseMirror')
+
+  await editor.locator('p').first().click({ clickCount: 3 })
+  await page.getByRole('button', { name: 'AI actions' }).click()
+  await page.getByRole('menuitem', { name: 'Rephrase' }).click()
+  await expect(editor.locator('.ai-suggestion-del')).toHaveText('The harbor smelled of salt.')
+  await expect(editor.locator('.ai-suggestion-ins')).toHaveText('The harbor reeked of brine.')
+  expect(await body()).toBe('The harbor smelled of salt.\n')
+  await editor.getByRole('button', { name: 'Accept suggestion by AI · Rephrase' }).click()
+  await expect.poll(body).toBe('The harbor reeked of brine.\n')
+
+  await editor.locator('p').first().click()
+  await page.keyboard.press('End')
+  await page.keyboard.press('Enter')
+  await page.keyboard.type('/contin')
+  await page.getByRole('option', { name: 'Continue writing' }).click()
+  await expect(editor.locator('.ai-suggestion-block')).toContainText('The gulls rose over the pier.')
+  await editor.getByRole('button', { name: 'Accept suggestion by AI · Continue writing' }).click()
+  await expect.poll(body).toContain('The gulls rose over the pier.')
 })
 
 test('the (closed) assistant does not steal keyboard focus from the page', async ({ page }) => {

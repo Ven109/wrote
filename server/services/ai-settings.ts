@@ -89,6 +89,7 @@ export function aiSettingsView(config: AiConfig): AiSettingsView {
     configured: resolveModel(config, modelRefFor(config.settings, 'chat')) !== null,
     embeddings: resolveEmbeddingModel(config, config.settings.models.embedding) !== null,
     summaries: config.settings.summaries,
+    autocomplete: config.settings.autocomplete,
   }
 }
 
@@ -123,6 +124,7 @@ async function applyAiSettingsPatch(workspaceDir: string, input: UpdateAiSetting
     providers,
     models: { ...config.settings.models, ...input.models },
     summaries: { ...config.settings.summaries, ...input.summaries },
+    autocomplete: input.autocomplete ?? config.settings.autocomplete,
   }
   await writeSettingsFile(workspaceDir, SETTINGS_FILE, settings)
   if (input.keys) {
