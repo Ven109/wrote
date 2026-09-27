@@ -87,3 +87,11 @@ export interface Entry<T extends EntryType = EntryType> {
 export function parseFrontmatter<T extends EntryType>(type: T, data: unknown): FrontmatterByType[T] {
   return FRONTMATTER_SCHEMAS[type].parse(data) as FrontmatterByType[T]
 }
+
+const MINIMAL_FRONTMATTER = { id: 'x_000000', title: 'x', codexType: 'character' } as const
+
+/** Default values the schema fills in for `type` (e.g. `tags: []`), used to avoid writing implicit defaults. */
+export function frontmatterDefaults(type: EntryType): Record<string, unknown> {
+  const parsed = FRONTMATTER_SCHEMAS[type].parse(MINIMAL_FRONTMATTER) as Record<string, unknown>
+  return Object.fromEntries(Object.entries(parsed).filter(([key]) => !(key in MINIMAL_FRONTMATTER)))
+}
