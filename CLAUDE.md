@@ -27,6 +27,19 @@ pnpm test:e2e     # playwright
 
 Run `lint`, `typecheck` and `test` before every commit. Never commit with failing checks.
 
+## Hooks (automatic checks for agentic coding)
+
+Configured in `.claude/settings.json`, scripts in `.claude/hooks/`. They are inactive until `package.json` and `node_modules` exist, and rely on the `lint`, `typecheck`, `test` scripts above.
+
+| Hook | When | What |
+|---|---|---|
+| `session-start.sh` | session start | `pnpm install` if dependencies are missing or the lockfile changed |
+| `post-edit.sh` | after every Edit/Write | `eslint --fix` on the file; runs the file if it is a `*.test.ts`, otherwise `vitest related` for it. Failures are fed back to Claude to fix immediately |
+| `pre-commit.sh` | before any `git commit` | blocks the commit unless `lint`, `typecheck` and `test` pass |
+| `stop-checks.sh` | before Claude finishes | if code changed, runs `lint`, `typecheck`, `test`; failures keep Claude working |
+
+When a hook reports a failure, fix the cause – never bypass hooks (`--no-verify`) or weaken tests/lint rules to get green. Playwright e2e is not run by hooks (too slow); run `pnpm test:e2e` for UI flow changes.
+
 ## Architecture (layers, top → bottom)
 
 ```
