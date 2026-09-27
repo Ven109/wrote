@@ -1,2 +1,18 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/literata";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Literata Variable", ui-serif, Georgia, serif;
+}
+
+:root {
+  --ui-radius: 0.5rem;
+}
+
+/* Manuscript prose uses the serif face. */
+.prose-manuscript {
+  font-family: var(--font-serif);
+}

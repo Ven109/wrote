@@ -9,7 +9,7 @@ export default defineConfig({
           name: 'unit',
           environment: 'node',
           include: ['{app,server,shared,test}/**/*.test.ts'],
-          exclude: ['**/*.nuxt.test.ts', '**/node_modules/**'],
+          exclude: ['**/*.nuxt.test.ts', '**/node_modules/**', 'test/e2e/**'],
         },
       },
       await defineVitestProject({
