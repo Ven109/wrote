@@ -25,4 +25,21 @@ export const STATE_MIGRATIONS: string[][] = [
     'CREATE INDEX jobs_status_run_after_idx ON jobs(status, run_after)',
     'CREATE INDEX jobs_created_at_idx ON jobs(created_at)',
   ],
+  // 2: assistant chat threads
+  [
+    `CREATE TABLE chat_threads (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`,
+    `CREATE TABLE chat_messages (
+      thread_id TEXT NOT NULL REFERENCES chat_threads(id) ON DELETE CASCADE,
+      seq INTEGER NOT NULL,
+      id TEXT NOT NULL,
+      role TEXT NOT NULL,
+      message TEXT NOT NULL,
+      PRIMARY KEY (thread_id, seq)
+    )`,
+  ],
 ]

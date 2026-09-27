@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const open = defineModel<boolean>('open', { default: false })
 const { configured } = useAiStatus()
+const { bookId } = useAppNavigation()
 </script>
 
 <template>
@@ -22,10 +23,15 @@ const { configured } = useAiStatus()
         Assistant
       </span>
     </template>
+    <AssistantPanel
+      v-if="configured && bookId"
+      :book-id="bookId"
+    />
     <BaseEmptyState
+      v-else
       icon="i-lucide-sparkles"
       title="Your writing assistant"
-      :description="configured ? 'Ask questions about your book, brainstorm or get feedback.' : 'Connect an AI provider – a cloud API key or a local model with Ollama – to start.'"
+      :description="configured ? 'Open a book to ask questions about it, brainstorm or get feedback.' : 'Connect an AI provider – a cloud API key or a local model with Ollama – to start.'"
     >
       <UButton
         v-if="!configured"

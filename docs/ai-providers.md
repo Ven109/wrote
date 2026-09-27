@@ -26,3 +26,16 @@ tasks) and **fast** (summaries, quick suggestions; falls back to chat).
 Features get models only through `getModel(workspaceDir, task)` (`server/ai/models.ts`), which returns `null` when AI
 is not configured – handle that by hiding the feature or showing a setup hint. Never hardcode provider or model ids.
 Tests use mocked models or a fake OpenAI-compatible server; CI never calls real providers.
+
+## Assistant
+
+The assistant panel (right sidebar, ✦) chats about the open book:
+
+- It uses the **chat** model and the shared tool layer, limited to `read` and `propose` tools: it can search, read
+  entries, look at the structure and codex, and *propose* edits, but never changes the manuscript directly.
+- Every message carries context: the book and the entry that is open (shown as chips above the prompt), so
+  "summarize this scene" needs no names.
+- Tool calls are shown in the conversation (collapsible, with links to the entries they returned).
+- Threads are stored per book in `.wrote/state.db` and survive restarts; the latest thread is resumed.
+- Model output is rendered as sanitized Markdown (DOMPurify); book content and tool results are treated as untrusted
+  data in the system prompt.

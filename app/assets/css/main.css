@@ -35,3 +35,28 @@
   color: var(--ui-text-muted);
   border-bottom-style: dotted;
 }
+
+/* Assistant replies (sanitized Markdown). */
+.prose-chat > * + * {
+  margin-top: 0.5rem;
+}
+
+.prose-chat ul {
+  list-style: disc;
+  padding-inline-start: 1.25rem;
+}
+
+.prose-chat ol {
+  list-style: decimal;
+  padding-inline-start: 1.25rem;
+}
+
+.prose-chat a {
+  color: var(--ui-primary);
+  text-decoration: underline;
+}
+
+.prose-chat code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
