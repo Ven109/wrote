@@ -64,7 +64,7 @@ export function resolveEmbeddingModel(config: AiConfig, ref: string | null | und
 }
 
 /** The model reference used for a task (`fast` falls back to `chat`). */
-export function modelRefFor(settings: AiSettings, task: AiTask): string | null {
+export function modelRefFor(settings: Pick<AiSettings, 'models'>, task: AiTask): string | null {
   return settings.models[task] ?? (task === 'chat' ? null : settings.models.chat ?? null)
 }
 
@@ -88,6 +88,7 @@ export function aiSettingsView(config: AiConfig): AiSettingsView {
     models: config.settings.models,
     configured: resolveModel(config, modelRefFor(config.settings, 'chat')) !== null,
     embeddings: resolveEmbeddingModel(config, config.settings.models.embedding) !== null,
+    summaries: config.settings.summaries,
   }
 }
 
@@ -118,7 +119,11 @@ async function applyAiSettingsPatch(workspaceDir: string, input: UpdateAiSetting
     const baseUrl = patch?.baseUrl === null ? undefined : patch?.baseUrl ?? current.baseUrl
     providers[id] = { enabled: patch?.enabled ?? current.enabled, ...(baseUrl ? { baseUrl } : {}) }
   }
-  const settings: AiSettings = { providers, models: { ...config.settings.models, ...input.models } }
+  const settings: AiSettings = {
+    providers,
+    models: { ...config.settings.models, ...input.models },
+    summaries: { ...config.settings.summaries, ...input.summaries },
+  }
   await writeSettingsFile(workspaceDir, SETTINGS_FILE, settings)
   if (input.keys) {
     const changes = input.keys

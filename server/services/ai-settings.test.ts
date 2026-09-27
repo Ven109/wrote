@@ -61,8 +61,15 @@ describe('ai settings', () => {
   it('parses model refs and falls back from fast to chat', () => {
     expect(parseModelRef('openrouter:anthropic/claude:beta')).toEqual({ provider: 'openrouter', model: 'anthropic/claude:beta' })
     expect(parseModelRef('bogus')).toBeNull()
-    expect(modelRefFor({ providers: {}, models: { chat: 'a:b' } }, 'fast')).toBe('a:b')
-    expect(modelRefFor({ providers: {}, models: { chat: 'a:b', fast: 'a:c' } }, 'fast')).toBe('a:c')
+    expect(modelRefFor({ models: { chat: 'a:b' } }, 'fast')).toBe('a:b')
+    expect(modelRefFor({ models: { chat: 'a:b', fast: 'a:c' } }, 'fast')).toBe('a:c')
+  })
+
+  it('keeps summaries off by default and patches one summary setting without resetting the other', async () => {
+    expect(aiSettingsView(await loadAiConfig(workspace, {})).summaries).toEqual({ enabled: false, dailyTokenBudget: 100_000 })
+    await updateAiSettings(workspace, { summaries: { dailyTokenBudget: 5000 } })
+    const view = await updateAiSettings(workspace, { summaries: { enabled: true } })
+    expect(view.summaries).toEqual({ enabled: true, dailyTokenBudget: 5000 })
   })
 
   it('does not lose concurrent updates', async () => {
@@ -72,6 +79,6 @@ describe('ai settings', () => {
       updateAiSettings(workspace, { models: { chat: 'ollama:x' } }),
     ])
     const config = await loadAiConfig(workspace, {})
-    expect(config.settings).toEqual({ providers: { ollama: { enabled: true, baseUrl: 'http://127.0.0.1:1' } }, models: { chat: 'ollama:x' } })
+    expect(config.settings).toMatchObject({ providers: { ollama: { enabled: true, baseUrl: 'http://127.0.0.1:1' } }, models: { chat: 'ollama:x' } })
   })
 })

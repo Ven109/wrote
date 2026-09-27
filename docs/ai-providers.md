@@ -58,3 +58,22 @@ guilty" finds a scene where nobody will look her in the eye.
 - Results from both searches are fused with reciprocal rank fusion. In ⌘K they appear under "In this book"; matches
   by meaning carry the ✦ icon. The assistant's and MCP's `search` tool use the same hybrid search.
 - If the model is unreachable at query time, search silently falls back to full-text.
+
+## Rolling summaries
+
+With **Settings → AI models → Background AI → Keep summaries up to date** switched on (off by default – it sends
+your manuscript to the **fast** model), Wrote keeps short summaries of every scene, chapter, part and the whole book,
+so the assistant can grasp the story without reading every scene (`get_summaries` tool).
+
+- A scene is summarized again only after a **significant** change: at least 10 % of its word trigrams and about a
+  sentence differ (`shared/utils/text-change.ts`) – typo fixes and small edits never cost tokens.
+- Chapters, parts and the book are rolled up from their children's summaries whenever those change, so an edit
+  cascades upwards in the same run.
+- It runs in the background as the job "Update summaries": one minute after you stop editing (unique and debounced),
+  when a book opens, and right away when you switch it on.
+- A **daily token budget** (default 100,000) caps the cost; once reached, summaries pause until the next day.
+- Summaries appear below the editor. **Edit** makes a summary yours: background updates never overwrite it (it still
+  feeds the chapter/book summary); **Reset to automatic** hands it back. **Use as synopsis** copies it into the
+  entry's `synopsis` frontmatter – only when you click it.
+- Summaries and token usage live in `.wrote/state.db` (they are not derived from the files, so they survive index
+  rebuilds).

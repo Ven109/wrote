@@ -42,4 +42,23 @@ export const STATE_MIGRATIONS: string[][] = [
       PRIMARY KEY (thread_id, seq)
     )`,
   ],
+  // 3: rolling summaries (WRO-48) and AI token usage per day
+  [
+    `CREATE TABLE summaries (
+      entry_id TEXT PRIMARY KEY,
+      scope TEXT NOT NULL,
+      text TEXT NOT NULL,
+      source_text TEXT,
+      source_hash TEXT,
+      is_manual INTEGER NOT NULL DEFAULT 0,
+      model TEXT,
+      updated_at TEXT NOT NULL
+    )`,
+    `CREATE TABLE ai_usage (
+      day TEXT NOT NULL,
+      feature TEXT NOT NULL,
+      tokens INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (day, feature)
+    )`,
+  ],
 ]

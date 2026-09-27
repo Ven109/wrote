@@ -10,6 +10,7 @@ let view: AiSettingsView = {
   models: {},
   configured: false,
   embeddings: false,
+  summaries: { enabled: false, dailyTokenBudget: 100_000 },
 }
 const patches: unknown[] = []
 registerEndpoint('/api/settings/ai', { method: 'GET', handler: () => view })

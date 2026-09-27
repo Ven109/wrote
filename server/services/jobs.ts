@@ -1,6 +1,6 @@
 import type { Job } from '#shared/schemas/jobs'
 import type { StateDb } from '../db/state/client'
-import { cancelQueuedJob, claimJob, findQueuedJob, finishJob, getJob, insertJob, jobInput, listJobs, nextRunAfter, requeueInterrupted, retryJob, setProgress } from '../db/state/jobs'
+import { advanceJob, cancelQueuedJob, claimJob, findQueuedJob, finishJob, getJob, insertJob, jobInput, listJobs, nextRunAfter, requeueInterrupted, retryJob, setProgress } from '../db/state/jobs'
 import type { WroteJob } from '../jobs/define'
 import { InvalidInputError, NotFoundError } from '../storage/errors'
 import type { BookContext } from './workspace'
@@ -20,6 +20,7 @@ export interface EnqueueOptions {
   /**
    * Returns the already queued job of this kind with the same input instead of adding another
    * (a running one does not count: it may have started before the change that triggered this).
+   * If this request is due sooner, the queued job is moved forward.
    */
   unique?: boolean
   /** Runs no earlier than this many ms from now (debouncing bursts of changes). */
@@ -113,9 +114,14 @@ export function createJobRunner(options: JobRunnerOptions) {
     const definition = definitions.get(kind)
     if (!definition) throw new InvalidInputError(`Unknown job kind "${kind}"`)
     const parsed = definition.input.parse(input)
+    const runAfter = enqueueOptions.delayMs ? new Date(now().getTime() + enqueueOptions.delayMs) : now()
     const existing = enqueueOptions.unique ? await findQueuedJob(options.db, kind, parsed) : null
-    if (existing) return withTitle(existing)
-    const runAfter = enqueueOptions.delayMs ? new Date(now().getTime() + enqueueOptions.delayMs) : undefined
+    if (existing) {
+      // Joining a queued job never delays it, but an urgent request (e.g. no delay) brings it forward.
+      const advanced = await advanceJob(options.db, existing.id, runAfter)
+      if (!stopped) void tick()
+      return withTitle(advanced ?? existing)
+    }
     const job = withTitle(await insertJob(options.db, { kind, input: parsed, maxAttempts: definition.maxAttempts, runAfter }, now()))
     publish(job)
     if (!stopped) void tick()
