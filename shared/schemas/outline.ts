@@ -50,3 +50,18 @@ export const ApplyOutlineOpsSchema = z.object({
   ops: z.array(OutlineOpSchema).min(1).max(100),
   expectedHash: z.string().optional(),
 })
+
+/** A beat-sheet template: a Markdown file in the outline format (`templates/beat-sheets/<id>.md` in the workspace). */
+export interface BeatSheet {
+  /** File name without `.md`. */
+  id: string
+  title: string
+  description: string
+  outline: Outline
+}
+
+export interface BeatSheetList {
+  /** Absolute path of the folder holding the templates (shown so people can edit them). */
+  folder: string
+  sheets: BeatSheet[]
+}

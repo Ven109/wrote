@@ -1,6 +1,8 @@
 import { $fetch, fetch } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
-import type { OutlineDocument } from '#shared/schemas/outline'
+import type { BeatSheetList, OutlineDocument } from '#shared/schemas/outline'
+import { beatSheetOps } from '../../shared/utils/beat-sheet'
+import { createRecordId } from '../../shared/utils/ids'
 import { setupApiServer } from '../utils/api-server'
 import { createTestWorkspace } from '../utils/workspace'
 
@@ -31,5 +33,21 @@ describe('scenes from beats', () => {
     const { sceneId } = await res.json() as { sceneId: string }
     expect(await $fetch(`${base}/beats`, { query: { sceneId } })).toMatchObject([{ id: 'bt_themap0001' }])
     expect((await fetch(`${base}/outline/beats/bt_themap0001/scene`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chapterId: 'nope' }) })).status).toBe(400)
+  })
+})
+
+describe('beat-sheet templates', () => {
+  it('lists the workspace templates and merges one into the outline without touching existing beats', async () => {
+    const { folder, sheets } = await $fetch<BeatSheetList>('/api/templates/beat-sheets')
+    expect(folder).toBe(`${workspace}/templates/beat-sheets`)
+    const threeActs = sheets.find(sheet => sheet.id === 'three-acts')!
+    const before = await $fetch<OutlineDocument>(`${base}/outline`)
+    const edits = beatSheetOps(before.outline, threeActs.outline, prefix => createRecordId(prefix, 10))
+    const res = await ops({ ops: edits, expectedHash: before.hash })
+    expect(res.status).toBe(200)
+    const after = (await res.json() as OutlineDocument).outline
+    const beatIds = (outline: OutlineDocument['outline']) => outline.acts.flatMap(act => act.beats.map(beat => beat.id))
+    expect(beatIds(after)).toEqual(expect.arrayContaining(beatIds(before.outline)))
+    expect(after.acts.flatMap(act => act.beats)).toHaveLength(beatIds(before.outline).length + 8)
   })
 })

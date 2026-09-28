@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 
 export function hashContent(content: string): string {
@@ -28,4 +28,22 @@ export async function readTextIfExists(path: string): Promise<string | null> {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
     throw error
   }
+}
+
+/** The `.md` files directly in a folder (name → content), or `null` when the folder does not exist. */
+export async function readMarkdownFiles(dir: string): Promise<Map<string, string> | null> {
+  let names: string[]
+  try {
+    names = await readdir(dir)
+  }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
+    throw error
+  }
+  const files = new Map<string, string>()
+  for (const name of names.filter(candidate => candidate.endsWith('.md')).sort()) {
+    const content = await readTextIfExists(`${dir}/${name}`)
+    if (content !== null) files.set(name, content)
+  }
+  return files
 }

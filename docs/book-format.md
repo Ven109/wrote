@@ -62,6 +62,32 @@ She arrives at low tide, older and unwelcome.
 - Acts and beats written by hand without the comment get an id the next time Wrote reads the outline.
 - Wrote writes the file back in exactly this format, so an unchanged outline round-trips without a diff.
 
+### Beat-sheet templates
+
+Templates live outside the books, in the workspace folder `templates/beat-sheets/`, so every book can use
+them. Each is a Markdown file in the outline format above, without the id comments, plus a `title` and an
+optional `description` in the frontmatter:
+
+```markdown
+---
+title: Three Acts
+description: The classic setup, confrontation and resolution.
+---
+
+## Act One: Setup
+
+### Inciting incident
+
+Something disrupts that world and sets the story in motion.
+```
+
+- Wrote copies its built-in templates (Three Acts, Save the Cat, Hero's Journey, Kishōtenketsu, Snowflake)
+  into the folder the first time templates are listed. After that the folder is yours: edit, delete or add
+  files, and share them by copying the files.
+- Applying a template adds the acts and beats the outline does not have yet, next to the ones it has; acts
+  match by title, beats by title anywhere in the outline. Nothing is removed or changed. Template notes fill
+  empty outline notes.
+
 ## Ordering
 
 Parts, chapters and scenes are ordered by a **numeric prefix** in the file or folder name: `01-arrival.md`, `02-the-map.md`. Prefixes are at least two digits. Reordering renames files (see [ADR 0001](adr/0001-ordering-and-ids.md)). Notes, codex and research entries are unordered.
