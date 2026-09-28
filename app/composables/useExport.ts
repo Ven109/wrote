@@ -23,7 +23,8 @@ export function useExport(bookId: MaybeRefOrGetter<string>) {
   const toast = useToast()
   const { open } = useExportDialog()
   const { data: capabilities, refetch: recheck, isPending: checking } = useQuery(() => ({ ...exportCapabilitiesQuery, enabled: store.open }))
-  const { data: structure } = useQuery(() => ({ ...structureQuery(toValue(bookId)), enabled: store.open }))
+  // Shared with the sidebar tree: same key, so no `enabled` override here (it would switch the tree's query off too).
+  const { data: structure } = useQuery(() => structureQuery(toValue(bookId)))
   const chapters = computed(() => chapterOptions(structure.value ?? []))
 
   const presets = useExportPresets(bookId, () => store.open)
