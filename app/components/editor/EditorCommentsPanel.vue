@@ -3,7 +3,7 @@ import type { CommentView } from '#shared/schemas/comments'
 
 /** Comments as a list in a slideover (phones and tablets, where there is no margin). */
 defineProps<{ comments: CommentView[], active: string | null, busy: string | null }>()
-defineEmits<{ reply: [id: string, body: string], resolve: [id: string], focus: [id: string] }>()
+defineEmits<{ reply: [id: string, body: string], resolve: [id: string], focus: [id: string], dismiss: [id: string], fix: [id: string] }>()
 const open = defineModel<boolean>('open', { default: false })
 </script>
 
@@ -23,6 +23,8 @@ const open = defineModel<boolean>('open', { default: false })
           @reply="body => $emit('reply', comment.id, body)"
           @resolve="$emit('resolve', comment.id)"
           @focus="$emit('focus', comment.id)"
+          @dismiss="$emit('dismiss', comment.id)"
+          @fix="$emit('fix', comment.id)"
         />
         <BaseEmptyState
           v-if="!comments.length"

@@ -26,11 +26,12 @@ export function useComments(bookId: MaybeRefOrGetter<string>, document: Ref<Entr
   /** Whether the margin column is shown (wide screens with open comments). */
   const margin = computed(() => isWide.value && comments.value.length > 0)
 
-  async function post(id: string, action: 'replies' | 'resolve', body: Record<string, unknown>, failure: string) {
+  async function post(id: string, action: 'replies' | 'resolve' | 'dismiss' | 'fix', body: Record<string, unknown>, failure: string) {
     busy.value = id
     try {
       await $fetch(`/api/books/${encodeURIComponent(toValue(bookId))}/comments/${id}/${action}`, { method: 'POST', body })
       await queryCache.invalidateQueries({ key: bookKeys.entryComments(toValue(bookId), entryId()) })
+      if (action === 'fix') await queryCache.invalidateQueries({ key: bookKeys.entrySuggestions(toValue(bookId), entryId()) })
     }
     catch (error) {
       toast.add({ title: failure, description: apiErrorMessage(error), color: 'error' })
@@ -71,5 +72,8 @@ export function useComments(bookId: MaybeRefOrGetter<string>, document: Ref<Entr
     focus: context.focus,
     reply: (id: string, body: string) => post(id, 'replies', { body }, 'Could not send the reply'),
     resolve: (id: string) => post(id, 'resolve', { resolved: true }, 'Could not resolve the comment'),
+    /** Review findings: hide for good (not raised again), or turn the fix into a suggestion. */
+    dismiss: (id: string) => post(id, 'dismiss', {}, 'Could not dismiss the finding'),
+    fix: (id: string) => post(id, 'fix', {}, 'Could not suggest the fix'),
   }
 }

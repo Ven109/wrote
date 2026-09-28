@@ -1,6 +1,6 @@
 import type { Node as PmNode } from '@tiptap/pm/model'
 import type { Suggestion } from '#shared/schemas/suggestion'
-import { locateAnchor, type TextRange } from '#shared/utils/text-anchor'
+import { locateAnchor, locateAnchorFuzzy, type TextRange } from '#shared/utils/text-anchor'
 
 /** Stands for an atom node (wiki link, image) – one character per document position. */
 const OPAQUE = '\uFFFC'
@@ -62,10 +62,14 @@ export function docTextIndex(doc: PmNode): { text: string, positions: number[] }
   return { text, positions }
 }
 
-/** Where a suggestion's passage is in the editor document, or `null` when it is gone (stale). */
-export function locateSuggestion(doc: PmNode, suggestion: Pick<Suggestion, 'find' | 'before' | 'after'>, index = docTextIndex(doc)): TextRange | null {
+/**
+ * Where a suggestion's passage is in the editor document, or `null` when it is gone (stale). `fuzzy` also
+ * finds a passage that was edited since (comments and review findings – never for replacing text).
+ */
+export function locateSuggestion(doc: PmNode, suggestion: Pick<Suggestion, 'find' | 'before' | 'after'>, index = docTextIndex(doc), options: { fuzzy?: boolean } = {}): TextRange | null {
   const find = markdownToDocText(suggestion.find).trim()
-  const found = locateAnchor(index.text, find, { before: markdownToDocText(suggestion.before), after: markdownToDocText(suggestion.after) })
+  const locate = options.fuzzy ? locateAnchorFuzzy : locateAnchor
+  const found = locate(index.text, find, { before: markdownToDocText(suggestion.before), after: markdownToDocText(suggestion.after) })
   if (!found) return null
   return { from: index.positions[found.from]!, to: index.positions[found.to - 1]! + 1 }
 }

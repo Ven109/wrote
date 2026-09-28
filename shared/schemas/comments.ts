@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { FindingInfoSchema } from './review'
 import { ActorSchema } from './suggestion'
 
 export const CommentReplySchema = z.object({
@@ -12,7 +13,7 @@ export type CommentReply = z.infer<typeof CommentReplySchema>
 /**
  * A comment on a passage of an entry (author notes, editor critique from agents). `quote` anchors it like a
  * suggestion's `find`, with the surrounding text in `before`/`after`, so it survives nearby edits. Comments
- * never change the text.
+ * never change the text. Review agents' findings are comments with `review` set.
  */
 export const CommentSchema = z.object({
   id: z.string(),
@@ -25,6 +26,8 @@ export const CommentSchema = z.object({
   replies: z.array(CommentReplySchema).default([]),
   createdAt: z.iso.datetime(),
   resolvedAt: z.iso.datetime().nullable().default(null),
+  /** Set when the comment is a review agent's finding. */
+  review: FindingInfoSchema.nullable().default(null),
 })
 export type Comment = z.infer<typeof CommentSchema>
 

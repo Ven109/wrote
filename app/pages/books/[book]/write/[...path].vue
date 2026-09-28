@@ -2,7 +2,7 @@
 const bookId = useRouteBookId()
 const { activeEntryPath } = useAppNavigation()
 const { book } = useBook(bookId)
-const { entry, autosave, words, meta, backlinks, summary, suggestions, comments, beats, ai, provenance } = useSceneEditor(bookId, activeEntryPath)
+const { entry, autosave, words, meta, backlinks, summary, suggestions, comments, beats, ai, provenance, review } = useSceneEditor(bookId, activeEntryPath)
 const { document, status, draft } = entry
 useSeoMeta({ title: () => document.value?.title ?? book.value?.title ?? 'Write' })
 defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
@@ -61,6 +61,18 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
             class="min-h-11"
             @click="comments.panelOpen.value = true"
           />
+          <UDropdownMenu
+            v-if="review.available.value"
+            :items="review.menu.value"
+          >
+            <UButton
+              icon="i-lucide-scan-search"
+              color="neutral"
+              variant="ghost"
+              aria-label="Review"
+              class="size-11 justify-center lg:size-auto"
+            />
+          </UDropdownMenu>
           <UButton
             v-if="document?.type === 'scene'"
             icon="i-lucide-sliders-horizontal"
@@ -91,6 +103,8 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
             @reply="comments.reply"
             @resolve="comments.resolve"
             @focus="comments.focus"
+            @dismiss="comments.dismiss"
+            @fix="comments.fix"
           />
         </div>
         <EditorSummary
@@ -151,6 +165,20 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
         @reply="comments.reply"
         @resolve="comments.resolve"
         @focus="comments.focus"
+        @dismiss="comments.dismiss"
+        @fix="comments.fix"
+      />
+      <EditorReviewConfirm
+        v-model:open="review.confirmOpen.value"
+        :estimate="review.estimate.value"
+        :agent-name="review.pending.value?.agentName ?? ''"
+        :starting="review.starting.value"
+        @confirm="review.confirm"
+      />
+      <EditorReviewHistory
+        v-model:open="review.historyOpen.value"
+        :runs="review.runs.value"
+        :loading="review.runsLoading.value"
       />
       <EditorScenePanel
         v-model:open="meta.open.value"

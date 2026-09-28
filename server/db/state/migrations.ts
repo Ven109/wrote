@@ -130,4 +130,13 @@ export const STATE_MIGRATIONS: string[][] = [
     )`,
     'CREATE INDEX outline_proposals_status_idx ON outline_proposals(status)',
   ],
+  // 10: review agent runs (WRO-12); findings are comments with `review` metadata
+  [
+    `CREATE TABLE review_runs (
+      id TEXT PRIMARY KEY,
+      created_at TEXT NOT NULL,
+      data TEXT NOT NULL
+    )`,
+    'CREATE INDEX review_runs_created_idx ON review_runs(created_at)',
+  ],
 ]

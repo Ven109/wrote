@@ -85,6 +85,13 @@ export const outlineProposals = sqliteTable('outline_proposals', {
   data: text('data', { mode: 'json' }).notNull(),
 })
 
+/** Review agent runs (WRO-12); `data` holds the full `ReviewRun` (JSON). */
+export const reviewRuns = sqliteTable('review_runs', {
+  id: text('id').primaryKey(),
+  createdAt: text('created_at').notNull(),
+  data: text('data', { mode: 'json' }).notNull(),
+})
+
 /** Comments on passages (WRO-67); `data` holds the full `Comment` (JSON). */
 export const comments = sqliteTable('comments', {
   id: text('id').primaryKey(),

@@ -28,3 +28,26 @@ describe('comments API', () => {
     expect((await post('/cmt_missing/resolve', { resolved: true })).status).toBe(404)
   })
 })
+
+describe('review API', () => {
+  const review = (path: string, body: unknown) => fetch(`/api/books/sample-book/review/${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+
+  it('lists agents, estimates runs and needs a model to start one', async () => {
+    expect(await $fetch('/api/books/sample-book/review/agents')).toMatchObject([{ id: 'editor', name: 'Editor' }])
+    const estimate = await review('estimate', { agentId: 'editor', scope: 'chapter', targetId: 'chp_harb0r0001' })
+    expect(estimate.status).toBe(200)
+    expect(await estimate.json()).toMatchObject({ scenes: 2, calls: 2 })
+    const start = await review('runs', { agentId: 'editor', scope: 'scene', targetId: 'scn_arr1val001' })
+    expect(start.status).toBe(409)
+    expect(await start.json()).toMatchObject({ data: { code: 'ai_not_configured' } })
+    expect((await review('estimate', { agentId: 'editor', scope: 'chapter', targetId: 'scn_arr1val001' })).status).toBe(400)
+    expect((await review('estimate', { agentId: 'nobody', scope: 'book' })).status).toBe(404)
+    expect(await $fetch('/api/books/sample-book/review/runs', { query: { sceneId: 'scn_arr1val001' } })).toEqual([])
+  })
+
+  it('only dismisses or fixes findings', async () => {
+    const created = await (await post('', { entryId: 'scn_arr1val001', quote: 'The harbor smelled of salt and tar', body: 'Plain comment.' })).json() as CommentView
+    expect((await post(`/${created.id}/dismiss`, {})).status).toBe(404)
+    expect((await post(`/${created.id}/fix`, {})).status).toBe(404)
+  })
+})

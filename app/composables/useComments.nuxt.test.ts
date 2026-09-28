@@ -8,7 +8,7 @@ import { useComments } from './useComments'
 
 const comment: CommentView = {
   id: 'cmt_1', entryId: 'scn_cmt', quote: 'The tide was out', before: '', after: '', body: 'Strong image.', author: { kind: 'mcp', name: 'Claude Code' },
-  replies: [], createdAt: '2026-09-28T10:00:00.000Z', resolvedAt: null, detached: false,
+  replies: [], createdAt: '2026-09-28T10:00:00.000Z', resolvedAt: null, review: null, detached: false,
 }
 const posts: unknown[] = []
 registerEndpoint('/api/books/cmt-book/comments', () => [comment])

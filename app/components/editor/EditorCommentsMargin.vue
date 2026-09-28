@@ -3,7 +3,7 @@ import type { CommentView } from '#shared/schemas/comments'
 
 /** Comment cards in the margin, each level with its passage (desktop). */
 defineProps<{ comments: CommentView[], active: string | null, busy: string | null }>()
-defineEmits<{ reply: [id: string, body: string], resolve: [id: string], focus: [id: string] }>()
+defineEmits<{ reply: [id: string, body: string], resolve: [id: string], focus: [id: string], dismiss: [id: string], fix: [id: string] }>()
 const root = ref<HTMLElement | null>(null)
 const { tops, observe } = useCommentLayout(root)
 </script>
@@ -29,6 +29,8 @@ const { tops, observe } = useCommentLayout(root)
         @reply="body => $emit('reply', comment.id, body)"
         @resolve="$emit('resolve', comment.id)"
         @focus="$emit('focus', comment.id)"
+        @dismiss="$emit('dismiss', comment.id)"
+        @fix="$emit('fix', comment.id)"
       />
     </div>
   </aside>
