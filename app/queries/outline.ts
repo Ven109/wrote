@@ -1,6 +1,6 @@
 import { defineQueryOptions } from '@pinia/colada'
-import type { OutlineDocument } from '#shared/schemas/outline'
-import { bookKeys } from './keys'
+import type { BeatSheetList, OutlineDocument } from '#shared/schemas/outline'
+import { bookKeys, templateKeys } from './keys'
 
 /** The plot outline with the file hash (refreshed with the book on file changes). */
 export const outlineQuery = defineQueryOptions((bookId: string) => ({
@@ -24,3 +24,10 @@ export const sceneBeatsQuery = defineQueryOptions(({ bookId, sceneId }: { bookId
   query: () => $fetch<SceneBeat[]>(`/api/books/${encodeURIComponent(bookId)}/beats`, { query: { sceneId } }),
   enabled: Boolean(bookId && sceneId),
 }))
+
+/** Beat-sheet templates of the workspace – plain files, so they are re-read whenever the picker opens. */
+export const beatSheetsQuery = defineQueryOptions({
+  key: templateKeys.beatSheets(),
+  query: () => $fetch<BeatSheetList>('/api/templates/beat-sheets'),
+  staleTime: 0,
+})

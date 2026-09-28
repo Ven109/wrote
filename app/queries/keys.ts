@@ -13,6 +13,11 @@ export const settingsKeys = {
   mcp: () => ['settings', 'mcp'] as const,
 }
 
+/** Workspace-wide templates (shared by all books). */
+export const templateKeys = {
+  beatSheets: () => ['templates', 'beat-sheets'] as const,
+}
+
 export const bookKeys = {
   list: () => ['books'] as const,
   book: (bookId: string) => ['book', bookId] as const,

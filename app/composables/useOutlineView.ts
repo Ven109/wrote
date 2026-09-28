@@ -18,7 +18,7 @@ const MOVES: [BeatDirection, string, string][] = [
   ['nextAct', 'Move to next act', 'i-lucide-arrow-right'],
 ]
 
-/** The outline page: board/tree toggle, add/rename/delete dialogs, card and act menus, beat editor. */
+/** The outline page: board/tree toggle, add/rename/delete dialogs, card and act menus, beat editor, templates. */
 export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
   const data = useOutline(bookId)
   const { outline, apply } = data
@@ -27,6 +27,7 @@ export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
   const board = useOutlineBoard(outline, op => apply(op))
   const dialog = ref<Dialog | null>(null)
   const beats = useBeatEditor(bookId, apply)
+  const templates = useBeatSheetPicker(outline, apply)
   const { edit } = beats
 
   const actMenu = (act: Act): DropdownMenuItem[][] => [
@@ -87,6 +88,7 @@ export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
     dragEnabled: computed(() => !isCoarsePointer.value),
     dialog,
     beats,
+    templates,
     actMenu,
     beatMenu,
     edit,

@@ -59,3 +59,26 @@ test('a scene created from a beat shows the beat while drafting, and follows cha
   await panel.getByRole('link', { name: 'Open the outline' }).click()
   await expect(page.getByRole('region', { name: 'Setup' }).getByRole('listitem', { name: 'The storm breaks' })).toContainText('1 scene')
 })
+
+test('applies a beat sheet to an empty outline, then merges another without touching existing beats', async ({ page, request }, testInfo) => {
+  const { book } = await (await request.post('/api/books', { data: { title: `Templates ${testInfo.project.name} ${Date.now()}`, template: 'novel' } })).json() as { book: { id: string } }
+  await gotoHydrated(page, `/books/${book.id}/outline`)
+
+  await page.getByRole('button', { name: 'Start from a template' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Apply a beat sheet' })
+  await dialog.getByRole('radio', { name: /Three Acts/ }).check()
+  await expect(dialog.getByText('Adds 3 acts and 8 beats.')).toBeVisible()
+  await expect(dialog.getByText(/templates\/beat-sheets/)).toBeVisible()
+  await dialog.getByRole('button', { name: 'Apply' }).click()
+  const setup = page.getByRole('region', { name: 'Act One: Setup' })
+  await expect(setup.getByRole('listitem', { name: 'Inciting incident' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Template', exact: true }).click()
+  await dialog.getByRole('radio', { name: /Three Acts/ }).check()
+  await expect(dialog.getByText(/^Nothing to add/)).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Apply' })).toBeDisabled()
+  await dialog.getByRole('radio', { name: /Kishōtenketsu/ }).check()
+  await dialog.getByRole('button', { name: 'Apply' }).click()
+  await expect(page.getByRole('region', { name: 'Ten: Twist' })).toBeVisible()
+  await expect(setup.getByRole('listitem')).toHaveCount(3)
+})

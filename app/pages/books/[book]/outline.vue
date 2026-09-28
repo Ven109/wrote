@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const bookId = useRouteBookId()
 const view = useOutlineView(bookId)
-const { outline, status, mode, board, beats, promptOpen, deleteOpen, promptTitle, deleteTitle, promptInitial } = view
+const { outline, status, mode, board, beats, templates, promptOpen, deleteOpen, promptTitle, deleteTitle, promptInitial } = view
 const { dragging, drop } = board
 useSeoMeta({ title: 'Outline' })
 </script>
@@ -34,6 +34,14 @@ useSeoMeta({ title: 'Outline' })
           />
         </UFieldGroup>
         <UButton
+          label="Template"
+          icon="i-lucide-layout-template"
+          color="neutral"
+          variant="outline"
+          class="min-h-11 lg:min-h-0"
+          @click="templates.open.value = true"
+        />
+        <UButton
           label="Add act"
           icon="i-lucide-plus"
           class="min-h-11 lg:min-h-0"
@@ -60,8 +68,15 @@ useSeoMeta({ title: 'Outline' })
       v-else-if="!outline.acts.length"
       icon="i-lucide-columns-3"
       title="No acts yet"
-      description="Add an act, then the beats of your story."
-    />
+      description="Add an act, then the beats of your story – or start from a beat sheet."
+    >
+      <UButton
+        label="Start from a template"
+        icon="i-lucide-layout-template"
+        class="min-h-11 lg:min-h-0"
+        @click="templates.open.value = true"
+      />
+    </BaseEmptyState>
     <OutlineBoard
       v-else-if="mode === 'board'"
       :outline="outline"
@@ -97,6 +112,16 @@ useSeoMeta({ title: 'Outline' })
       confirm-label="Delete"
       danger
       @confirm="view.confirmDelete"
+    />
+    <OutlineTemplateModal
+      v-model:open="templates.open.value"
+      v-model:selected="templates.selectedId.value"
+      :sheets="templates.sheets.value"
+      :loading="templates.status.value === 'pending'"
+      :folder="templates.folder.value"
+      :preview="templates.preview.value"
+      :can-apply="templates.canApply.value"
+      @apply="templates.apply"
     />
     <OutlineBeatSheet
       v-model="beats.editing.value"
