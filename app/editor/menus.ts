@@ -15,7 +15,13 @@ export const SLASH_ITEMS: EditorSuggestionMenuItem[][] = [[
   { kind: 'orderedList', label: 'Numbered list', icon: 'i-lucide-list-ordered' },
   { kind: 'blockquote', label: 'Quote', icon: 'i-lucide-text-quote' },
   { kind: 'codeBlock', label: 'Code block', icon: 'i-lucide-square-code' },
-  { kind: 'horizontalRule', label: 'Scene break', description: 'Divider between beats', icon: 'i-lucide-separator-horizontal' },
+  { kind: 'sceneBreak', label: 'Scene break', description: '* * * between scenes', icon: 'i-lucide-asterisk' },
+  { kind: 'horizontalRule', label: 'Divider', icon: 'i-lucide-separator-horizontal' },
+], [
+  { type: 'label', label: 'Wrote' },
+  { kind: 'noteBlock', label: 'Note', description: 'A working note or to-do; not exported', icon: 'i-lucide-sticky-note' },
+  { kind: 'calloutBlock', label: 'Callout', description: 'Info, tip or warning box', icon: 'i-lucide-info' },
+  { kind: 'codexCard', label: 'Codex card', description: 'Show a codex entry', icon: 'i-lucide-book-user' },
 ]]
 
 /** Inline formatting shared by the bubble toolbar (desktop) and the bottom toolbar (mobile). */

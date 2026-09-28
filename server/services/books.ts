@@ -2,6 +2,7 @@ import { access, mkdir, rename, stat } from 'node:fs/promises'
 import { basename, isAbsolute, join, resolve } from 'node:path'
 import type { BookConfig } from '#shared/schemas/book'
 import type { BookSummary, CreateBookInput, UpdateBookInput } from '#shared/schemas/library'
+import { blockExportPolicy } from '#shared/utils/directives'
 import { CreateBookSchema } from '#shared/schemas/library'
 import { slugify } from '#shared/utils/slug'
 import { readBookConfig, writeBookConfig } from '../storage/config'
@@ -42,6 +43,7 @@ async function summarize(workspaceDir: string, location: BookLocation, config?: 
     wordCount: progress.totalWords,
     scenes: progress.scenes,
     updatedAt: await lastModified(location.root),
+    blockExport: blockExportPolicy(cfg.export.blocks),
   }
 }
 

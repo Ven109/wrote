@@ -25,6 +25,20 @@ async function save() {
   }
 }
 
+const blocks = ref<Record<string, 'include' | 'strip'>>({})
+watch(book, value => value && (blocks.value = { ...value.blockExport }), { immediate: true })
+const savingBlocks = ref(false)
+async function saveBlocks() {
+  savingBlocks.value = true
+  try {
+    await update({ export: { blocks: blocks.value } })
+    toast.add({ title: 'Export settings saved', color: 'success' })
+  }
+  finally {
+    savingBlocks.value = false
+  }
+}
+
 const confirmRemove = ref(false)
 async function remove() {
   await removeBook(bookId.value)
@@ -94,6 +108,12 @@ async function remove() {
         </div>
       </UForm>
     </UCard>
+
+    <LibraryBookExportBlocks
+      v-model="blocks"
+      :saving="savingBlocks"
+      @save="saveBlocks"
+    />
 
     <UCard :ui="{ root: 'ring-error/40' }">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
