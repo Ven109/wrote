@@ -23,6 +23,14 @@ export const ReviewAgentSchema = z.object({
   instructions: z.string().trim().min(1).max(20_000),
   scopes: z.array(ReviewScopeSchema).min(1).default(['scene', 'chapter']),
   task: AiTaskSchema.default('chat'),
+  /**
+   * Extra material the agent gets besides the book context: `outline` (the beats the scene tells, for
+   * structure), `research` (research notes matching the scene, for fact checks), `heuristics` (cheap
+   * line-level flags – repetition, filter words, adverbs, passive voice – for the model to confirm).
+   */
+  tools: z.array(z.enum(['outline', 'research', 'heuristics'])).default([]),
+  /** Also asks for a short per-scene summary (e.g. a beta reader's engagement), kept on the run. */
+  summary: z.boolean().default(false),
   /** Categories the agent reports (shown as filters; findings may use others). */
   categories: z.array(z.string().trim().min(1).max(50)).max(20).default([]),
   source: z.enum(['builtin', 'book']).default('builtin'),
@@ -38,6 +46,7 @@ export const FindingsOutputSchema = z.object({
     message: z.string().describe('What is wrong and why, in one to three sentences'),
     suggestion: z.string().nullable().describe('Replacement text for the quoted passage, or null when there is no direct fix'),
   })),
+  summary: z.string().nullable().default(null).describe('Only when the instructions ask for a scene summary; otherwise null'),
 })
 export type FindingsOutput = z.infer<typeof FindingsOutputSchema>
 
@@ -72,6 +81,8 @@ export const ReviewRunSchema = z.object({
   jobId: z.string().nullable().default(null),
   model: z.string().nullable().default(null),
   findings: z.number().int().default(0),
+  /** Per-scene summaries for agents that write one (beta reader engagement). */
+  summaries: z.array(z.object({ sceneId: z.string(), title: z.string(), text: z.string() })).default([]),
   error: z.string().nullable().default(null),
   createdAt: z.iso.datetime(),
   finishedAt: z.iso.datetime().nullable().default(null),

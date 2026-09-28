@@ -6,6 +6,8 @@ import { buildContext } from '../ai/context/build'
 import { renderContext } from '../ai/context/render'
 import { contextBudget, estimateTokens } from '../ai/context/tokens'
 import { reviewPrompt, reviewSystem, type ReviewPrompt } from '../ai/review-prompts'
+import { agentMaterial } from '../review/agent-material'
+import type { StoredEntry } from '../storage/entries'
 import { saveContextSnapshot } from '../db/state/context-snapshots'
 import { getReviewRun, upsertReviewRun } from '../db/state/review-runs'
 import { InvalidInputError, NotFoundError } from '../storage/errors'
@@ -76,6 +78,7 @@ export async function createReviewRun(book: BookContext, plan: ReviewPlan, scope
     jobId: null,
     model: null,
     findings: 0,
+    summaries: [],
     error: null,
     createdAt: now.toISOString(),
     finishedAt: null,
@@ -91,13 +94,15 @@ export interface RunOptions {
 }
 
 /** One scene's prompt: the agent's instructions plus book context from the context engine (snapshot stored). */
-async function scenePrompt(book: BookContext, agent: ReviewAgent, scene: StructureNode, body: string, model: string): Promise<ReviewPrompt> {
-  const built = await buildContext(book, { entryPath: scene.path, query: agent.instructions.slice(0, 500), model })
+async function scenePrompt(book: BookContext, agent: ReviewAgent, scene: StructureNode, entry: StoredEntry, model: string): Promise<ReviewPrompt> {
+  // POV and location name the scene's main character and place in full, so their codex entries come along.
+  const named = ['pov', 'location'].map(key => entry.frontmatter[key]).filter((value): value is string => typeof value === 'string')
+  const built = await buildContext(book, { entryPath: scene.path, query: [...named, agent.instructions.slice(0, 500)].join('\n'), model })
   // The scene itself is in the prompt in full; the local layer would repeat it.
   const items = built.items.filter(item => item.layer !== 'local')
   const system = reviewSystem(agent, renderContext(items))
   await saveContextSnapshot(book.state, { feature: `review:${agent.id}`, model, ...built, items, system }, new Date())
-  return { system, prompt: reviewPrompt(scene.title, body) }
+  return { system, prompt: reviewPrompt(scene.title, entry.body, await agentMaterial(book, agent, entry)) }
 }
 
 /**
@@ -116,12 +121,13 @@ export async function executeReviewRun(book: BookContext, runId: string, options
       options.signal?.throwIfAborted()
       const scene = scenes.find(candidate => candidate.id === sceneId)
       await options.progress?.(index / run.sceneIds.length, `${agent.name}: ${scene?.title ?? 'skipped scene'} (${index + 1} of ${run.sceneIds.length})`)
-      const body = scene ? (await book.repository.read(scene.path).catch(() => null))?.body ?? '' : ''
-      if (!scene || !body.trim()) continue
-      const output = await options.review(await scenePrompt(book, agent, scene, body, options.model), options.signal)
+      const entry = scene ? await book.repository.read(scene.path).catch(() => null) : null
+      if (!scene || !entry?.body.trim()) continue
+      const output = await options.review(await scenePrompt(book, agent, scene, entry, options.model), options.signal)
       options.signal?.throwIfAborted()
-      const stored = await storeFindings(book, { runId, agent, entryId: scene.id, body, output }, now())
-      run = await upsertReviewRun(book.state, { ...run, findings: run.findings + stored.length })
+      const stored = await storeFindings(book, { runId, agent, entryId: scene.id, body: entry.body, output }, now())
+      const summary = agent.summary && output.summary?.trim() ? [{ sceneId: scene.id, title: scene.title, text: output.summary.trim().slice(0, 2_000) }] : []
+      run = await upsertReviewRun(book.state, { ...run, findings: run.findings + stored.length, summaries: [...run.summaries, ...summary] })
     }
     await options.progress?.(1, `${agent.name}: done`)
     return await upsertReviewRun(book.state, { ...run, status: 'done', finishedAt: now().toISOString() })
