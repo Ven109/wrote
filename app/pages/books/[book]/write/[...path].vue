@@ -2,14 +2,17 @@
 const bookId = useRouteBookId()
 const { activeEntryPath } = useAppNavigation()
 const { book } = useBook(bookId)
-const { entry, autosave, words, meta, backlinks, summary, suggestions, ai, provenance } = useSceneEditor(bookId, activeEntryPath)
+const { entry, autosave, words, meta, backlinks, summary, suggestions, comments, ai, provenance } = useSceneEditor(bookId, activeEntryPath)
 const { document, status, draft } = entry
 useSeoMeta({ title: () => document.value?.title ?? book.value?.title ?? 'Write' })
 defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4 sm:p-6">
+  <div
+    class="mx-auto flex w-full flex-col gap-4 p-4 sm:p-6"
+    :class="comments.margin.value ? 'max-w-6xl' : 'max-w-3xl'"
+  >
     <template v-if="activeEntryPath">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <ManuscriptBreadcrumb
@@ -49,6 +52,16 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
             @click="suggestions.panelOpen.value = true"
           />
           <UButton
+            v-if="comments.comments.value.length && !comments.margin.value"
+            icon="i-lucide-message-square"
+            :label="String(comments.comments.value.length)"
+            color="warning"
+            variant="soft"
+            :aria-label="`${comments.comments.value.length} ${comments.comments.value.length === 1 ? 'comment' : 'comments'}`"
+            class="min-h-11"
+            @click="comments.panelOpen.value = true"
+          />
+          <UButton
             v-if="document?.type === 'scene'"
             icon="i-lucide-sliders-horizontal"
             color="neutral"
@@ -61,10 +74,21 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
         </div>
       </div>
       <template v-if="document">
-        <EditorWroteEditor
-          :key="document.path"
-          v-model="draft"
-        />
+        <div :class="comments.margin.value ? 'grid grid-cols-[minmax(0,1fr)_16rem] gap-6' : ''">
+          <EditorWroteEditor
+            :key="document.path"
+            v-model="draft"
+          />
+          <EditorCommentsMargin
+            v-if="comments.margin.value"
+            :comments="comments.comments.value"
+            :active="comments.active.value"
+            :busy="comments.busy.value"
+            @reply="comments.reply"
+            @resolve="comments.resolve"
+            @focus="comments.focus"
+          />
+        </div>
         <EditorSummary
           v-if="summary.visible.value"
           v-model:draft="summary.draft.value"
@@ -114,6 +138,15 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
         @jump="suggestions.jumpTo"
         @accept-all="suggestions.acceptAll"
         @reject-all="suggestions.rejectAll"
+      />
+      <EditorCommentsPanel
+        v-model:open="comments.panelOpen.value"
+        :comments="comments.comments.value"
+        :active="comments.active.value"
+        :busy="comments.busy.value"
+        @reply="comments.reply"
+        @resolve="comments.resolve"
+        @focus="comments.focus"
       />
       <EditorScenePanel
         v-model:open="meta.open.value"

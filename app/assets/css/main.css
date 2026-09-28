@@ -68,6 +68,16 @@
   cursor: help;
 }
 
+/* Commented passages (decorations; comments live in app state). */
+.prose-manuscript .comment-highlight {
+  background: color-mix(in oklab, var(--ui-warning) 18%, transparent);
+  border-bottom: 2px solid color-mix(in oklab, var(--ui-warning) 60%, transparent);
+  cursor: pointer;
+}
+.prose-manuscript .comment-highlight-active {
+  background: color-mix(in oklab, var(--ui-warning) 35%, transparent);
+}
+
 /* AI suggestions (tracked changes): decorations only, never part of the Markdown. */
 .prose-manuscript .ai-suggestion-del {
   text-decoration: line-through;

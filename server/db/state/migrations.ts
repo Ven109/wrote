@@ -109,4 +109,15 @@ export const STATE_MIGRATIONS: string[][] = [
     )`,
     'CREATE INDEX codex_proposals_status_idx ON codex_proposals(status, source_entry_id)',
   ],
+  // 8: comments on passages (WRO-67)
+  [
+    `CREATE TABLE comments (
+      id TEXT PRIMARY KEY,
+      entry_id TEXT NOT NULL,
+      resolved INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      data TEXT NOT NULL
+    )`,
+    'CREATE INDEX comments_entry_idx ON comments(entry_id, resolved)',
+  ],
 ]

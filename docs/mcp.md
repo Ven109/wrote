@@ -13,6 +13,8 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 | `get_codex` | Characters, places, … | read |
 | `get_progress` | Word counts and goals | read |
 | `list_suggestions` | Edit suggestions with status, author and `stale` (text changed since) | read |
+| `list_comments` | Comments on the book or an entry, with replies and `detached` (passage changed) | read |
+| `add_comment` | Comments on an exact passage – appears live in the author's editor margin; the text is not changed | propose |
 | `create_note` | Adds a note to the inbox | write |
 | `extract_codex` | Scans a chapter/scene/part with Wrote's configured model and proposes codex entries (with quotes as evidence) – **never applied directly** | propose |
 | `propose_codex_entries` | Proposes codex entries the agent found itself in a chapter/scene/part; entries whose quotes are not in the text are dropped | propose |
@@ -30,7 +32,7 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 **Prompts** (pick them in your client, e.g. `/` in Claude Code): `continue-scene` (sceneId, direction?),
 `critique-chapter` (chapterId, focus?), `brainstorm-titles` (count?), `character-interview` (character),
 `summarize-book`. They embed the relevant resources and ask the agent to answer through reviewable tools
-(`propose_edit`, notes).
+(`propose_edit`, `add_comment`, notes).
 
 Tools that work on a book take an optional `bookId` (from `list_books`). It can be omitted when you have only one
 book, or when the server was started for a book (`wrote mcp --book …`).
@@ -116,6 +118,7 @@ in `.wrote/state.db` of the book.
 - "Which scenes of my book mention the harbor?"
 - "Read the scene *Arrival* and add a note to my inbox with three ideas to raise the tension."
 - "Suggest a tighter first sentence for *Arrival*." (creates a suggestion)
+- Use the `critique-chapter` prompt: the critique arrives as comments in the margin, live.
 - "Read chapter 2 and propose codex entries for its characters and places." (creates codex proposals)
 
 ## Troubleshooting
