@@ -18,6 +18,20 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 | `propose_codex_entries` | Proposes codex entries the agent found itself in a chapter/scene/part; entries whose quotes are not in the text are dropped | propose |
 | `propose_edit` | Suggests a change (replace a passage, or `mode: "insert_after"` to add paragraphs) – **never applied directly**; it appears live as a tracked change you accept, edit or reject in Wrote | propose |
 
+**Resources** (read level; listable, Markdown):
+
+| URI | Content |
+|---|---|
+| `wrote://book/{bookId}/outline` | Outline notes, whole-book summary, parts → chapters → scenes with summaries |
+| `wrote://book/{bookId}/style-guide` | The style guide |
+| `wrote://book/{bookId}/scene/{sceneId}` | A scene with status, POV, location, synopsis |
+| `wrote://book/{bookId}/codex/{codexType}/{entryId}` | A codex entry with aliases and fields |
+
+**Prompts** (pick them in your client, e.g. `/` in Claude Code): `continue-scene` (sceneId, direction?),
+`critique-chapter` (chapterId, focus?), `brainstorm-titles` (count?), `character-interview` (character),
+`summarize-book`. They embed the relevant resources and ask the agent to answer through reviewable tools
+(`propose_edit`, notes).
+
 Tools that work on a book take an optional `bookId` (from `list_books`). It can be omitted when you have only one
 book, or when the server was started for a book (`wrote mcp --book …`).
 

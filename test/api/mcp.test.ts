@@ -36,6 +36,8 @@ describe('MCP over HTTP', () => {
     expect(tools).toEqual(['create_note', 'extract_codex', 'get_codex', 'get_codex_entry', 'get_progress', 'get_structure', 'get_summaries', 'list_books', 'list_suggestions', 'propose_codex_entries', 'propose_edit', 'read_entry', 'search'])
 
     expect(text(await client.callTool({ name: 'list_books', arguments: {} }))).toContain('sample-book')
+    expect((await client.listResources()).resources.map(r => r.uri)).toContain('wrote://book/sample-book/outline')
+    expect((await client.listPrompts()).prompts.map(p => p.name)).toContain('critique-chapter')
     expect(text(await client.callTool({ name: 'search', arguments: { query: 'harbor' } }))).toContain('Arrival')
     expect(text(await client.callTool({ name: 'read_entry', arguments: { id: 'scn_arr1val001' } }))).toContain('The tide was out')
     expect(text(await client.callTool({ name: 'get_structure', arguments: {} }))).toContain('Part One')
