@@ -1,5 +1,6 @@
 import { defineQueryOptions } from '@pinia/colada'
 import type { AiModelOption, AiProviderId, AiSettingsView, ModelPurpose } from '#shared/schemas/ai'
+import type { IntegrationView } from '#shared/schemas/integrations'
 import type { McpSettingsView } from '#shared/schemas/permissions'
 import { settingsKeys } from './keys'
 
@@ -18,4 +19,10 @@ export const aiModelsQuery = defineQueryOptions((purpose: ModelPurpose = 'langua
 export const mcpSettingsQuery = defineQueryOptions({
   key: settingsKeys.mcp(),
   query: () => $fetch<McpSettingsView>('/api/settings/mcp'),
+})
+
+/** External MCP servers with status and tools (listing connects enabled ones). */
+export const integrationsQuery = defineQueryOptions({
+  key: settingsKeys.integrations(),
+  query: () => $fetch<IntegrationView[]>('/api/settings/integrations'),
 })

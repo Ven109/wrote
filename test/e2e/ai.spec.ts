@@ -1,5 +1,6 @@
 import { devices, expect, test, type Page } from '@playwright/test'
 import { startFakeOpenAi, type FakeOpenAi } from '../utils/fake-openai'
+import { join } from 'node:path'
 import { gotoHydrated } from './utils'
 
 // AI settings are workspace-wide and both projects share one server, so every AI flow runs here,
@@ -33,6 +34,12 @@ test.beforeAll(async () => {
         : { text: JSON.stringify({ notes: [{ text: 'Nothing explains why the Guild waits.' }], beats: [{ actId: 'act_e2e0000002', afterBeatId: null, title: 'The Guild watches', summary: 'Spies at the harbor.', rationale: 'Sets up the offer.' }] }) }
     }
     if (system.includes('manuscript editor')) return { text: JSON.stringify(lastUser?.content).includes('Continue after') ? 'The gulls rose over the pier.' : 'The harbor reeked of brine.' }
+    if (JSON.stringify(lastUser?.content).includes('When were lighthouses automated')) {
+      const tools = messages.filter(message => message.role === 'tool').length
+      if (tools === 0) return { toolCall: { name: 'web-search__web_search', arguments: { query: 'lighthouse automation' } } }
+      if (tools === 1) return { toolCall: { name: 'create_note', arguments: { title: 'Lighthouse automation', body: 'Lighthouses were automated in the 1980s (web search).' } } }
+      return { text: 'They were automated in the 1980s – I saved a note.' }
+    }
     if (JSON.stringify(lastUser?.content).includes('inject')) return { text: 'Look: <img src=x onerror="window.__xss=1"> **done**' }
     return messages.some(message => message.role === 'tool')
       ? { text: 'The harbor appears in **Opening**.' }
@@ -263,6 +270,35 @@ test('a review agent adds findings to the margin; a fix becomes a suggestion, a 
   await expect(history.getByRole('listitem').first()).toContainText('0 findings')
   await page.keyboard.press('Escape')
   await expect(margin.getByRole('article')).toHaveCount(1)
+})
+
+test('an integration adds web search to the assistant, which saves what it found as a note', async ({ page }) => {
+  await gotoHydrated(page, '/settings/integrations')
+  await page.getByRole('button', { name: /Local command/ }).click()
+  const form = page.getByRole('dialog', { name: 'Add integration' })
+  await form.getByLabel('Name', { exact: true }).fill('Web search')
+  await form.getByLabel('Command', { exact: true }).fill(process.execPath)
+  await form.getByLabel('Arguments', { exact: true }).fill(join(import.meta.dirname, '../utils/fake-mcp-server.mjs'))
+  await form.getByRole('radio', { name: /Always allow/ }).check()
+  await form.getByRole('button', { name: 'Add and connect' }).click()
+  const card = page.getByRole('article', { name: 'Web search' })
+  await expect(card).toContainText('Connected')
+  await expect(card.getByRole('list', { name: 'Tools of Web search' })).toContainText('Web search')
+
+  const { bookId } = await createBookWithHarbor(page, `Integrations ${Date.now()}`)
+  await gotoHydrated(page, `/books/${bookId}/notes`)
+  await page.getByRole('button', { name: 'Toggle assistant' }).click()
+  const prompt = page.getByPlaceholder('Ask about your book…')
+  await prompt.fill('When were lighthouses automated? Save it as a note.')
+  await prompt.press('Enter')
+  await page.getByRole('region', { name: 'Requests waiting for your approval' }).getByRole('button', { name: 'Allow' }).click()
+  await expect(page.getByText('They were automated in the 1980s')).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Note list' }).getByRole('link', { name: /Lighthouse automation/ })).toBeVisible()
+  expect(JSON.stringify(model.requests.at(-1)?.messages)).toContain('Lighthouses were automated in the 1980s')
+
+  await gotoHydrated(page, '/settings/integrations')
+  await page.getByRole('button', { name: 'Remove Web search' }).click()
+  await expect(page.getByText('No integrations yet')).toBeVisible()
 })
 
 test('settings and assistant fit a phone screen', async ({ browser }) => {

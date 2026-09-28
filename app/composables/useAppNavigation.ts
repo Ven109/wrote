@@ -46,6 +46,7 @@ export function useAppNavigation() {
       { label: 'Library', icon: 'i-lucide-library-big', to: '/', exact: true },
       { label: 'AI models', icon: 'i-lucide-sparkles', to: '/settings/ai' },
       { label: 'Connect agents', icon: 'i-lucide-plug', to: '/settings/mcp' },
+      { label: 'Integrations', icon: 'i-lucide-blocks', to: '/settings/integrations' },
     ]
     return bookId.value ? [global, bookNavigationItems(bookId.value, badges.value)] : [global]
   })
