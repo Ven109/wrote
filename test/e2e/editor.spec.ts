@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
+import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test'
 import { gotoHydrated } from './utils'
 
 async function bookWithScene(request: APIRequestContext, title: string, body: string) {
@@ -66,6 +66,22 @@ test('document mode: bottom toolbar and block action sheet, no drag handle', asy
   await expect(content.locator('p').first()).toHaveText('Beta')
 })
 
+/**
+ * Puts the caret at the end of a paragraph and waits until the editor really has it there – on slow runners a
+ * click right after a node-view update can land before the selection settles.
+ */
+async function caretAtEndOf(page: Page, content: Locator, text: string) {
+  await expect(async () => {
+    await content.getByText(text, { exact: true }).click()
+    await page.keyboard.press('End')
+    const atEnd = await page.evaluate((expected) => {
+      const selection = window.getSelection()
+      return selection?.anchorNode?.textContent === expected && selection.anchorOffset === expected.length
+    }, text)
+    expect(atEnd).toBe(true)
+  }).toPass({ timeout: 10_000 })
+}
+
 test('custom blocks: note with a to-do, codex card, scene break – stored as directives; export settings per block', async ({ page, request, isMobile }, testInfo) => {
   test.skip(isMobile, 'Slash menu by keyboard (the insert button covers mobile)')
   const { bookId, path } = await bookWithScene(request, `Custom blocks ${Date.now()}-${testInfo.retry}`, 'Alpha\n')
@@ -73,8 +89,7 @@ test('custom blocks: note with a to-do, codex card, scene break – stored as di
   await gotoHydrated(page, `/books/${bookId}/write/${path}`)
   const content = editorContent(page)
 
-  await content.getByText('Alpha').click()
-  await page.keyboard.press('End')
+  await caretAtEndOf(page, content, 'Alpha')
   await page.keyboard.press('Enter')
   await page.keyboard.type('/')
   await page.getByRole('option', { name: /^Note/ }).click()
@@ -84,10 +99,7 @@ test('custom blocks: note with a to-do, codex card, scene break – stored as di
   await note.getByRole('button', { name: 'Open task – mark done' }).click()
   await expect(note.getByRole('button', { name: 'Done – remove task' })).toBeVisible()
 
-  // Caret to the end of the first line by keyboard: a click alone can land before the node view re-rendered.
-  await content.getByText('Alpha').click()
-  await page.keyboard.press('ControlOrMeta+Home')
-  await page.keyboard.press('End')
+  await caretAtEndOf(page, content, 'Alpha')
   await page.keyboard.press('Enter')
   await page.keyboard.type('/')
   await page.getByRole('option', { name: /Codex card/ }).click()
@@ -95,9 +107,7 @@ test('custom blocks: note with a to-do, codex card, scene break – stored as di
   await page.getByRole('option', { name: /Mara Velden/ }).click()
   await expect(content.getByRole('link', { name: 'Mara Velden' })).toBeVisible()
 
-  await content.getByText('Alpha').click()
-  await page.keyboard.press('ControlOrMeta+Home')
-  await page.keyboard.press('End')
+  await caretAtEndOf(page, content, 'Alpha')
   await page.keyboard.press('Enter')
   await page.keyboard.type('/')
   await page.getByRole('option', { name: /Scene break/ }).click()

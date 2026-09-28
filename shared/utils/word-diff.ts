@@ -1,7 +1,7 @@
-const words = (text: string) => text.toLowerCase().match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) ?? []
+export const words = (text: string) => text.toLowerCase().match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) ?? []
 
 /** Longest common subsequence length of two word lists (two-row DP). */
-function lcs(a: string[], b: string[]): number {
+export function lcs(a: string[], b: string[]): number {
   let previous = new Array<number>(b.length + 1).fill(0)
   for (const word of a) {
     const current = new Array<number>(b.length + 1).fill(0)

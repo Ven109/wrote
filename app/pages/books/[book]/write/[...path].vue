@@ -42,6 +42,15 @@ const bare = writing.distractionFree
             :session-words="words.sessionWords.value"
             :ai-shares="provenance.shares.value"
           />
+          <EditorGoalIndicator :book-id="bookId" />
+          <UButton
+            icon="i-lucide-camera"
+            color="neutral"
+            variant="ghost"
+            :to="`/books/${bookId}/snapshots?path=${encodeURIComponent(activeEntryPath)}`"
+            aria-label="Snapshots of this scene"
+            class="size-11 justify-center lg:size-auto"
+          />
           <UButton
             icon="i-lucide-highlighter"
             color="neutral"

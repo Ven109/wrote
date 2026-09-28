@@ -10,6 +10,7 @@ export const BOOK_SECTIONS = [
   { key: 'research', label: 'Research', icon: 'i-lucide-library' },
   { key: 'goals', label: 'Goals', icon: 'i-lucide-target' },
   { key: 'agents', label: 'Agents', icon: 'i-lucide-bot' },
+  { key: 'snapshots', label: 'Snapshots', icon: 'i-lucide-camera' },
   { key: 'activity', label: 'Activity', icon: 'i-lucide-history' },
   { key: 'settings', label: 'Settings', icon: 'i-lucide-settings' },
 ] as const

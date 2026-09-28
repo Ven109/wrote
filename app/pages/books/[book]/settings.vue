@@ -39,6 +39,11 @@ async function saveBlocks() {
   }
 }
 
+async function setSnapshotGit(git: boolean) {
+  await update({ snapshots: { git } })
+  toast.add({ title: git ? 'Snapshots will be committed to git' : 'Snapshots stay out of git', color: 'success' })
+}
+
 const confirmRemove = ref(false)
 async function remove() {
   await removeBook(bookId.value)
@@ -114,6 +119,15 @@ async function remove() {
       :saving="savingBlocks"
       @save="saveBlocks"
     />
+
+    <UCard>
+      <USwitch
+        :model-value="book?.snapshotGit ?? false"
+        label="Commit snapshots to git"
+        description="If the book folder is a git repository, each named snapshot is committed with its name as the message."
+        @update:model-value="setSnapshotGit"
+      />
+    </UCard>
 
     <UCard :ui="{ root: 'ring-error/40' }">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

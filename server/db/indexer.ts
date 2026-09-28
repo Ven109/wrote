@@ -112,12 +112,34 @@ export async function syncIndex(db: IndexDb, repository: BookRepository, options
 }
 
 /** Applies a single file change (from the watcher or an own write) to the index. */
-export async function applyChange(db: IndexDb, repository: BookRepository, change: { kind: string, path: string }): Promise<void> {
-  if (change.kind === 'removed') return removeFromIndex(db, change.path)
+/** An applied change with the entry's text before and after (for writing statistics). */
+export interface IndexedChange {
+  path: string
+  type: string | null
+  before: string | null
+  after: string | null
+}
+
+async function indexedBody(db: IndexDb, path: string): Promise<{ type: string, body: string } | null> {
+  const result = await db.$client.execute({ sql: 'SELECT e.type AS type, f.body AS body FROM entries e JOIN entries_fts f ON f.id = e.id WHERE e.path = ?', args: [path] })
+  const row = result.rows[0]
+  return row ? { type: String(row.type), body: String(row.body ?? '') } : null
+}
+
+export async function applyChange(db: IndexDb, repository: BookRepository, change: { kind: string, path: string }): Promise<IndexedChange> {
+  const previous = await indexedBody(db, change.path)
+  const unchanged = { path: change.path, type: previous?.type ?? null, before: previous?.body ?? null }
+  if (change.kind === 'removed') {
+    await removeFromIndex(db, change.path)
+    return { ...unchanged, after: null }
+  }
   try {
-    await indexEntry(db, await repository.read(change.path))
+    const entry = await repository.read(change.path)
+    await indexEntry(db, entry)
+    return { ...unchanged, type: entry.type, after: entry.body }
   }
   catch {
     await removeFromIndex(db, change.path)
+    return { ...unchanged, after: null }
   }
 }
