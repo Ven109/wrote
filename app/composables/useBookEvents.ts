@@ -20,6 +20,8 @@ export interface BookEventHandlers {
   activity?: (event: ActivityEvent) => void
   /** Codex proposals created (scan, agents) or resolved. */
   codexProposal?: (event: { sourceEntryId: string }) => void
+  /** Outline proposals created (assistant, agents, outline helpers) or resolved. */
+  outlineProposal?: () => void
   /** Comments added, answered or resolved (author or agents). */
   comment?: (event: CommentEvent) => void
 }
@@ -55,6 +57,7 @@ export function useBookEvents(bookId: MaybeRefOrGetter<string | null>, handlers:
     source.addEventListener('codex-proposal', (message) => {
       handlers.codexProposal?.(JSON.parse((message as MessageEvent<string>).data) as { sourceEntryId: string })
     })
+    source.addEventListener('outline-proposal', () => handlers.outlineProposal?.())
     source.addEventListener('comment', (message) => {
       handlers.comment?.(JSON.parse((message as MessageEvent<string>).data) as CommentEvent)
     })

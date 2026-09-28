@@ -1,6 +1,7 @@
 import { $fetch, fetch } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
 import type { BeatSheetList, OutlineDocument } from '#shared/schemas/outline'
+import type { OutlineProposal } from '#shared/schemas/outline-proposals'
 import { beatSheetOps } from '../../shared/utils/beat-sheet'
 import { createRecordId } from '../../shared/utils/ids'
 import { setupApiServer } from '../utils/api-server'
@@ -49,5 +50,15 @@ describe('beat-sheet templates', () => {
     const beatIds = (outline: OutlineDocument['outline']) => outline.acts.flatMap(act => act.beats.map(beat => beat.id))
     expect(beatIds(after)).toEqual(expect.arrayContaining(beatIds(before.outline)))
     expect(after.acts.flatMap(act => act.beats)).toHaveLength(beatIds(before.outline).length + 8)
+  })
+})
+
+describe('outline proposals', () => {
+  it('lists pending proposals and accepts or rejects them', async () => {
+    expect(await $fetch<OutlineProposal[]>(`${base}/outline/proposals`, { query: { status: 'pending' } })).toEqual([])
+    const resolve = (id: string, body: unknown) => fetch(`${base}/outline/proposals/${id}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+    expect((await resolve('opr_missing001', { status: 'rejected' })).status).toBe(404)
+    expect((await resolve('opr_missing001', { status: 'maybe' })).status).toBe(400)
+    expect((await fetch(`${base}/outline/proposals?status=nope`)).status).toBe(400)
   })
 })

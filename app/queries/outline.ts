@@ -1,5 +1,6 @@
 import { defineQueryOptions } from '@pinia/colada'
 import type { BeatSheetList, OutlineDocument } from '#shared/schemas/outline'
+import type { OutlineProposal } from '#shared/schemas/outline-proposals'
 import { bookKeys, templateKeys } from './keys'
 
 /** The plot outline with the file hash (refreshed with the book on file changes). */
@@ -31,3 +32,10 @@ export const beatSheetsQuery = defineQueryOptions({
   query: () => $fetch<BeatSheetList>('/api/templates/beat-sheets'),
   staleTime: 0,
 })
+
+/** Pending outline proposals (ghost beats and notes), refreshed by `outline-proposal` events. */
+export const outlineProposalsQuery = defineQueryOptions((bookId: string) => ({
+  key: bookKeys.outlineProposals(bookId),
+  query: () => $fetch<OutlineProposal[]>(`/api/books/${encodeURIComponent(bookId)}/outline/proposals`, { query: { status: 'pending' } }),
+  enabled: Boolean(bookId),
+}))

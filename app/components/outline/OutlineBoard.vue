@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { Act, Beat, Outline } from '#shared/schemas/outline'
+import type { OutlineProposal } from '#shared/schemas/outline-proposals'
 import type { BeatDrop } from '~/utils/outline-board'
 
-/** One column per act, one card per beat; drag cards between and within columns (or use their menu). */
+/** One column per act, one card per beat; drag cards between and within columns (or use their menu). Proposals show as ghost cards in place. */
 const props = defineProps<{
   outline: Outline
   dragEnabled: boolean
@@ -13,8 +14,11 @@ const props = defineProps<{
   columnHandlers: (actId: string) => Record<string, unknown>
   actMenu: (act: Act) => DropdownMenuItem[][]
   beatMenu: (beat: Beat) => DropdownMenuItem[][]
+  ghosts: (actId: string, afterBeatId: string | null) => OutlineProposal[]
+  beatTitle: (beatId: string) => string | undefined
+  busy: string | null
 }>()
-defineEmits<{ open: [beat: Beat], addBeat: [act: Act] }>()
+defineEmits<{ open: [beat: Beat], addBeat: [act: Act], accept: [proposal: OutlineProposal], reject: [proposal: OutlineProposal] }>()
 const dropsBefore = (actId: string, beatId: string | null) => props.drop?.actId === actId && props.drop.beforeBeatId === beatId
 </script>
 
@@ -39,16 +43,36 @@ const dropsBefore = (actId: string, beatId: string | null) => props.drop?.actId 
         />
       </header>
       <ol class="flex min-h-12 flex-col gap-2">
-        <OutlineBeatCard
+        <OutlineProposalCard
+          v-for="proposal in ghosts(act.id, null)"
+          :key="proposal.id"
+          :proposal="proposal"
+          :busy="busy === proposal.id"
+          @accept="$emit('accept', proposal)"
+          @reject="$emit('reject', proposal)"
+        />
+        <template
           v-for="(beat, index) in act.beats"
           :key="beat.id"
-          :beat="beat"
-          :menu="beatMenu(beat)"
-          :dragging="dragging === beat.id"
-          :drop-before="dropsBefore(act.id, beat.id)"
-          v-bind="dragEnabled ? cardHandlers(beat.id, act.id, act.beats[index + 1]?.id ?? null) : {}"
-          @open="$emit('open', beat)"
-        />
+        >
+          <OutlineBeatCard
+            :beat="beat"
+            :menu="beatMenu(beat)"
+            :dragging="dragging === beat.id"
+            :drop-before="dropsBefore(act.id, beat.id)"
+            v-bind="dragEnabled ? cardHandlers(beat.id, act.id, act.beats[index + 1]?.id ?? null) : {}"
+            @open="$emit('open', beat)"
+          />
+          <OutlineProposalCard
+            v-for="proposal in ghosts(act.id, beat.id)"
+            :key="proposal.id"
+            :proposal="proposal"
+            :target-title="proposal.change.kind === 'updateBeat' ? beatTitle(proposal.change.beatId) : undefined"
+            :busy="busy === proposal.id"
+            @accept="$emit('accept', proposal)"
+            @reject="$emit('reject', proposal)"
+          />
+        </template>
       </ol>
       <UButton
         label="Add beat"

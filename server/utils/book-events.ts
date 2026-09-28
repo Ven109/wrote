@@ -31,6 +31,7 @@ const approvals = createBookChannel<ApprovalEvent>()
 const activity = createBookChannel<ActivityEvent>()
 const codexProposals = createBookChannel<{ sourceEntryId: string }>()
 const comments = createBookChannel<CommentEvent>()
+const outlineProposals = createBookChannel<{ id: string }>()
 
 /** File changes of a book (watcher and own writes → SSE clients). */
 export const subscribeBookEvents = changes.subscribe
@@ -53,3 +54,6 @@ export const publishCodexProposalEvent = codexProposals.publish
 /** Comments added, answered or resolved (author or agents). */
 export const subscribeCommentEvents = comments.subscribe
 export const publishCommentEvent = comments.publish
+/** Outline proposals created (assistant, MCP clients, outline helpers) or resolved. */
+export const subscribeOutlineProposalEvents = outlineProposals.subscribe
+export const publishOutlineProposalEvent = outlineProposals.publish

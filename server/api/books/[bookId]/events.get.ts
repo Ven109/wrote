@@ -1,6 +1,6 @@
-import { subscribeActivityEvents, subscribeApprovalEvents, subscribeCodexProposalEvents, subscribeCommentEvents, subscribeBookEvents, subscribeJobEvents, subscribeSuggestionEvents } from '../../../utils/book-events'
+import { subscribeActivityEvents, subscribeApprovalEvents, subscribeCodexProposalEvents, subscribeCommentEvents, subscribeBookEvents, subscribeOutlineProposalEvents, subscribeJobEvents, subscribeSuggestionEvents } from '../../../utils/book-events'
 
-/** Server-sent events stream of a book: file changes (`change`), background jobs (`job`), suggestions (`suggestion`), tool calls awaiting approval (`approval`), the activity log (`activity`), codex proposals (`codex-proposal`) and comments (`comment`). */
+/** Server-sent events stream of a book: file changes (`change`), background jobs (`job`), suggestions (`suggestion`), tool calls awaiting approval (`approval`), the activity log (`activity`), codex proposals (`codex-proposal`), outline proposals (`outline-proposal`) and comments (`comment`). */
 export default defineEventHandler(async (event) => {
   const book = await requireBook(event)
   const stream = createEventStream(event)
@@ -22,6 +22,9 @@ export default defineEventHandler(async (event) => {
   const unsubscribeProposals = subscribeCodexProposalEvents(book.id, (change) => {
     void stream.push({ event: 'codex-proposal', data: JSON.stringify(change) })
   })
+  const unsubscribeOutlineProposals = subscribeOutlineProposalEvents(book.id, (change) => {
+    void stream.push({ event: 'outline-proposal', data: JSON.stringify(change) })
+  })
   const unsubscribeComments = subscribeCommentEvents(book.id, (change) => {
     void stream.push({ event: 'comment', data: JSON.stringify(change) })
   })
@@ -34,6 +37,7 @@ export default defineEventHandler(async (event) => {
     unsubscribeApprovals()
     unsubscribeActivity()
     unsubscribeProposals()
+    unsubscribeOutlineProposals()
     unsubscribeComments()
     await stream.close()
   })

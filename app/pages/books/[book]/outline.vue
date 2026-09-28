@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const bookId = useRouteBookId()
 const view = useOutlineView(bookId)
-const { outline, status, mode, board, beats, templates, promptOpen, deleteOpen, promptTitle, deleteTitle, promptInitial } = view
+const { outline, status, mode, board, beats, templates, proposals, listedProposals, promptOpen, deleteOpen, promptTitle, deleteTitle, promptInitial } = view
 const { dragging, drop } = board
 useSeoMeta({ title: 'Outline' })
 </script>
@@ -60,6 +60,14 @@ useSeoMeta({ title: 'Outline' })
       @change="(event: Event) => view.saveNotes((event.target as HTMLTextAreaElement).value)"
     />
 
+    <OutlineProposalList
+      :proposals="listedProposals"
+      :beat-title="proposals.beatTitle"
+      :busy="proposals.busy.value"
+      @accept="proposals.accept"
+      @reject="proposals.reject"
+    />
+
     <USkeleton
       v-if="status === 'pending'"
       class="h-64 w-full"
@@ -87,8 +95,13 @@ useSeoMeta({ title: 'Outline' })
       :column-handlers="board.column"
       :act-menu="view.actMenu"
       :beat-menu="view.beatMenu"
+      :ghosts="proposals.ghosts"
+      :beat-title="proposals.beatTitle"
+      :busy="proposals.busy.value"
       @open="view.edit"
       @add-beat="view.addBeat"
+      @accept="proposals.accept"
+      @reject="proposals.reject"
     />
     <OutlineTree
       v-else

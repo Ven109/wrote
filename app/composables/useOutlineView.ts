@@ -18,7 +18,7 @@ const MOVES: [BeatDirection, string, string][] = [
   ['nextAct', 'Move to next act', 'i-lucide-arrow-right'],
 ]
 
-/** The outline page: board/tree toggle, add/rename/delete dialogs, card and act menus, beat editor, templates. */
+/** The outline page: board/tree toggle, add/rename/delete dialogs, card and act menus, beat editor, templates, proposals. */
 export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
   const data = useOutline(bookId)
   const { outline, apply } = data
@@ -28,6 +28,7 @@ export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
   const dialog = ref<Dialog | null>(null)
   const beats = useBeatEditor(bookId, apply)
   const templates = useBeatSheetPicker(outline, apply)
+  const proposals = useOutlineProposals(bookId, outline)
   const { edit } = beats
 
   const actMenu = (act: Act): DropdownMenuItem[][] => [
@@ -89,6 +90,9 @@ export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
     dialog,
     beats,
     templates,
+    proposals,
+    /** Tree view has no ghost cards: every proposal is listed above it. */
+    listedProposals: computed(() => (mode.value === 'tree' ? proposals.pending.value : proposals.loose.value)),
     actMenu,
     beatMenu,
     edit,
