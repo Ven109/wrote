@@ -27,8 +27,9 @@ async function readJson(request: IncomingMessage): Promise<Record<string, unknow
   return body ? JSON.parse(body) : {}
 }
 
+const USAGE = { prompt_tokens: 100, completion_tokens: 10, total_tokens: 110 }
 const chunk = (delta: Record<string, unknown>, finish: string | null = null) =>
-  `data: ${JSON.stringify({ id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'tiny:latest', choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`
+  `data: ${JSON.stringify({ id: 'c1', object: 'chat.completion.chunk', created: 0, model: 'tiny:latest', choices: [{ index: 0, delta, finish_reason: finish }], ...(finish ? { usage: USAGE } : {}) })}\n\n`
 
 function streamReply(reply: Reply): string {
   if ('text' in reply) return chunk({ role: 'assistant', content: reply.text }) + chunk({}, 'stop') + 'data: [DONE]\n\n'

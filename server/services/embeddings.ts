@@ -14,8 +14,13 @@ const QUERY_TIMEOUT_MS = 8000
 /** Embeds a batch of texts (vectors in input order). Injected so tests need no provider. */
 export type EmbedTexts = (values: string[], signal: AbortSignal) => Promise<number[][]>
 
-export function embedTextsWith(model: ConfiguredEmbeddingModel['model']): EmbedTexts {
-  return async (values, signal) => (await embedMany({ model, values, abortSignal: signal, maxRetries: 1 })).embeddings
+/** Embeds with a model; `onTokens` gets the tokens each batch used (usage log). */
+export function embedTextsWith(model: ConfiguredEmbeddingModel['model'], onTokens?: (tokens: number) => Promise<unknown>): EmbedTexts {
+  return async (values, signal) => {
+    const result = await embedMany({ model, values, abortSignal: signal, maxRetries: 1 })
+    await onTokens?.(result.usage.tokens).catch(() => undefined)
+    return result.embeddings
+  }
 }
 
 export interface EmbedResult {

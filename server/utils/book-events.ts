@@ -4,6 +4,7 @@ import type { BookChangeEvent } from '#shared/schemas/events'
 import type { Job } from '#shared/schemas/jobs'
 import type { ApprovalEvent } from '#shared/schemas/permissions'
 import type { SuggestionEvent } from '#shared/schemas/suggestion'
+import type { BudgetStatus } from '#shared/schemas/usage'
 
 /** A per-book in-process pub/sub channel (server → SSE clients). */
 function createBookChannel<T>() {
@@ -32,6 +33,7 @@ const activity = createBookChannel<ActivityEvent>()
 const codexProposals = createBookChannel<{ sourceEntryId: string }>()
 const comments = createBookChannel<CommentEvent>()
 const outlineProposals = createBookChannel<{ id: string }>()
+const usage = createBookChannel<BudgetStatus>()
 
 /** File changes of a book (watcher and own writes → SSE clients). */
 export const subscribeBookEvents = changes.subscribe
@@ -57,3 +59,6 @@ export const publishCommentEvent = comments.publish
 /** Outline proposals created (assistant, MCP clients, outline helpers) or resolved. */
 export const subscribeOutlineProposalEvents = outlineProposals.subscribe
 export const publishOutlineProposalEvent = outlineProposals.publish
+/** The monthly AI budget crossed 80% or 100% (sent to the book whose call crossed it). */
+export const subscribeUsageEvents = usage.subscribe
+export const publishUsageEvent = usage.publish

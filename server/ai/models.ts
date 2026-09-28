@@ -1,23 +1,39 @@
-import { generateText, type EmbeddingModel, type LanguageModel } from 'ai'
-import type { AiModelOption, AiProviderId, AiTask, ModelPurpose } from '#shared/schemas/ai'
+import { generateText, wrapLanguageModel, type EmbeddingModel, type LanguageModel, type LanguageModelMiddleware } from 'ai'
+import type { AiModelOption, AiProviderId, AiRoute, AiTask, ModelPurpose } from '#shared/schemas/ai'
 import { loadAiConfig, modelRefFor, parseModelRef, resolveEmbeddingModel, resolveModel, type AiConfig } from '../services/ai-settings'
+import { recordAiCall, type UsageScope } from '../services/usage'
 import { PROVIDERS } from './providers'
+import { promptCacheMiddleware, supportsExplicitCache, usageMiddleware } from './usage-middleware'
 
-/**
- * The single entry point for models: the configured model for a task, or `null` when AI is not set up.
- * Features must handle `null` gracefully (hide AI actions or show a setup hint) – never hardcode models.
- */
-export async function getModel(workspaceDir: string, task: AiTask): Promise<LanguageModel | null> {
-  const config = await loadAiConfig(workspaceDir)
-  return resolveModel(config, modelRefFor(config.settings, task))
+/** Who a model call is for: the book and the feature its usage is logged under (default: the route). */
+export type ModelScope = Partial<UsageScope>
+
+/** The resolved model wrapped with usage logging (tokens + estimated cost) and, where needed, prompt caching. */
+function tracked(workspaceDir: string, model: LanguageModel, ref: string, route: AiRoute, scope: ModelScope): LanguageModel {
+  if (typeof model === 'string') return model
+  const usage = { bookId: scope.bookId ?? null, feature: scope.feature ?? route }
+  const middleware: LanguageModelMiddleware[] = [usageMiddleware(tokens => recordAiCall(workspaceDir, usage, ref, tokens).then(() => undefined))]
+  if (supportsExplicitCache(ref)) middleware.push(promptCacheMiddleware)
+  return wrapLanguageModel({ model, middleware })
 }
 
+/**
+ * The single entry point for models: the configured model for a tier or feature (see `modelRefFor`), or `null` when AI is not set up.
+ * Features must handle `null` gracefully (hide AI actions or show a setup hint) – never hardcode models.
+ */
+export async function getModel(workspaceDir: string, route: AiRoute, scope: ModelScope = {}): Promise<LanguageModel | null> {
+  return (await getModelWithRef(workspaceDir, route, scope))?.model ?? null
+}
+
+/** Review agents asking for the fast tier get it; all others use the `review` route (its own model, else chat). */
+export const reviewRoute = (task: AiTask): AiRoute => (task === 'fast' ? 'fast' : 'review')
+
 /** Like `getModel`, plus the `provider:model` reference (context budgets, snapshots). */
-export async function getModelWithRef(workspaceDir: string, task: AiTask): Promise<{ model: LanguageModel, ref: string } | null> {
+export async function getModelWithRef(workspaceDir: string, route: AiRoute, scope: ModelScope = {}): Promise<{ model: LanguageModel, ref: string } | null> {
   const config = await loadAiConfig(workspaceDir)
-  const ref = modelRefFor(config.settings, task)
+  const ref = modelRefFor(config.settings, route)
   const model = resolveModel(config, ref)
-  return model && ref ? { model, ref } : null
+  return model && ref ? { model: tracked(workspaceDir, model, ref, route, scope), ref } : null
 }
 
 export interface ConfiguredEmbeddingModel {

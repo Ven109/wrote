@@ -343,3 +343,21 @@ test('settings and assistant fit a phone screen', async ({ browser }) => {
   await expect(phone.getByPlaceholder('Ask about your book…').filter({ visible: true })).toBeVisible()
   await context.close()
 })
+
+test('routes reviews to their own model and shows usage per feature with a budget', async ({ page, request }) => {
+  await gotoHydrated(page, '/settings/ai')
+  await page.getByRole('button', { name: 'Per-feature models' }).click()
+  await page.getByRole('button', { name: 'Reviews', exact: true }).click()
+  await page.getByRole('option', { name: 'tiny:latest' }).click()
+  await expect.poll(async () => ((await (await request.get('/api/settings/ai')).json()) as { models: Record<string, string> }).models.review).toBe('ollama:tiny:latest')
+
+  await gotoHydrated(page, '/settings/usage')
+  const features = page.getByRole('region', { name: 'By feature' })
+  await expect(features.getByText('Assistant')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'By model' }).getByText('ollama:tiny:latest')).toBeVisible()
+  await page.getByLabel('Budget (USD per month)').fill('25')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByText(/of \$25\.00 spent in/)).toBeVisible()
+  await page.getByRole('button', { name: 'Remove' }).click()
+  await expect(page.getByText('Set a budget to be warned')).toBeVisible()
+})

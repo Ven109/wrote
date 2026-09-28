@@ -48,6 +48,12 @@ useSeoMeta({ title: 'AI models' })
         :items="ai.embeddingItems(ai.settings.value?.models.embedding)"
         @update:model-value="ai.setModel('embedding', $event)"
       />
+      <SettingsAiRouting
+        v-if="ai.settings.value"
+        :models="ai.settings.value.models"
+        :items="ai.modelItems"
+        @set="ai.setModel"
+      />
     </section>
     <section
       v-if="ai.settings.value"

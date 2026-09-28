@@ -1,6 +1,6 @@
-import { subscribeActivityEvents, subscribeApprovalEvents, subscribeCodexProposalEvents, subscribeCommentEvents, subscribeBookEvents, subscribeOutlineProposalEvents, subscribeJobEvents, subscribeSuggestionEvents } from '../../../utils/book-events'
+import { subscribeActivityEvents, subscribeApprovalEvents, subscribeCodexProposalEvents, subscribeCommentEvents, subscribeBookEvents, subscribeOutlineProposalEvents, subscribeJobEvents, subscribeSuggestionEvents, subscribeUsageEvents } from '../../../utils/book-events'
 
-/** Server-sent events stream of a book: file changes (`change`), background jobs (`job`), suggestions (`suggestion`), tool calls awaiting approval (`approval`), the activity log (`activity`), codex proposals (`codex-proposal`), outline proposals (`outline-proposal`) and comments (`comment`). */
+/** Server-sent events stream of a book: file changes (`change`), background jobs (`job`), suggestions (`suggestion`), tool calls awaiting approval (`approval`), the activity log (`activity`), codex proposals (`codex-proposal`), outline proposals (`outline-proposal`), comments (`comment`) and AI budget warnings (`usage`). */
 export default defineEventHandler(async (event) => {
   const book = await requireBook(event)
   const stream = createEventStream(event)
@@ -28,6 +28,9 @@ export default defineEventHandler(async (event) => {
   const unsubscribeComments = subscribeCommentEvents(book.id, (change) => {
     void stream.push({ event: 'comment', data: JSON.stringify(change) })
   })
+  const unsubscribeUsage = subscribeUsageEvents(book.id, (status) => {
+    void stream.push({ event: 'usage', data: JSON.stringify(status) })
+  })
   // Flush headers immediately so clients know the stream is live.
   void stream.push({ event: 'ready', data: JSON.stringify({ bookId: book.id }) })
   stream.onClosed(async () => {
@@ -39,6 +42,7 @@ export default defineEventHandler(async (event) => {
     unsubscribeProposals()
     unsubscribeOutlineProposals()
     unsubscribeComments()
+    unsubscribeUsage()
     await stream.close()
   })
   return stream.send()

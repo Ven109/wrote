@@ -9,7 +9,7 @@ import { streamInlineAction } from '../../../../services/inline-ai'
 export default defineEventHandler(async (event) => {
   const input = await readValidatedBody(event, InlineAiRequestSchema.parse)
   const book = await requireBook(event)
-  const configured = await getModelWithRef(useWorkspaceDir(event), 'chat')
+  const configured = await getModelWithRef(useWorkspaceDir(event), 'inline', { bookId: book.id })
   if (!configured) throw createError({ statusCode: 409, statusMessage: 'No AI model is configured', data: { code: 'ai_not_configured' } })
   const controller = new AbortController()
   event.node.req.on('close', () => controller.abort())

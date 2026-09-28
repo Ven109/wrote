@@ -10,7 +10,7 @@ export const summarizeJob = defineWroteJob({
   input: z.object({}).default({}),
   maxAttempts: 3,
   async run({ book, signal, progress }) {
-    const configured = await getSummaryModel(book.workspaceDir)
+    const configured = await getSummaryModel(book.workspaceDir, book.id)
     if (!configured) return { skipped: 'Summaries are off or no model is configured' }
     return refreshSummaries(book, { generate: generateWith(configured.model), model: configured.ref, dailyTokenBudget: configured.dailyTokenBudget, signal, progress })
   },

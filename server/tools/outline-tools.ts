@@ -61,8 +61,8 @@ const helperView = (proposals: { id: string, change: unknown, rationale: string 
 })
 
 /** Runs an outline helper with Wrote's configured model; errors become tool errors the agent can act on. */
-async function withConfiguredModel<T>(workspaceDir: string, run: (options: { generate: ReturnType<typeof generateWith>, model: string }) => Promise<T>): Promise<T> {
-  const configured = await getModelWithRef(workspaceDir, 'chat')
+async function withConfiguredModel<T>(workspaceDir: string, bookId: string, run: (options: { generate: ReturnType<typeof generateWith>, model: string }) => Promise<T>): Promise<T> {
+  const configured = await getModelWithRef(workspaceDir, 'outline', { bookId })
   if (!configured) throw new ToolError('No AI model is configured in Wrote. Read the outline with get_outline and use propose_outline_changes instead.', 'ai_not_configured')
   try {
     return await run({ generate: generateWith(configured.model), model: configured.ref })
@@ -80,7 +80,7 @@ export const suggestBridgeBeatsTool = defineWroteTool({
   permission: 'propose',
   input: z.object({ fromBeatId: BeatIdSchema, toBeatId: BeatIdSchema, count: z.number().int().min(2).max(4).optional() }),
   handler: (input, { book, caller, workspaceDir }) =>
-    withConfiguredModel(workspaceDir, async options => helperView(await suggestBridgeBeats(book!, input, { ...options, author: caller }))),
+    withConfiguredModel(workspaceDir, book!.id, async options => helperView(await suggestBridgeBeats(book!, input, { ...options, author: caller }))),
 })
 
 export const reviewOutlineTool = defineWroteTool({
@@ -90,5 +90,5 @@ export const reviewOutlineTool = defineWroteTool({
   permission: 'propose',
   input: z.object({ actId: ActIdSchema.optional(), templateId: z.string().regex(/^[\w.-]+$/).optional() }),
   handler: (input, { book, caller, workspaceDir }) =>
-    withConfiguredModel(workspaceDir, async options => helperView(await reviewOutline(book!, input, { ...options, author: caller }))),
+    withConfiguredModel(workspaceDir, book!.id, async options => helperView(await reviewOutline(book!, input, { ...options, author: caller }))),
 })

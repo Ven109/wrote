@@ -5,6 +5,6 @@ import { generateWith, OUTLINE_HELPER, reviewOutline } from '../../../../../serv
 export default defineEventHandler(async (event) => {
   const input = await readValidatedBody(event, ReviewOutlineSchema.parse)
   const book = await requireBook(event)
-  const { model, ref } = await requireChatModel(book.workspaceDir)
+  const { model, ref } = await requireChatModel(book.workspaceDir, 'outline', { bookId: book.id })
   return withStorageErrors(() => reviewOutline(book, input, { generate: generateWith(model), model: ref, author: OUTLINE_HELPER }))
 })

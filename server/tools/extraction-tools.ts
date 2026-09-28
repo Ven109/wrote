@@ -18,7 +18,7 @@ export const extractCodexTool = defineWroteTool({
   permission: 'propose',
   input: z.object({ entryId: EntryIdSchema.describe('Chapter, scene or part id (see get_structure)') }),
   async handler({ entryId }, { book, caller }) {
-    const configured = await getModelWithRef(book!.workspaceDir, 'chat')
+    const configured = await getModelWithRef(book!.workspaceDir, 'extraction', { bookId: book!.id })
     if (!configured) throw new ToolError('No AI model is configured in Wrote. Read the text and use propose_codex_entries instead.', 'ai_not_configured')
     return view(await scanForCodex(book!, entryId, { extract: extractWith(configured.model), model: configured.ref, author: caller }))
   },

@@ -16,9 +16,45 @@ Models are referenced as `provider:model` (e.g. `ollama:llama3.2`). Two defaults
 tasks) and **fast** (summaries, quick suggestions; falls back to chat). A third, optional slot, **embeddings**, turns
 on semantic search (see below).
 
+## Per-feature models
+
+Under *Per-feature models* each AI feature can use its own model; unset features use their tier:
+
+| Feature | Tier | Typical choice |
+|---|---|---|
+| Assistant (`assistant`) | chat | a strong general model |
+| Autocomplete (`autocomplete`) | fast | a small, fast (local) model |
+| Inline actions (`inline`) | chat | |
+| Summaries (`summaries`) | fast | a cheap model |
+| Reviews (`review`) | chat | a large model – it finds more |
+| Codex scan (`extraction`) | chat | |
+| Outline helpers (`outline`) | chat | |
+
+Review agents set to the *fast* tier keep using the fast model. All model calls resolve through this routing
+(`getModel(workspaceDir, route)` in `server/ai/models.ts`).
+
+## Usage, cost and budget
+
+Every AI call (and every embedding batch) is logged in `<workspace>/.wrote/usage.db` with its book, feature, model,
+input/output/cached tokens and an **estimated** cost. Costs use built-in list prices (`server/ai/pricing.ts`) – local
+Ollama models are free, unknown models have no cost. Set your own prices per model with `prices` in
+`ai-settings.json` (USD per million tokens: `{ "input": 3, "output": 15, "cachedInput": 0.3 }`).
+
+The **Usage** page (sidebar → Usage) shows tokens and cost by feature, model, book and month. With a **monthly
+budget** (USD, whole workspace) Wrote warns with a toast when a call pushes the month over 80% and 100%; AI keeps
+working – the budget is a warning, not a limit.
+
+## Prompt caching
+
+Requests put the stable part first (instructions and book context in the system prompt, the question last).
+Anthropic models get a cache breakpoint at the end of the system prompt, so repeated requests on the same material
+(review runs, chat turns) read it from the cache; OpenAI and Gemini cache stable prefixes automatically. Cached input
+tokens appear as *Cached input* on the Usage page and are billed at the cached rate.
+
 ## Where settings live
 
-- `<workspace>/.wrote/ai-settings.json` – providers, base URLs, default models.
+- `<workspace>/.wrote/ai-settings.json` – providers, base URLs, models per tier and feature, budget, own prices.
+- `<workspace>/.wrote/usage.db` – the AI usage log.
 - `<workspace>/.wrote/secrets.json` – API keys, readable by your user only (`0600`). Keys are write-only in the UI and
   API: they are never sent to the browser. (The desktop app will move them to the OS keychain.)
 
