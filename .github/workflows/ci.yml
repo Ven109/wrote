@@ -56,3 +56,39 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 7
+
+  export:
+    name: Export check (EPUB, PDF, DOCX, HTML, Markdown)
+    runs-on: ubuntu-latest
+    env:
+      TYPST_VERSION: v0.13.1
+      EPUBCHECK_VERSION: 5.2.1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Pandoc, Typst and epubcheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y pandoc
+          curl -sSL "https://github.com/typst/typst/releases/download/${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz" | tar -xJ
+          sudo mv typst-x86_64-unknown-linux-musl/typst /usr/local/bin/
+          curl -sSL -o epubcheck.zip "https://github.com/w3c/epubcheck/releases/download/v${EPUBCHECK_VERSION}/epubcheck-${EPUBCHECK_VERSION}.zip"
+          unzip -q epubcheck.zip
+          pandoc --version | head -1 && typst --version
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm export:check
+        env:
+          EPUBCHECK_JAR: ${{ github.workspace }}/epubcheck-5.2.1/epubcheck.jar

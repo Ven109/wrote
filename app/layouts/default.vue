@@ -10,6 +10,7 @@ watch(() => route.fullPath, () => {
 useAppCommands()
 const { bookId } = useAppNavigation()
 useBookSync(bookId)
+const exportDialog = useExportDialog()
 </script>
 
 <template>
@@ -23,6 +24,15 @@ useBookSync(bookId)
       >
         <slot name="title" />
         <template #actions>
+          <UButton
+            v-if="bookId"
+            icon="i-lucide-download"
+            color="neutral"
+            variant="ghost"
+            aria-label="Export book"
+            class="min-h-11 justify-center lg:min-h-0"
+            @click="exportDialog.show"
+          />
           <AppJobsIndicator
             v-if="bookId"
             :book-id="bookId"
@@ -38,6 +48,10 @@ useBookSync(bookId)
     <AppCommandPalette />
     <NotesQuickCapture />
     <AppApprovals
+      v-if="bookId"
+      :book-id="bookId"
+    />
+    <ExportModal
       v-if="bookId"
       :book-id="bookId"
     />

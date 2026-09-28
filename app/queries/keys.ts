@@ -16,6 +16,11 @@ export const settingsKeys = {
   usage: (months?: number) => (months ? ['settings', 'usage', months] as const : ['settings', 'usage'] as const),
 }
 
+/** Export tools on this machine (Pandoc, Typst). */
+export const exportKeys = {
+  capabilities: () => ['export', 'capabilities'] as const,
+}
+
 /** Workspace-wide templates (shared by all books). */
 export const templateKeys = {
   beatSheets: () => ['templates', 'beat-sheets'] as const,

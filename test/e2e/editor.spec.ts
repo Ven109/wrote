@@ -84,7 +84,9 @@ test('custom blocks: note with a to-do, codex card, scene break – stored as di
   await note.getByRole('button', { name: 'Open task – mark done' }).click()
   await expect(note.getByRole('button', { name: 'Done – remove task' })).toBeVisible()
 
+  // Caret to the end of the first line by keyboard: a click alone can land before the node view re-rendered.
   await content.getByText('Alpha').click()
+  await page.keyboard.press('ControlOrMeta+Home')
   await page.keyboard.press('End')
   await page.keyboard.press('Enter')
   await page.keyboard.type('/')
@@ -94,6 +96,7 @@ test('custom blocks: note with a to-do, codex card, scene break – stored as di
   await expect(content.getByRole('link', { name: 'Mara Velden' })).toBeVisible()
 
   await content.getByText('Alpha').click()
+  await page.keyboard.press('ControlOrMeta+Home')
   await page.keyboard.press('End')
   await page.keyboard.press('Enter')
   await page.keyboard.type('/')
