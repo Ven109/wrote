@@ -39,6 +39,21 @@ export async function readEntry(root: string, path: string): Promise<StoredEntry
 }
 
 /** Recursively lists all Markdown files that are entry locations (book-relative POSIX paths, sorted). */
+/** Every Markdown file of the book (entries, matter, agents …) plus `wrote.json` – what a book snapshot holds. */
+export async function listBookTextFiles(root: string): Promise<string[]> {
+  const found: string[] = ['wrote.json']
+  async function walk(dir: string) {
+    for (const item of await readdir(dir, { withFileTypes: true })) {
+      if (item.name.startsWith('.') || IGNORED_DIRS.has(item.name)) continue
+      const absolute = join(dir, item.name)
+      if (item.isDirectory()) await walk(absolute)
+      else if (item.name.endsWith('.md')) found.push(relativeToBook(root, absolute))
+    }
+  }
+  await walk(root)
+  return found.sort()
+}
+
 export async function listEntryPaths(root: string): Promise<string[]> {
   const found: string[] = []
   async function walk(dir: string) {

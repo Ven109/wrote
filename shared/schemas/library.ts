@@ -13,7 +13,7 @@ export const OpenFolderSchema = z.object({
   path: z.string().trim().min(1, 'Enter the folder path'),
 })
 
-export const UpdateBookSchema = BookConfigSchema.pick({ title: true, subtitle: true, author: true, language: true, export: true }).partial()
+export const UpdateBookSchema = BookConfigSchema.pick({ title: true, subtitle: true, author: true, language: true, export: true, snapshots: true, goals: true }).partial()
 export type UpdateBookInput = z.infer<typeof UpdateBookSchema>
 
 export interface BookSummary {
@@ -29,4 +29,6 @@ export interface BookSummary {
   updatedAt: string | null
   /** How export treats each custom block type (defaults merged with the book's settings). */
   blockExport: Record<string, 'include' | 'strip'>
+  /** Manual snapshots are committed to git (when the folder is a repository). */
+  snapshotGit: boolean
 }

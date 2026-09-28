@@ -2,6 +2,7 @@ import type { z } from 'zod'
 import { DEFAULT_TOOL_POLICY, type PermissionDecision, type ToolPermissionLevel, type ToolPolicy } from '#shared/schemas/permissions'
 import type { Actor } from '#shared/schemas/suggestion'
 import { recordChanges, recordToolCall } from '../services/activity'
+import { snapshotBeforeBulkChange } from '../services/snapshot-restore'
 import type { BookContext } from '../services/workspace'
 
 /** How much a tool may change: drives the permission model (`read` < `propose` < `write` < `destructive`). */
@@ -73,13 +74,15 @@ export async function runTool<I extends z.ZodType, O>(tool: WroteTool<I, O>, raw
 
 /**
  * Runs a tool that may change data with its file changes recorded, and logs the call to the activity log
- * (with before/after states, so the author can review and undo it). Partial changes of a failing call are
- * logged too.
+ * (with before/after states, so the author can review and undo it). Bulk changes (several files or blocks) also
+ * leave an automatic snapshot of the affected files as they were. Partial changes of a failing call are logged too.
  */
 async function runLogged<I extends z.ZodType, O>(tool: WroteTool<I, O>, input: z.infer<I>, context: ToolContext, book: BookContext): Promise<O> {
   const recorder = recordChanges(book.repository)
   const log = async (output: unknown) => {
     const changes = await recorder.changes()
+    await snapshotBeforeBulkChange(book, changes, tool.title, context.caller)
+      .catch(error => console.warn(`[snapshots] could not snapshot before ${tool.name}:`, error))
     await recordToolCall(book, { actor: context.caller, tool: tool.name, toolTitle: tool.title, permission: tool.permission, input, output, changes, undoable: recorder.undoable() })
       .catch(error => console.warn(`[activity] could not log ${tool.name}:`, error))
   }

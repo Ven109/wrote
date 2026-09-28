@@ -26,7 +26,7 @@ my-novel/
 ├── cover.jpg                      # optional EPUB cover
 ├── outline.md
 ├── style-guide.md
-└── .wrote/                        # index (rebuildable), app state, AI provenance, export presets (presets/*.yaml) – gitignored
+└── .wrote/                        # index (rebuildable), app state, AI provenance, export presets (presets/*.yaml), snapshots (see snapshots.md) – gitignored
 ```
 
 Paths inside the book are POSIX and relative to the book root. Entry types are derived from the location (`shared/book/layout.ts`):

@@ -4,7 +4,7 @@ import { defineComponent, h } from 'vue'
 import type { BookSummary } from '#shared/schemas/library'
 import { useBooks } from './useBooks'
 
-const book = (id: string): BookSummary => ({ id, title: id, subtitle: null, author: null, language: 'en', template: 'blank', external: false, wordCount: 0, scenes: 0, updatedAt: null, blockExport: {} })
+const book = (id: string): BookSummary => ({ id, title: id, subtitle: null, author: null, language: 'en', template: 'blank', external: false, wordCount: 0, scenes: 0, updatedAt: null, blockExport: {}, snapshotGit: false })
 
 let books: BookSummary[] = []
 let failDelete = false

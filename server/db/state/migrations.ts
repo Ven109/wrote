@@ -139,4 +139,26 @@ export const STATE_MIGRATIONS: string[][] = [
     )`,
     'CREATE INDEX review_runs_created_idx ON review_runs(created_at)',
   ],
+  // 11: snapshots (WRO-4); file contents live in .wrote/snapshots/objects
+  [
+    `CREATE TABLE snapshots (
+      id TEXT PRIMARY KEY,
+      created_at TEXT NOT NULL,
+      data TEXT NOT NULL
+    )`,
+    'CREATE INDEX snapshots_created_idx ON snapshots(created_at)',
+  ],
+  // 12: writing sessions (WRO-5): words added/deleted/net per session; days and streaks are derived
+  [
+    `CREATE TABLE writing_sessions (
+      id TEXT PRIMARY KEY,
+      day TEXT NOT NULL,
+      started_at TEXT NOT NULL,
+      ended_at TEXT NOT NULL,
+      added INTEGER NOT NULL DEFAULT 0,
+      deleted INTEGER NOT NULL DEFAULT 0,
+      net INTEGER NOT NULL DEFAULT 0
+    )`,
+    'CREATE INDEX writing_sessions_day_idx ON writing_sessions(day)',
+  ],
 ]

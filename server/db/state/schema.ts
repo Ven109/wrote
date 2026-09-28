@@ -100,3 +100,21 @@ export const comments = sqliteTable('comments', {
   createdAt: text('created_at').notNull(),
   data: text('data', { mode: 'json' }).notNull(),
 })
+
+/** Snapshots (WRO-4); `data` holds the full `Snapshot` (JSON); contents are blobs in `.wrote/snapshots/objects`. */
+export const snapshots = sqliteTable('snapshots', {
+  id: text('id').primaryKey(),
+  createdAt: text('created_at').notNull(),
+  data: text('data', { mode: 'json' }).notNull(),
+})
+
+/** Writing sessions (WRO-5): a run of edits with less than 30 minutes between saves. */
+export const writingSessions = sqliteTable('writing_sessions', {
+  id: text('id').primaryKey(),
+  day: text('day').notNull(),
+  startedAt: text('started_at').notNull(),
+  endedAt: text('ended_at').notNull(),
+  added: integer('added').notNull().default(0),
+  deleted: integer('deleted').notNull().default(0),
+  net: integer('net').notNull().default(0),
+})
