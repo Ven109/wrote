@@ -1,4 +1,9 @@
+// API tests build the app once into a shared folder (see test/setup/api-build.ts).
+const testBuildDir = process.env.WROTE_TEST_BUILD_DIR
+
 export default defineNuxtConfig({
+  ...(testBuildDir ? { buildDir: testBuildDir, nitro: { output: { dir: `${testBuildDir}/output` } } } : {}),
+
   modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxt/test-utils/module', '@pinia/nuxt', '@pinia/colada-nuxt'],
 
   devtools: { enabled: true },

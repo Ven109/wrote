@@ -9,51 +9,69 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Independent jobs run in parallel; each takes a few minutes.
 jobs:
-  checks:
-    name: Lint, typecheck & test
+  static:
+    name: Lint & typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile
-
       - run: pnpm lint
-
       - run: pnpm typecheck
 
-      - run: pnpm test
-
-  e2e:
-    name: E2E (desktop + mobile)
+  unit:
+    name: Unit & component tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile
+      - run: pnpm test:unit
 
+  api:
+    name: API tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:api
+
+  e2e:
+    name: E2E (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop, mobile]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-
-      - run: pnpm test:e2e
-
+      - run: pnpm test:e2e --project ${{ matrix.project }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.project }}
           path: playwright-report
           retention-days: 7
 
