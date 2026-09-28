@@ -19,7 +19,10 @@ export function useEntryDocument(bookId: MaybeRefOrGetter<string>, path: MaybeRe
   const id = () => toValue(bookId)
   const { data: document, status, error, refetch } = useQuery(() => documentQuery({ bookId: id(), path: toValue(path) ?? '' }))
 
-  const draft = ref('')
+  // Watchers do not run during SSR once the query resolves, so on the server the draft mirrors the loaded document.
+  const draft: Ref<string> = import.meta.server
+    ? computed({ get: () => document.value?.body.trimEnd() ?? '', set: () => {} })
+    : ref('')
   const draftPath = ref<string | null>(null)
   const baseBody = (p: string) => session.baseBody(id(), p) ?? ''
   const dirty = computed(() => Boolean(draftPath.value) && bodiesDiffer(draft.value, baseBody(draftPath.value!)))

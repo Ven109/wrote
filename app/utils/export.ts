@@ -16,7 +16,7 @@ export interface ChapterOption {
 }
 
 /** The chapters of the manuscript in book order, with their part (for the chapter picker). */
-export const chapterOptions = (structure: StructureNode[]): ChapterOption[] =>
+export const exportChapterOptions = (structure: StructureNode[]): ChapterOption[] =>
   structure.flatMap(part => part.children.filter(child => child.type === 'chapter').map(chapter => ({ id: chapter.id, title: chapter.title, part: part.title })))
 
 /** The file name from a `Content-Disposition` header, else a fallback. */

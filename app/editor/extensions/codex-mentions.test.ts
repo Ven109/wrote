@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it } from 'vitest'
 import type { Editor } from '@tiptap/vue-3'
+import { Selection } from '@tiptap/pm/state'
 import { createNameMatcher } from '#shared/utils/name-matcher'
 import { createHeadlessEditor } from '../../../test/utils/headless-editor'
 import { toStoredBody } from '../markdown'
@@ -47,7 +48,8 @@ describe('codex mention decorations', () => {
     const paragraph = 'The tide was out when Mara reached the harbor, and the gulls were loud above the water again.'
     const e = setup(Array.from({ length: 550 }, () => paragraph).join('\n\n'))
     expect(mentions(e)).toHaveLength(550)
-    e.commands.setTextSelection(e.state.doc.content.size / 2)
+    // Middle of the scene, snapped into a paragraph's text.
+    e.commands.setTextSelection(Selection.near(e.state.doc.resolve(Math.floor(e.state.doc.content.size / 2))).from)
     const samples: number[] = []
     for (let i = 0; i < 50; i++) {
       const started = performance.now()

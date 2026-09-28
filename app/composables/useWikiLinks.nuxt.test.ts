@@ -1,8 +1,12 @@
-import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import { mockNuxtImport, mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { getQuery, readBody } from 'h3'
 import { useWikiLinks } from './useWikiLinks'
+
+// Navigation itself is Nuxt's job; loading the target page (with the editor) would only slow these tests down.
+const { navigateTo } = vi.hoisted(() => ({ navigateTo: vi.fn() }))
+mockNuxtImport('navigateTo', () => navigateTo)
 
 const created: string[] = []
 registerEndpoint('/api/books/wl/links/resolve', (event) => {
@@ -42,6 +46,6 @@ describe('useWikiLinks', () => {
     await vi.waitFor(() => expect(api.resolve('Nowhere').broken).toBe(true))
     await api.open('Nowhere')
     expect(created).toEqual(['Nowhere'])
-    await vi.waitFor(() => expect(useRoute().fullPath).toBe('/books/wl/notes/notes/inbox/nowhere.md'))
+    expect(navigateTo).toHaveBeenCalledWith('/books/wl/notes/notes/inbox/nowhere.md', undefined)
   })
 })

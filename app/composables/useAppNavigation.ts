@@ -7,7 +7,6 @@ export const BOOK_SECTIONS = [
   { key: 'codex', label: 'Codex', icon: 'i-lucide-book-user' },
   { key: 'outline', label: 'Outline', icon: 'i-lucide-list-tree' },
   { key: 'timeline', label: 'Timeline', icon: 'i-lucide-calendar-range' },
-  { key: 'research', label: 'Research', icon: 'i-lucide-library' },
   { key: 'goals', label: 'Goals', icon: 'i-lucide-target' },
   { key: 'agents', label: 'Agents', icon: 'i-lucide-bot' },
   { key: 'snapshots', label: 'Snapshots', icon: 'i-lucide-camera' },
