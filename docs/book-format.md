@@ -123,9 +123,9 @@ Type-specific fields:
 |---|---|---|
 | `part` | `prt` | `synopsis` |
 | `chapter` | `chp` | `synopsis` |
-| `scene` | `scn` | `status` (`idea` · `draft` · `revised` · `final`, default `draft`), `pov`, `location`, `timeline`, `synopsis` |
+| `scene` | `scn` | `status` (`idea` · `draft` · `revised` · `final`, default `draft`), `pov`, `location`, `timeline` (in-world date, see [Timeline](timeline.md)), `synopsis` |
 | `note` | `nte` | `pinned` (default `false`) |
-| `codex` | `cdx` | `codexType` (**required**: `character` · `place` · `item` · `faction` · `lore` · `glossary` or a custom type), `aliases`, type fields (see Codex types) |
+| `codex` | `cdx` | `codexType` (**required**: `character` · `place` · `item` · `faction` · `lore` · `event` · `glossary` or a custom type), `aliases`, type fields (see Codex types) |
 | `research` | `rsc` | `source`, `url`, `author` |
 | `outline` | `otl` | – |
 | `style-guide` | `sty` | – |
@@ -139,7 +139,7 @@ Schemas live in `shared/schemas/` (Zod) and are the single source of truth for t
 Codex entries (`codex/<type folder>/<slug>.md`) have `codexType` in their frontmatter plus the fields of their type
 template. Built-in types: `character` (role, age, appearance, personality, goals, relationships), `place` (region,
 atmosphere, features), `item` (owner, significance), `faction` (leader, members, goals), `lore` (era, summary),
-`glossary` (definition). `aliases` (list) are matched by links, search and mention detection.
+`event` (date, end, participants, place, summary – see [Timeline](timeline.md)), `glossary` (definition). `aliases` (list) are matched by links, search and mention detection.
 
 Custom types live in `codex/_types/<id>.yaml` (the file name is the type id):
 

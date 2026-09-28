@@ -5,6 +5,7 @@ import { extractCodexTool, proposeCodexEntriesTool } from './extraction-tools'
 import { getOutlineTool, proposeOutlineChangesTool, reviewOutlineTool, suggestBridgeBeatsTool, updateOutlineTool } from './outline-tools'
 import { getProgressTool, getStructureTool, listBooksTool, readEntryTool, searchTool } from './read-tools'
 import { getSummariesTool } from './summary-tools'
+import { timelineQueryTool } from './timeline-tools'
 import { createNoteTool, listSuggestionsTool, proposeEditTool } from './write-tools'
 
 /** All tools available to the assistant and MCP clients. */
@@ -15,6 +16,7 @@ export const WROTE_TOOLS = [
   getStructureTool,
   getSummariesTool,
   getOutlineTool,
+  timelineQueryTool,
   getCodexTool,
   getCodexEntryTool,
   getProgressTool,

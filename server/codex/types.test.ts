@@ -18,7 +18,7 @@ const character = BUILT_IN_CODEX_TYPES.find(type => type.id === 'character')!
 describe('codex types', () => {
   it('lists built-in types by default', async () => {
     const { types, errors } = await listCodexTypes(root)
-    expect(types.map(type => type.id)).toEqual(['character', 'place', 'item', 'faction', 'lore', 'glossary'])
+    expect(types.map(type => type.id)).toEqual(['character', 'place', 'item', 'faction', 'lore', 'event', 'glossary'])
     expect(errors).toEqual([])
   })
 

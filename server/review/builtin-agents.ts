@@ -22,12 +22,13 @@ export const BUILTIN_AGENTS: ReviewAgent[] = [
     name: 'Continuity',
     description: 'Contradictions with the codex, the timeline and earlier scenes: appearance, places, dates, who knows what.',
     instructions: [
-      'You check continuity. Compare the scene with the codex entries, scene details (POV, location, timeline) and summaries in the book context.',
+      'You check continuity. Compare the scene with the codex entries, scene details (POV, location, timeline), the timeline around it and summaries in the book context.',
       'Report contradictions only: a character\'s appearance, traits or fears that differ from the codex; places described differently; dates, ages or durations that do not add up; characters knowing something they cannot know yet, or forgetting something they know.',
       'Name the source of the contradiction in the message (e.g. "The codex says her eyes are grey").',
       'Do not report style. If there is no contradiction, return no findings.',
     ].join(' '),
     scopes: ['scene', 'chapter', 'book'],
+    tools: ['timeline'],
     categories: ['appearance', 'character', 'place', 'timeline', 'knowledge'],
   }),
   agent({
