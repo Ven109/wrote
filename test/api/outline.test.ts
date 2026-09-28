@@ -62,3 +62,14 @@ describe('outline proposals', () => {
     expect((await fetch(`${base}/outline/proposals?status=nope`)).status).toBe(400)
   })
 })
+
+describe('outline helpers', () => {
+  it('needs a configured model and validates input', async () => {
+    const post = (path: string, body: unknown) => fetch(`${base}/outline/helpers/${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+    const res = await post('bridge', { fromBeatId: 'bt_arr1va0001', toBeatId: 'bt_themap0001' })
+    expect(res.status).toBe(409)
+    expect(await res.json()).toMatchObject({ data: { code: 'ai_not_configured' } })
+    expect((await post('bridge', { fromBeatId: 'nope' })).status).toBe(400)
+    expect((await post('review', { templateId: '../etc' })).status).toBe(400)
+  })
+})

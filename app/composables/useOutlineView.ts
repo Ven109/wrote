@@ -18,7 +18,7 @@ const MOVES: [BeatDirection, string, string][] = [
   ['nextAct', 'Move to next act', 'i-lucide-arrow-right'],
 ]
 
-/** The outline page: board/tree toggle, add/rename/delete dialogs, card and act menus, beat editor, templates, proposals. */
+/** The outline page: board/tree toggle, add/rename/delete dialogs, card and act menus, beat editor, templates, proposals, AI helpers. */
 export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
   const data = useOutline(bookId)
   const { outline, apply } = data
@@ -29,6 +29,7 @@ export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
   const beats = useBeatEditor(bookId, apply)
   const templates = useBeatSheetPicker(outline, apply)
   const proposals = useOutlineProposals(bookId, outline)
+  const helpers = useOutlineHelpers(bookId, outline)
   const { edit } = beats
 
   const actMenu = (act: Act): DropdownMenuItem[][] => [
@@ -36,11 +37,15 @@ export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
       { label: 'Add beat', icon: 'i-lucide-plus', onSelect: () => (dialog.value = { kind: 'addBeat', act }) },
       { label: 'Rename act', icon: 'i-lucide-pencil', onSelect: () => (dialog.value = { kind: 'renameAct', act }) },
     ],
+    [{ label: 'What is missing here?', icon: 'i-lucide-sparkles', onSelect: () => helpers.openReview(act.id) }],
     [{ label: 'Delete act', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => (dialog.value = { kind: 'deleteAct', act }) }],
   ]
 
   const beatMenu = (beat: Beat): DropdownMenuItem[][] => [
-    [{ label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => edit(beat) }],
+    [
+      { label: 'Edit', icon: 'i-lucide-pencil', onSelect: () => edit(beat) },
+      { label: 'Suggest bridge beats', icon: 'i-lucide-sparkles', disabled: !helpers.canBridge.value, onSelect: () => helpers.openBridge(beat) },
+    ],
     MOVES.map(([direction, label, icon]) => {
       const op = stepMove(outline.value, beat.id, direction)
       return { label, icon, disabled: !op, onSelect: () => op && apply(op) }
@@ -91,6 +96,12 @@ export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
     beats,
     templates,
     proposals,
+    helpers,
+    aiMenu: computed<DropdownMenuItem[]>(() => [
+      { label: 'Suggest bridge beats', icon: 'i-lucide-git-commit-horizontal', disabled: !helpers.canBridge.value, onSelect: () => helpers.openBridge() },
+      { label: 'Find plot holes', icon: 'i-lucide-search-check', disabled: !outline.value.acts.length, onSelect: () => helpers.openReview() },
+      { label: 'What is missing in an act', icon: 'i-lucide-list-plus', disabled: !outline.value.acts.length, onSelect: () => helpers.openReview(outline.value.acts[0]?.id) },
+    ]),
     /** Tree view has no ghost cards: every proposal is listed above it. */
     listedProposals: computed(() => (mode.value === 'tree' ? proposals.pending.value : proposals.loose.value)),
     actMenu,

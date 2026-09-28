@@ -47,3 +47,9 @@ export const ResolveOutlineProposalSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('rejected') }),
 ])
 export type ResolveOutlineProposalInput = z.infer<typeof ResolveOutlineProposalSchema>
+
+/** "Suggest ways to get from beat A to beat B". */
+export const BridgeBeatsSchema = z.object({ fromBeatId: BeatIdSchema, toBeatId: BeatIdSchema, count: z.number().int().min(2).max(4).optional() })
+
+/** "Find plot holes" (whole outline) or "What's missing in act N" (`actId`), optionally against a beat sheet. */
+export const ReviewOutlineSchema = z.object({ actId: ActIdSchema.optional(), templateId: z.string().regex(/^[\w.-]+$/).max(100).optional() })
