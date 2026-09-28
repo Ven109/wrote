@@ -21,7 +21,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git switch:*)",
-      "Bash(git checkout -b:*)"
+      "Bash(git checkout -b:*)",
+      "mcp__github__merge_pull_request",
+      "mcp__Claude_Code_Remote__delete_trigger"
     ],
     "deny": [
       "Bash(git push --force:*)",
