@@ -6,21 +6,31 @@ const { entry, autosave, words, meta, backlinks, summary, suggestions, comments,
 const { document, status, draft } = entry
 useSeoMeta({ title: () => document.value?.title ?? book.value?.title ?? 'Write' })
 defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
+const writing = useWritingEnvironment(draft)
+const bare = writing.distractionFree
 </script>
 
 <template>
   <div
     class="mx-auto flex w-full flex-col gap-4 p-4 sm:p-6"
-    :class="comments.margin.value ? 'max-w-6xl' : 'max-w-3xl'"
+    :class="comments.margin.value && !bare ? 'max-w-6xl' : 'max-w-3xl'"
   >
     <template v-if="activeEntryPath">
-      <div class="flex flex-wrap items-center justify-between gap-2">
+      <div
+        v-if="!bare"
+        class="flex flex-wrap items-center justify-between gap-2"
+      >
         <ManuscriptBreadcrumb
           :book-id="bookId"
           :path="activeEntryPath"
           class="min-w-0"
         />
-        <div class="flex shrink-0 items-center gap-1">
+        <div class="flex shrink-0 flex-wrap items-center gap-1">
+          <EditorSessionTimer
+            v-if="writing.timerVisible.value"
+            v-bind="writing.timerProps.value"
+            v-on="writing.timerEvents"
+          />
           <EditorSaveStatus
             :status="autosave.status.value"
             @keep-mine="autosave.keepMine"
@@ -82,21 +92,23 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
             class="size-11 justify-center lg:size-auto"
             @click="meta.show"
           />
+          <EditorWritingModesMenu :items="writing.menu.value" />
           <EditorModeToggle class="hidden sm:flex" />
         </div>
       </div>
       <template v-if="document">
         <EditorBeatPanel
+          v-if="!bare"
           :beats="beats.beats.value"
           :outline-href="beats.outlineHref.value"
         />
-        <div :class="comments.margin.value ? 'grid grid-cols-[minmax(0,1fr)_16rem] gap-6' : ''">
+        <div :class="comments.margin.value && !bare ? 'grid grid-cols-[minmax(0,1fr)_16rem] gap-6' : ''">
           <EditorWroteEditor
             :key="document.path"
             v-model="draft"
           />
           <EditorCommentsMargin
-            v-if="comments.margin.value"
+            v-if="comments.margin.value && !bare"
             :comments="comments.comments.value"
             :active="comments.active.value"
             :busy="comments.busy.value"
@@ -108,7 +120,7 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
           />
         </div>
         <EditorSummary
-          v-if="summary.visible.value"
+          v-if="summary.visible.value && !bare"
           v-model:draft="summary.draft.value"
           :summary="summary.summary.value"
           :enabled="summary.enabled.value"
@@ -120,7 +132,20 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
           @reset="summary.reset"
           @synopsis="summary.useAsSynopsis"
         />
-        <EditorBacklinks :backlinks="backlinks" />
+        <EditorBacklinks
+          v-if="!bare"
+          :backlinks="backlinks"
+        />
+        <EditorDistractionFreeBar
+          v-if="bare"
+          @exit="writing.exitDistractionFree"
+        >
+          <EditorSessionTimer
+            v-if="writing.timerVisible.value"
+            v-bind="writing.timerProps.value"
+            v-on="writing.timerEvents"
+          />
+        </EditorDistractionFreeBar>
       </template>
       <USkeleton
         v-else-if="status === 'pending'"

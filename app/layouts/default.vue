@@ -11,14 +11,20 @@ useAppCommands()
 const { bookId } = useAppNavigation()
 useBookSync(bookId)
 const exportDialog = useExportDialog()
+// Distraction-free mode hides the shell without touching its state, so leaving it restores the layout as it was.
+const { distractionFree } = useWritingModes()
 </script>
 
 <template>
   <div class="flex min-h-svh bg-muted">
-    <AppSidebar v-model:open="sidebarOpen" />
+    <AppSidebar
+      v-if="!distractionFree"
+      v-model:open="sidebarOpen"
+    />
 
-    <AppMain class="lg:me-2">
+    <AppMain :bare="distractionFree">
       <AppTopbar
+        v-if="!distractionFree"
         @toggle-sidebar="toggleSidebar"
         @toggle-assistant="toggleAssistant"
       >
@@ -44,7 +50,10 @@ const exportDialog = useExportDialog()
       </div>
     </AppMain>
 
-    <AppAssistantSidebar v-model:open="assistantOpen" />
+    <AppAssistantSidebar
+      v-if="!distractionFree"
+      v-model:open="assistantOpen"
+    />
     <AppCommandPalette />
     <NotesQuickCapture />
     <AppApprovals

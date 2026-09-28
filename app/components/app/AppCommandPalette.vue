@@ -5,8 +5,12 @@ const { bookId } = useAppNavigation()
 useBookSearch(bookId)
 
 defineShortcuts({
-  meta_k: () => {
-    open.value = !open.value
+  // Works while writing, too: the writing modes are toggled from here.
+  meta_k: {
+    usingInput: true,
+    handler: () => {
+      open.value = !open.value
+    },
   },
   meta_b: toggleSidebar,
   meta_j: toggleAssistant,
