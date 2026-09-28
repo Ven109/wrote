@@ -25,6 +25,8 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 | `update_outline` | Adds, moves, edits and deletes acts and beats; logged and undoable | write |
 | `propose_edit` | Suggests a change (replace a passage, or `mode: "insert_after"` to add paragraphs) – **never applied directly**; it appears live as a tracked change you accept, edit or reject in Wrote | propose |
 
+**Review agent prompts**: every built-in review agent and the custom agents of the open book (`agents/*.md`) are prompts named `review-<id>` (argument `entryId`: a scene or chapter). They embed the scenes and the agent's instructions; findings come back as anchored comments (`add_comment`) and fixes as suggestions (`propose_edit`).
+
 **Resources** (read level; listable, Markdown):
 
 | URI | Content |

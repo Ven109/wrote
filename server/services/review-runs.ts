@@ -13,7 +13,7 @@ import { getReviewRun, upsertReviewRun } from '../db/state/review-runs'
 import { InvalidInputError, NotFoundError } from '../storage/errors'
 import { publishCommentEvent } from '../utils/book-events'
 import { reviewAgent } from './review-agents'
-import { storeFindings } from './review-findings'
+import { normalizeFindings, storeFindings, type FindingDraft } from './review-findings'
 import { getStructure } from './structure'
 import type { BookContext } from './workspace'
 
@@ -138,4 +138,17 @@ export async function executeReviewRun(book: BookContext, runId: string, options
     publishCommentEvent(book.id, { entryId: run.sceneIds[0] ?? '' })
     throw error
   }
+}
+
+/**
+ * "Test on scene": runs an agent (saved or a draft from the editor) on one scene and returns its findings
+ * without storing anything, so instructions can be tried out.
+ */
+export async function previewAgent(book: BookContext, agent: ReviewAgent, sceneId: string, options: Pick<RunOptions, 'review' | 'model' | 'signal'>): Promise<{ scene: string, findings: FindingDraft[], summary: string | null }> {
+  const scene = find(await getStructure(book.db), sceneId)
+  if (!scene || scene.type !== 'scene') throw new NotFoundError(`Scene ${sceneId}`)
+  const entry = await book.repository.read(scene.path)
+  if (!entry.body.trim()) throw new InvalidInputError(`“${scene.title}” has no text yet`)
+  const output = await options.review(await scenePrompt(book, agent, scene, entry, options.model), options.signal)
+  return { scene: scene.title, findings: normalizeFindings(agent, entry.body, output), summary: agent.summary ? output.summary?.trim() || null : null }
 }

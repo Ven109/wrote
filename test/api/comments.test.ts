@@ -51,3 +51,21 @@ describe('review API', () => {
     expect((await post(`/${created.id}/fix`, {})).status).toBe(404)
   })
 })
+
+describe('custom agents API', () => {
+  const agent = { id: 'victorian-dialogue', name: 'Victorian dialogue checker', description: '', instructions: 'Flag modern words.', scopes: ['scene'], task: 'chat', tools: [], summary: false, categories: [] }
+  const put = (id: string, body: unknown) => fetch(`/api/books/sample-book/review/agents/${id}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+
+  it('saves, lists, validates and deletes custom agents', async () => {
+    expect((await put('victorian-dialogue', agent)).status).toBe(200)
+    expect((await $fetch<{ id: string, source: string }[]>('/api/books/sample-book/review/agents')).at(-1)).toMatchObject({ id: 'victorian-dialogue', source: 'book' })
+    expect(await $fetch('/api/books/sample-book/review/agent-files')).toMatchObject({ agents: [{ id: 'victorian-dialogue' }], problems: [] })
+    expect((await put('other-id', agent)).status).toBe(400)
+    expect((await put('victorian-dialogue', { ...agent, instructions: '' })).status).toBe(400)
+    expect((await put('Bad Id', agent)).status).toBe(400)
+    const test = await fetch('/api/books/sample-book/review/agents/test', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ agent, sceneId: 'scn_arr1val001' }) })
+    expect(test.status).toBe(409)
+    expect((await fetch('/api/books/sample-book/review/agents/victorian-dialogue', { method: 'DELETE' })).status).toBe(204)
+    expect((await fetch('/api/books/sample-book/review/agents/victorian-dialogue', { method: 'DELETE' })).status).toBe(404)
+  })
+})

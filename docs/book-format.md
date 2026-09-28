@@ -21,6 +21,7 @@ my-novel/
 │   ├── characters/mara-velden.md
 │   └── places/hollow-bay.md
 ├── research/                      # sources, clippings, interviews
+├── agents/                        # custom review agents (see review-agents.md)
 ├── outline.md
 ├── style-guide.md
 └── .wrote/                        # index (rebuildable), app state, AI provenance – gitignored

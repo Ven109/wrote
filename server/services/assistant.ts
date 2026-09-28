@@ -3,10 +3,13 @@ import type { ChatContext } from '#shared/schemas/chat'
 import { DEFAULT_TOOL_POLICY, type ToolPolicy } from '#shared/schemas/permissions'
 import type { Actor } from '#shared/schemas/suggestion'
 import type { ContextSnapshot } from '#shared/schemas/context'
+import type { ReviewAgent } from '#shared/schemas/review'
+import { leadingAgentMention } from '#shared/utils/agent-mention'
 import { buildContext } from '../ai/context/build'
 import { renderContext } from '../ai/context/render'
 import { saveThreadMessages } from '../db/state/chat'
 import { saveContextSnapshot } from '../db/state/context-snapshots'
+import { agentMaterial } from '../review/agent-material'
 import { readBookConfig } from '../storage/config'
 import { toAiSdkTools } from '../tools/adapters'
 import { decisionFor } from '../tools/define'
@@ -28,7 +31,7 @@ export function assistantTools(book: BookContext, workspaceDir: string, policy: 
 }
 
 /** Assistant instructions with the book and what the user is looking at (book content comes via the context engine). */
-export async function assistantInstructions(book: BookContext, context: ChatContext): Promise<string> {
+export async function assistantInstructions(book: BookContext, context: ChatContext, agent?: ReviewAgent): Promise<string> {
   const config = await readBookConfig(book.root)
   const lines = [
     `You are Wrote's writing assistant for the book "${config.title}"${config.author ? ` by ${config.author}` : ''}.`,
@@ -42,17 +45,35 @@ export async function assistantInstructions(book: BookContext, context: ChatCont
     if (entry) lines.push(`The author currently has the ${entry.type} "${entry.frontmatter.title}" open (path: ${entry.path}, id: ${entry.frontmatter.id}). "This scene/note" refers to it; it is in the context below (possibly shortened) – use read_entry for the full text.`)
   }
   if (context.selection) lines.push('The author has selected text in the editor; it is the "selection" item in the context below.')
+  if (agent) lines.push(...await agentSection(book, agent, context))
   return lines.join('\n\n')
+}
+
+/** For an `@agent` message: the agent's instructions and material for the open scene, and how to report. */
+async function agentSection(book: BookContext, agent: ReviewAgent, context: ChatContext): Promise<string[]> {
+  const entry = context.entryPath ? await book.repository.read(context.entryPath).catch(() => null) : null
+  return [
+    `For this message the author called on the review agent "${agent.name}" (@${agent.id}). Answer as that agent, following its instructions:\n\n${agent.instructions}`,
+    entry ? `Unless the author asks otherwise, review the open ${entry.type} (read it in full with read_entry). Report each finding with add_comment (quote = a short exact passage) and offer fixes only with propose_edit; then summarise briefly.` : 'No scene is open: ask which scene or chapter to review, or answer the question as the agent.',
+    ...(entry ? await agentMaterial(book, agent, entry) : []),
+  ]
 }
 
 /** Text of the latest user message: what the author asks, used for retrieval. */
 export function latestQuestion(messages: UIMessage[]): string {
   const last = messages.findLast(message => message.role === 'user')
-  return last?.parts.map(part => (part.type === 'text' ? part.text : '')).join(' ').trim() ?? ''
+  const text = last?.parts.map(part => (part.type === 'text' ? part.text : '')).join(' ').trim() ?? ''
+  return leadingAgentMention(text)?.rest ?? text
+}
+
+/** The `@agent-id` the latest user message starts with, if any. */
+export function mentionedAgentId(messages: UIMessage[]): string | null {
+  const last = messages.findLast(message => message.role === 'user')
+  return leadingAgentMention(last?.parts.map(part => (part.type === 'text' ? part.text : '')).join(' ') ?? '')?.agentId ?? null
 }
 
 /** Builds the context for an assistant request, renders the system prompt and stores the snapshot of exactly that prompt. */
-export async function prepareAssistantPrompt(request: Pick<AssistantRequest, 'book' | 'context' | 'messages' | 'modelRef'>, now: Date): Promise<ContextSnapshot> {
+export async function prepareAssistantPrompt(request: Pick<AssistantRequest, 'book' | 'context' | 'messages' | 'modelRef' | 'agent'>, now: Date): Promise<ContextSnapshot> {
   const built = await buildContext(request.book, {
     entryPath: request.context.entryPath,
     selection: request.context.selection,
@@ -60,8 +81,8 @@ export async function prepareAssistantPrompt(request: Pick<AssistantRequest, 'bo
     model: request.modelRef,
     overrides: request.context.overrides,
   })
-  const system = [await assistantInstructions(request.book, request.context), renderContext(built.items)].filter(Boolean).join('\n\n')
-  return saveContextSnapshot(request.book.state, { feature: 'assistant', model: request.modelRef, ...built, system }, now)
+  const system = [await assistantInstructions(request.book, request.context, request.agent), renderContext(built.items)].filter(Boolean).join('\n\n')
+  return saveContextSnapshot(request.book.state, { feature: request.agent ? `assistant:@${request.agent.id}` : 'assistant', model: request.modelRef, ...built, system }, now)
 }
 
 /** Thread title from the first user message. */
@@ -83,6 +104,8 @@ export interface AssistantRequest {
   threadId: string
   messages: UIMessage[]
   context: ChatContext
+  /** The review agent the latest message calls on (`@agent-id`): its instructions for this turn. */
+  agent?: ReviewAgent
   abortSignal?: AbortSignal
   now?: () => Date
 }

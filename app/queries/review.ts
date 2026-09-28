@@ -16,3 +16,10 @@ export const reviewRunsQuery = defineQueryOptions(({ bookId, sceneId, enabled }:
   enabled: Boolean(bookId && sceneId && enabled),
   staleTime: 0,
 }))
+
+/** The book's custom agent files and the ones that are not valid (with why). */
+export const agentFilesQuery = defineQueryOptions((bookId: string) => ({
+  key: bookKeys.agentFiles(bookId),
+  query: () => $fetch<{ agents: ReviewAgent[], problems: { file: string, message: string }[] }>(`/api/books/${encodeURIComponent(bookId)}/review/agent-files`),
+  enabled: Boolean(bookId),
+}))

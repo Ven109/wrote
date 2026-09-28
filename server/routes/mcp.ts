@@ -1,7 +1,9 @@
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+import { agentsForPrompts } from '../mcp/agent-prompts'
 import { createWroteMcpServer } from '../mcp/server'
 import { checkMcpAccess } from '../services/mcp-auth'
 import { authenticateMcpClient } from '../services/mcp-clients'
+import { openBooks } from '../services/workspace'
 
 /**
  * MCP over Streamable HTTP (stateless: one server per request). Local only; each client authenticates with
@@ -16,7 +18,9 @@ export default defineEventHandler(async (event) => {
   if (!client) throw createError({ statusCode: 401, statusMessage: 'Missing or invalid MCP token' })
 
   const body = event.method === 'POST' ? await readBody(event) : undefined
-  const server = createWroteMcpServer({ workspaceDir, caller: { kind: 'mcp', name: client.name }, policy: client.policy, approvals: true })
+  // Review agents as prompts: the built-ins and the custom agents of the books open in the app.
+  const agents = await agentsForPrompts(openBooks())
+  const server = createWroteMcpServer({ workspaceDir, caller: { kind: 'mcp', name: client.name }, policy: client.policy, approvals: true, agents })
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true })
   event.node.res.on('close', () => {
     void transport.close()

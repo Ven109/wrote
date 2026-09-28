@@ -1,12 +1,14 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import type { ToolPolicy } from '#shared/schemas/permissions'
+import type { ReviewAgent } from '#shared/schemas/review'
 import type { Actor } from '#shared/schemas/suggestion'
 import { approvalsFor } from '../services/tool-approvals'
 import { WROTE_TOOLS } from '../tools'
 import { toMcpTools, type McpToolDefinition } from '../tools/adapters'
 import { decisionFor } from '../tools/define'
 import { resolveBook } from './books'
+import { registerAgentPrompts } from './agent-prompts'
 import { registerWritingPrompts } from './prompts'
 import { registerBookResources } from './resources'
 
@@ -20,6 +22,8 @@ export interface WroteMcpOptions {
   /** Whether `ask` calls can wait for the author in the running app (HTTP); stdio refuses them. */
   approvals?: boolean
   version?: string
+  /** Review agents offered as prompts (`review-<id>`); load them with `agentsForPrompts`. Default: none. */
+  agents?: ReviewAgent[]
 }
 const BOOK_ID = z.string().min(1).optional().describe('Book id from list_books. Optional when only one book exists or the server was started for a book.')
 
@@ -65,6 +69,7 @@ export function createWroteMcpServer(options: WroteMcpOptions): McpServer {
   if (decisionFor(options.policy, 'read') !== 'deny') {
     registerBookResources(server, options)
     registerWritingPrompts(server, options)
+    registerAgentPrompts(server, options, options.agents ?? [])
   }
   return server
 }

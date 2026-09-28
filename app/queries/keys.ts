@@ -26,6 +26,7 @@ export const bookKeys = {
   outline: (bookId: string) => ['book', bookId, 'outline'] as const,
   outlineProposals: (bookId: string) => ['book', bookId, 'outline-proposals'] as const,
   reviewAgents: (bookId: string) => ['book', bookId, 'review', 'agents'] as const,
+  agentFiles: (bookId: string) => ['book', bookId, 'review', 'agent-files'] as const,
   reviewRuns: (bookId: string, sceneId: string) => ['book', bookId, 'review', 'runs', sceneId] as const,
   sceneBeats: (bookId: string, sceneId: string) => ['book', bookId, 'beats', sceneId] as const,
   entry: (bookId: string, entryId: string) => ['book', bookId, 'entry', entryId] as const,
