@@ -1,8 +1,9 @@
 import { useQueryCache } from '@pinia/colada'
 import type { Job } from '#shared/schemas/jobs'
 import type { PendingApproval } from '#shared/schemas/permissions'
-import { bookKeys } from '~/queries/keys'
+import { bookKeys, settingsKeys } from '~/queries/keys'
 import { upsertJob } from '~/utils/jobs'
+import { budgetMessage } from '~/utils/usage'
 
 /**
  * Keeps all cached data of the open book fresh from its SSE stream: file changes invalidate the
@@ -11,6 +12,7 @@ import { upsertJob } from '~/utils/jobs'
  */
 export function useBookSync(bookId: MaybeRefOrGetter<string | null>) {
   const queryCache = useQueryCache()
+  const toast = useToast()
   const refreshBook = (id: string) => {
     void queryCache.invalidateQueries({ key: bookKeys.book(id) })
     void queryCache.invalidateQueries({ key: bookKeys.list() })
@@ -53,6 +55,10 @@ export function useBookSync(bookId: MaybeRefOrGetter<string | null>) {
     comment: ({ entryId }) => {
       const id = toValue(bookId)
       if (id) void queryCache.invalidateQueries({ key: bookKeys.entryComments(id, entryId) })
+    },
+    usage: (status) => {
+      toast.add({ ...budgetMessage(status), color: status.level === 100 ? 'error' : 'warning', icon: 'i-lucide-wallet', actions: [{ label: 'Usage', to: '/settings/usage' }] })
+      void queryCache.invalidateQueries({ key: settingsKeys.usage() })
     },
     suggestion: ({ entryId }) => {
       const id = toValue(bookId)

@@ -4,6 +4,7 @@ import type { BookChangeEvent } from '#shared/schemas/events'
 import type { JobEvent } from '#shared/schemas/jobs'
 import type { ApprovalEvent } from '#shared/schemas/permissions'
 import type { SuggestionEvent } from '#shared/schemas/suggestion'
+import type { BudgetStatus } from '#shared/schemas/usage'
 
 export interface BookEventHandlers {
   /** The stream is (re)connected – events sent while it was not are missed, so resync. */
@@ -24,6 +25,8 @@ export interface BookEventHandlers {
   outlineProposal?: () => void
   /** Comments added, answered or resolved (author or agents). */
   comment?: (event: CommentEvent) => void
+  /** The monthly AI budget crossed 80% or 100%. */
+  usage?: (event: BudgetStatus) => void
 }
 
 /** Subscribes to a book's live event stream (SSE). Reconnects automatically (EventSource). */
@@ -58,6 +61,9 @@ export function useBookEvents(bookId: MaybeRefOrGetter<string | null>, handlers:
       handlers.codexProposal?.(JSON.parse((message as MessageEvent<string>).data) as { sourceEntryId: string })
     })
     source.addEventListener('outline-proposal', () => handlers.outlineProposal?.())
+    source.addEventListener('usage', (message) => {
+      handlers.usage?.(JSON.parse((message as MessageEvent<string>).data) as BudgetStatus)
+    })
     source.addEventListener('comment', (message) => {
       handlers.comment?.(JSON.parse((message as MessageEvent<string>).data) as CommentEvent)
     })

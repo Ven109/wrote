@@ -8,9 +8,9 @@ export default defineEventHandler(async (event) => {
   const input = await readValidatedBody(event, AutocompleteRequestSchema.parse)
   const workspaceDir = useWorkspaceDir(event)
   const config = await loadAiConfig(workspaceDir)
-  const configured = config.settings.autocomplete ? await getModelWithRef(workspaceDir, 'fast') : null
-  if (!configured) throw createError({ statusCode: 409, statusMessage: 'Autocomplete is off', data: { code: 'autocomplete_off' } })
   const book = await requireBook(event)
+  const configured = config.settings.autocomplete ? await getModelWithRef(workspaceDir, 'autocomplete', { bookId: book.id }) : null
+  if (!configured) throw createError({ statusCode: 409, statusMessage: 'Autocomplete is off', data: { code: 'autocomplete_off' } })
   const controller = new AbortController()
   event.node.req.on('close', () => controller.abort())
   return { text: await withStorageErrors(() => completeText(book, input, configured, controller.signal)) }

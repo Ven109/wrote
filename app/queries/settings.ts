@@ -2,6 +2,7 @@ import { defineQueryOptions } from '@pinia/colada'
 import type { AiModelOption, AiProviderId, AiSettingsView, ModelPurpose } from '#shared/schemas/ai'
 import type { IntegrationView } from '#shared/schemas/integrations'
 import type { McpSettingsView } from '#shared/schemas/permissions'
+import type { UsageReport } from '#shared/schemas/usage'
 import { settingsKeys } from './keys'
 
 export const aiSettingsQuery = defineQueryOptions({
@@ -26,3 +27,9 @@ export const integrationsQuery = defineQueryOptions({
   key: settingsKeys.integrations(),
   query: () => $fetch<IntegrationView[]>('/api/settings/integrations'),
 })
+
+/** AI usage of the workspace for the last `months` months (tokens, estimated cost, budget). */
+export const usageQuery = defineQueryOptions((months: number) => ({
+  key: settingsKeys.usage(months),
+  query: () => $fetch<UsageReport>('/api/settings/usage', { query: { months } }),
+}))

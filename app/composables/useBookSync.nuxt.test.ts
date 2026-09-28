@@ -1,9 +1,12 @@
-import { mountSuspended } from '@nuxt/test-utils/runtime'
+import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { useQueryCache } from '@pinia/colada'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
-import { bookKeys } from '~/queries/keys'
+import { bookKeys, settingsKeys } from '~/queries/keys'
 import { useBookSync } from './useBookSync'
+
+const { addToast } = vi.hoisted(() => ({ addToast: vi.fn() }))
+mockNuxtImport('useToast', () => () => ({ add: addToast }))
 
 type Listener = (message: MessageEvent<string>) => void
 
@@ -68,5 +71,12 @@ describe('useBookSync', () => {
     expect(cache.getQueryData(bookKeys.approvals('demo'))).toEqual([approval])
     FakeEventSource.last!.emit('approval', { approval, state: 'expired' })
     expect(cache.getQueryData(bookKeys.approvals('demo'))).toEqual([])
+  })
+
+  it('warns when the monthly AI budget crosses 80% and refreshes the usage page', async () => {
+    const invalidate = await mountSync()
+    FakeEventSource.last!.emit('usage', { month: '2026-09', spent: 8.5, budget: 10, level: 80 })
+    expect(addToast).toHaveBeenCalledWith(expect.objectContaining({ title: 'AI budget 80% used', color: 'warning' }))
+    expect(invalidate).toHaveBeenCalledWith({ key: settingsKeys.usage() })
   })
 })

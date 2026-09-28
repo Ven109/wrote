@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { BOOK_CONFIG_FILE } from '#shared/schemas/book'
 import { openIndexDb, type IndexDb } from '../db/client'
 import { applyChange, syncIndex } from '../db/indexer'
+import { closeUsageDbs } from '../db/usage'
 import { NotFoundError } from '../storage/errors'
 import { readTextIfExists, writeFileAtomic } from '../storage/fs'
 import { createBookRepository, type BookRepository } from '../storage/repository'
@@ -190,4 +191,5 @@ export async function closeAllBooks(): Promise<void> {
     await shutdown(context)
   }))
   contexts.clear()
+  await closeUsageDbs()
 }

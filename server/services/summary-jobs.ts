@@ -1,7 +1,8 @@
 import { generateText, type LanguageModel } from 'ai'
 import { entryTypeFromPath } from '#shared/book/layout'
 import type { Job } from '#shared/schemas/jobs'
-import { loadAiConfig, modelRefFor, resolveModel } from './ai-settings'
+import { getModelWithRef } from '../ai/models'
+import { loadAiConfig } from './ai-settings'
 import type { GenerateSummary } from './summaries'
 import type { BookContext } from './workspace'
 
@@ -16,13 +17,12 @@ export interface SummaryModel {
   dailyTokenBudget: number
 }
 
-/** The model for background summaries (the `fast` task), or `null` when summaries are off or AI is not set up. */
-export async function getSummaryModel(workspaceDir: string): Promise<SummaryModel | null> {
+/** The model for background summaries (the `summaries` route: fast tier unless set), or `null` when summaries are off or AI is not set up. */
+export async function getSummaryModel(workspaceDir: string, bookId: string | null = null): Promise<SummaryModel | null> {
   const config = await loadAiConfig(workspaceDir)
   if (!config.settings.summaries.enabled) return null
-  const ref = modelRefFor(config.settings, 'fast')
-  const model = resolveModel(config, ref)
-  return model && ref ? { model, ref, dailyTokenBudget: config.settings.summaries.dailyTokenBudget } : null
+  const configured = await getModelWithRef(workspaceDir, 'summaries', { bookId })
+  return configured ? { ...configured, dailyTokenBudget: config.settings.summaries.dailyTokenBudget } : null
 }
 
 export function generateWith(model: LanguageModel): GenerateSummary {

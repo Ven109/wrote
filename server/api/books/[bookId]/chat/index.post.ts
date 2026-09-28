@@ -1,6 +1,6 @@
 import type { UIMessage } from 'ai'
 import { ChatRequestSchema } from '#shared/schemas/chat'
-import { getModelWithRef } from '../../../../ai/models'
+import { getModelWithRef, reviewRoute } from '../../../../ai/models'
 import { getThread } from '../../../../db/state/chat'
 import { mentionedAgentId, streamAssistant } from '../../../../services/assistant'
 import { listReviewAgents } from '../../../../services/review-agents'
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   // "@agent-id …" hands this turn to a review agent: its instructions and its model slot (chat if unset).
   const mention = mentionedAgentId(messages)
   const agent = mention ? (await listReviewAgents(book)).find(candidate => candidate.id === mention) : undefined
-  const configured = (agent ? await getModelWithRef(workspaceDir, agent.task) : null) ?? await getModelWithRef(workspaceDir, 'chat')
+  const configured = (agent ? await getModelWithRef(workspaceDir, reviewRoute(agent.task), { bookId: book.id, feature: 'review' }) : null) ?? await getModelWithRef(workspaceDir, 'assistant', { bookId: book.id })
   if (!configured) throw createError({ statusCode: 409, statusMessage: 'No AI model is configured', data: { code: 'ai_not_configured' } })
 
   const controller = new AbortController()

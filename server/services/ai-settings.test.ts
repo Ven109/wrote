@@ -65,6 +65,23 @@ describe('ai settings', () => {
     expect(modelRefFor({ models: { chat: 'a:b', fast: 'a:c' } }, 'fast')).toBe('a:c')
   })
 
+  it('routes features to their own model, else their tier (autocomplete and summaries: fast)', () => {
+    const models = { chat: 'a:chat', fast: 'a:fast', review: 'a:large' }
+    expect(modelRefFor({ models }, 'review')).toBe('a:large')
+    expect(modelRefFor({ models }, 'autocomplete')).toBe('a:fast')
+    expect(modelRefFor({ models }, 'assistant')).toBe('a:chat')
+    expect(modelRefFor({ models: { chat: 'a:chat' } }, 'summaries')).toBe('a:chat')
+    expect(modelRefFor({ models: {} }, 'review')).toBeNull()
+  })
+
+  it('saves a monthly budget and own model prices; null removes them', async () => {
+    await updateAiSettings(workspace, { monthlyBudget: 20, prices: { 'ollama:big': { input: 1, output: 2 }, 'openai:x': { input: 3, output: 4 } } })
+    const view = await updateAiSettings(workspace, { prices: { 'ollama:big': null } })
+    expect(view.monthlyBudget).toBe(20)
+    expect(view.prices).toEqual({ 'openai:x': { input: 3, output: 4 } })
+    expect((await updateAiSettings(workspace, { monthlyBudget: null })).monthlyBudget).toBeNull()
+  })
+
   it('keeps summaries off by default and patches one summary setting without resetting the other', async () => {
     expect(aiSettingsView(await loadAiConfig(workspace, {})).summaries).toEqual({ enabled: false, dailyTokenBudget: 100_000 })
     await updateAiSettings(workspace, { summaries: { dailyTokenBudget: 5000 } })

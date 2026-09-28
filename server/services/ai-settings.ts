@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { AI_PROVIDER_IDS, AiSettingsSchema, type AiProviderId, type AiSettings, type AiSettingsView, type AiTask, type UpdateAiSettingsInput } from '#shared/schemas/ai'
+import { AI_PROVIDER_IDS, AiSettingsSchema, FEATURE_TIER, type AiProviderId, type AiRoute, type AiSettings, type AiSettingsView, type UpdateAiSettingsInput } from '#shared/schemas/ai'
+import type { ModelPrice } from '#shared/schemas/usage'
 import { PROVIDERS, createProvider } from '../ai/providers'
 import { readSettingsFile, writeSettingsFile } from '../storage/app-settings'
 import { createSerializer } from '../utils/serialize'
@@ -65,8 +66,11 @@ export function resolveEmbeddingModel(config: AiConfig, ref: string | null | und
 }
 
 /** The model reference used for a task (`fast` falls back to `chat`). */
-export function modelRefFor(settings: Pick<AiSettings, 'models'>, task: AiTask): string | null {
-  return settings.models[task] ?? (task === 'chat' ? null : settings.models.chat ?? null)
+/** The model reference for a tier or feature: its own setting, else its tier's, else the chat model. */
+export function modelRefFor(settings: Pick<AiSettings, 'models'>, route: AiRoute): string | null {
+  const own = settings.models[route] ?? null
+  if (own || route === 'chat') return own
+  return route === 'fast' ? settings.models.chat ?? null : modelRefFor(settings, FEATURE_TIER[route])
 }
 
 export function aiSettingsView(config: AiConfig): AiSettingsView {
@@ -92,7 +96,15 @@ export function aiSettingsView(config: AiConfig): AiSettingsView {
     summaries: config.settings.summaries,
     autocomplete: config.settings.autocomplete,
     provenanceThreshold: config.settings.provenanceThreshold,
+    monthlyBudget: config.settings.monthlyBudget,
+    prices: config.settings.prices,
   }
+}
+
+/** Applies a price patch: a price sets it, `null` removes the override. */
+function mergePrices(current: AiSettings['prices'], patch: UpdateAiSettingsInput['prices']): AiSettings['prices'] {
+  const entries = Object.entries({ ...current, ...patch }).filter((entry): entry is [string, ModelPrice] => entry[1] !== null)
+  return Object.fromEntries(entries)
 }
 
 /** Per-workspace write lock: patches are read-merge-write, so concurrent ones must not interleave. */
@@ -117,6 +129,8 @@ async function applyAiSettingsPatch(workspaceDir: string, input: UpdateAiSetting
     summaries: { ...config.settings.summaries, ...input.summaries },
     autocomplete: input.autocomplete ?? config.settings.autocomplete,
     provenanceThreshold: input.provenanceThreshold ?? config.settings.provenanceThreshold,
+    monthlyBudget: input.monthlyBudget === undefined ? config.settings.monthlyBudget : input.monthlyBudget,
+    prices: mergePrices(config.settings.prices, input.prices),
   }
   await writeSettingsFile(workspaceDir, SETTINGS_FILE, settings)
   if (input.keys) {
