@@ -1,4 +1,5 @@
 import type { ActivityEvent } from '#shared/schemas/activity'
+import type { CommentEvent } from '#shared/schemas/comments'
 import type { BookChangeEvent } from '#shared/schemas/events'
 import type { JobEvent } from '#shared/schemas/jobs'
 import type { ApprovalEvent } from '#shared/schemas/permissions'
@@ -19,6 +20,8 @@ export interface BookEventHandlers {
   activity?: (event: ActivityEvent) => void
   /** Codex proposals created (scan, agents) or resolved. */
   codexProposal?: (event: { sourceEntryId: string }) => void
+  /** Comments added, answered or resolved (author or agents). */
+  comment?: (event: CommentEvent) => void
 }
 
 /** Subscribes to a book's live event stream (SSE). Reconnects automatically (EventSource). */
@@ -51,6 +54,9 @@ export function useBookEvents(bookId: MaybeRefOrGetter<string | null>, handlers:
     })
     source.addEventListener('codex-proposal', (message) => {
       handlers.codexProposal?.(JSON.parse((message as MessageEvent<string>).data) as { sourceEntryId: string })
+    })
+    source.addEventListener('comment', (message) => {
+      handlers.comment?.(JSON.parse((message as MessageEvent<string>).data) as CommentEvent)
     })
     source.addEventListener('suggestion', (message) => {
       handlers.suggestion?.(JSON.parse((message as MessageEvent<string>).data) as SuggestionEvent)

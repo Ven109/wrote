@@ -69,7 +69,7 @@ export function registerWritingPrompts(server: McpServer, options: WroteMcpOptio
         ...await Promise.all(scenes.map(async scene => embed(await readSceneResource(b, scene.id)))),
         text([
           `Critique the chapter "${title}" like a developmental editor${focus ? `, focusing on ${focus}` : ''}: what works, what does not, and why.`,
-          'For each concrete point, add a comment anchored to the exact passage with add_comment (entryId of the scene, quote = a short exact passage). If add_comment is not available, collect the points in one note with create_note.',
+          'For each concrete point, add a comment anchored to the exact passage with add_comment (entryId of the scene, quote = a short exact passage from it). The author sees them live in the margin.',
           'Finish with a short overall assessment in your reply. Do not rewrite the text; use propose_edit only for small, clearly better fixes.',
           UNTRUSTED,
         ].join('\n')),

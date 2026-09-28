@@ -76,3 +76,12 @@ export const codexProposals = sqliteTable('codex_proposals', {
   createdAt: text('created_at').notNull(),
   data: text('data', { mode: 'json' }).notNull(),
 })
+
+/** Comments on passages (WRO-67); `data` holds the full `Comment` (JSON). */
+export const comments = sqliteTable('comments', {
+  id: text('id').primaryKey(),
+  entryId: text('entry_id').notNull(),
+  resolved: integer('resolved').notNull().default(0),
+  createdAt: text('created_at').notNull(),
+  data: text('data', { mode: 'json' }).notNull(),
+})

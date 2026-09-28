@@ -9,8 +9,9 @@ export function useSceneEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefO
   const { backlinks } = useBacklinks(bookId, () => entry.document.value?.id)
   const summary = useSummary(bookId, entry.document)
   const suggestions = useSuggestions(bookId, entry.document)
+  const comments = useComments(bookId, entry.document)
   const ai = useInlineAi(bookId, entry.document, autosave.flush)
   useAutocomplete(bookId, entry.document)
   const provenance = useProvenance(bookId, entry.document)
-  return { entry, autosave, words, meta, links, backlinks, summary, suggestions, ai, provenance }
+  return { entry, autosave, words, meta, links, backlinks, summary, suggestions, comments, ai, provenance }
 }

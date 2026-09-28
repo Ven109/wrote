@@ -1,4 +1,5 @@
 import type { ActivityEvent } from '#shared/schemas/activity'
+import type { CommentEvent } from '#shared/schemas/comments'
 import type { BookChangeEvent } from '#shared/schemas/events'
 import type { Job } from '#shared/schemas/jobs'
 import type { ApprovalEvent } from '#shared/schemas/permissions'
@@ -29,6 +30,7 @@ const suggestions = createBookChannel<SuggestionEvent>()
 const approvals = createBookChannel<ApprovalEvent>()
 const activity = createBookChannel<ActivityEvent>()
 const codexProposals = createBookChannel<{ sourceEntryId: string }>()
+const comments = createBookChannel<CommentEvent>()
 
 /** File changes of a book (watcher and own writes → SSE clients). */
 export const subscribeBookEvents = changes.subscribe
@@ -48,3 +50,6 @@ export const publishActivityEvent = activity.publish
 /** Codex proposals created (scan) or resolved. */
 export const subscribeCodexProposalEvents = codexProposals.subscribe
 export const publishCodexProposalEvent = codexProposals.publish
+/** Comments added, answered or resolved (author or agents). */
+export const subscribeCommentEvents = comments.subscribe
+export const publishCommentEvent = comments.publish
