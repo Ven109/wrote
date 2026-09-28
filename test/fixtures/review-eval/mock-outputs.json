@@ -1,0 +1,34 @@
+{
+  "continuity": {
+    "The Lighthouse": [
+      { "quote": "Mara's brown eyes", "severity": "high", "category": "appearance", "message": "The codex says Mara's eyes are grey.", "suggestion": "Mara's grey eyes" },
+      { "quote": "dove into the deep water without a second thought", "severity": "high", "category": "character", "message": "The codex says Mara is afraid of deep water; diving in without hesitation contradicts that.", "suggestion": null }
+    ]
+  },
+  "line-editor": {
+    "The Lighthouse": [
+      { "quote": "\"You came back,\" he said quietly.", "severity": "low", "category": "style-guide", "message": "The style guide rules out adverbs in dialogue tags.", "suggestion": "\"You came back,\" he said." },
+      { "quote": "She felt the cold wind on her face.", "severity": "low", "category": "filter-words", "message": "\"Felt\" distances the reader.", "suggestion": "The cold wind stung her face." },
+      { "quote": "The door was opened by the keeper", "severity": "low", "category": "passive-voice", "message": "The passive hides who acts.", "suggestion": "The keeper opened the door" }
+    ]
+  },
+  "developmental": {
+    "Waiting": [
+      { "quote": "Mara sat in the kitchen of the inn and waited for the rain to stop.", "severity": "high", "category": "conflict", "message": "Nothing is at stake and nothing changes: Mara waits and goes to bed. Give her a goal or an obstacle, or fold the moment into another scene.", "suggestion": null }
+    ]
+  },
+  "beta-reader": {
+    "Waiting": [
+      { "quote": "It fell on the roofs and the harbor wall and the boats", "severity": "medium", "category": "bored", "message": "I started skimming here – the rain description goes on.", "suggestion": null }
+    ],
+    "The Lighthouse": [
+      { "quote": "dove into the deep water without a second thought", "severity": "low", "category": "hooked", "message": "Whoa – I did not see that coming.", "suggestion": null },
+      { "quote": "Two hundred steps wound up into the dark.", "severity": "low", "category": "moved", "message": "Lovely, eerie image.", "suggestion": null }
+    ]
+  },
+  "fact-checker": {
+    "The Lighthouse": [
+      { "quote": "The big tides only come at the half moon", "severity": "high", "category": "contradicted", "message": "\"How tides work\" says spring tides occur around new and full moon.", "suggestion": "The big tides only come at the new and full moon" }
+    ]
+  }
+}

@@ -235,7 +235,7 @@ test('a review agent adds findings to the margin; a fix becomes a suggestion, a 
   const { bookId, scenePath } = await createBookWithHarbor(page, `Review ${Date.now()}`)
   await gotoHydrated(page, `/books/${bookId}/write/${scenePath}`)
   await page.getByRole('button', { name: 'Review', exact: true }).click()
-  await page.getByRole('menuitem', { name: 'Editor' }).click()
+  await page.getByRole('menuitem', { name: 'Editor', exact: true }).click()
   await page.getByRole('menuitem', { name: 'This scene' }).click()
 
   const margin = page.getByRole('complementary', { name: 'Comments' })
@@ -256,7 +256,7 @@ test('a review agent adds findings to the margin; a fix becomes a suggestion, a 
   await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: 'Review', exact: true }).click()
-  await page.getByRole('menuitem', { name: 'Editor' }).click()
+  await page.getByRole('menuitem', { name: 'Editor', exact: true }).click()
   await page.getByRole('menuitem', { name: 'This scene' }).click()
   await page.getByRole('button', { name: 'Review', exact: true }).click()
   await page.getByRole('menuitem', { name: 'Review history' }).click()

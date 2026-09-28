@@ -33,7 +33,7 @@ describe('review API', () => {
   const review = (path: string, body: unknown) => fetch(`/api/books/sample-book/review/${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
 
   it('lists agents, estimates runs and needs a model to start one', async () => {
-    expect(await $fetch('/api/books/sample-book/review/agents')).toMatchObject([{ id: 'editor', name: 'Editor' }])
+    expect((await $fetch<{ id: string }[]>('/api/books/sample-book/review/agents')).map(agent => agent.id)).toEqual(['editor', 'continuity', 'line-editor', 'developmental', 'beta-reader', 'fact-checker'])
     const estimate = await review('estimate', { agentId: 'editor', scope: 'chapter', targetId: 'chp_harb0r0001' })
     expect(estimate.status).toBe(200)
     expect(await estimate.json()).toMatchObject({ scenes: 2, calls: 2 })
