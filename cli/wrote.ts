@@ -1,7 +1,8 @@
 import { homedir } from 'node:os'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { agentsForPrompts } from '../server/mcp/agent-prompts'
 import { createWroteMcpServer } from '../server/mcp/server'
-import { closeAllBooks } from '../server/services/workspace'
+import { closeAllBooks, openBook } from '../server/services/workspace'
 import { parseMcpArgs } from './args'
 
 /** `wrote mcp` – serves the shared tools over stdio (stdout is the protocol channel; logs go to stderr). */
@@ -11,7 +12,9 @@ async function main() {
     process.stderr.write(`${options.error}\n`)
     process.exit(1)
   }
-  const server = createWroteMcpServer({ workspaceDir: options.workspaceDir, defaultBookId: options.bookId, caller: { kind: 'mcp', name: 'MCP (stdio)' } })
+  // Review agents as prompts: the built-ins, plus the custom agents of the book the server was started for.
+  const agents = await agentsForPrompts(options.bookId ? [await openBook(options.workspaceDir, options.bookId)] : [])
+  const server = createWroteMcpServer({ workspaceDir: options.workspaceDir, defaultBookId: options.bookId, caller: { kind: 'mcp', name: 'MCP (stdio)' }, agents })
   const shutdown = async () => {
     await server.close()
     await closeAllBooks()

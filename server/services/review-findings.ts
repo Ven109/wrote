@@ -25,35 +25,53 @@ function findQuote(body: string, quote: string): { quote: string, from: number }
   return null
 }
 
+/** A model finding checked against the scene text: anchored, categorised, fingerprinted. */
+export interface FindingDraft {
+  quote: string
+  from: number
+  severity: FindingsOutput['findings'][number]['severity']
+  category: string
+  message: string
+  suggestion: string | null
+  fingerprint: string
+}
+
+/** Keeps the findings whose quote is in the text (models invent quotes), once each. */
+export function normalizeFindings(agent: ReviewAgent, body: string, output: FindingsOutput): FindingDraft[] {
+  const drafts: FindingDraft[] = []
+  for (const finding of output.findings) {
+    const found = findQuote(body, finding.quote)
+    const message = finding.message.trim().slice(0, 10_000)
+    if (!found || !message) continue
+    const category = finding.category.trim().slice(0, 50) || 'general'
+    const fingerprint = fingerprintOf(agent.id, category, found.quote)
+    if (drafts.some(draft => draft.fingerprint === fingerprint)) continue
+    const suggestion = finding.suggestion?.trim() && finding.suggestion.trim() !== found.quote.trim() ? finding.suggestion.trim().slice(0, 10_000) : null
+    drafts.push({ quote: found.quote, from: found.from, severity: finding.severity, category, message, suggestion, fingerprint })
+  }
+  return drafts
+}
+
 /**
- * Stores a scene's findings as comments anchored to their passage. Findings whose quote is not in the text
- * are dropped (models invent quotes); ones the author dismissed before, or that are still open from an
- * earlier run, are not raised again.
+ * Stores a scene's findings as comments anchored to their passage. Ones the author dismissed before, or that
+ * are still open from an earlier run, are not raised again.
  */
 export async function storeFindings(book: BookContext, input: { runId: string, agent: ReviewAgent, entryId: string, body: string, output: FindingsOutput }, now = new Date()): Promise<Comment[]> {
   const previous = (await findComments(book.state, { entryId: input.entryId, includeResolved: true })).filter(comment => comment.review?.agentId === input.agent.id)
   const known = new Set(previous.filter(comment => comment.review!.dismissed || !comment.resolvedAt).map(comment => comment.review!.fingerprint))
   const stored: Comment[] = []
-  for (const finding of input.output.findings) {
-    const found = findQuote(input.body, finding.quote)
-    const message = finding.message.trim()
-    if (!found || !message) continue
-    const category = finding.category.trim().slice(0, 50) || 'general'
-    const fingerprint = fingerprintOf(input.agent.id, category, found.quote)
-    if (known.has(fingerprint)) continue
-    known.add(fingerprint)
-    const suggestion = finding.suggestion?.trim() && finding.suggestion.trim() !== found.quote.trim() ? finding.suggestion.trim().slice(0, 10_000) : null
+  for (const draft of normalizeFindings(input.agent, input.body, input.output).filter(candidate => !known.has(candidate.fingerprint))) {
     stored.push(await upsertComment(book.state, {
       id: createRecordId('cmt', 10),
       entryId: input.entryId,
-      quote: found.quote,
-      ...anchorContext(input.body, { from: found.from, to: found.from + found.quote.length }),
-      body: message.slice(0, 10_000),
+      quote: draft.quote,
+      ...anchorContext(input.body, { from: draft.from, to: draft.from + draft.quote.length }),
+      body: draft.message,
       author: { kind: 'agent', name: input.agent.name },
       replies: [],
       createdAt: now.toISOString(),
       resolvedAt: null,
-      review: { runId: input.runId, agentId: input.agent.id, severity: finding.severity, category, suggestion, fingerprint, suggestionId: null, dismissed: false },
+      review: { runId: input.runId, agentId: input.agent.id, severity: draft.severity, category: draft.category, suggestion: draft.suggestion, fingerprint: draft.fingerprint, suggestionId: null, dismissed: false },
     }))
   }
   if (stored.length) publishCommentEvent(book.id, { entryId: input.entryId })

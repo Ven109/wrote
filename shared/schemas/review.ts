@@ -111,3 +111,19 @@ export const StartReviewSchema = z.object({
 export type StartReviewInput = z.infer<typeof StartReviewSchema>
 
 export const ReviewRunQuerySchema = z.object({ sceneId: z.string().optional() })
+
+/** A custom agent as the editor sends it (saved to `agents/<id>.md`). */
+export const SaveAgentSchema = ReviewAgentSchema.omit({ source: true })
+export type SaveAgentInput = z.infer<typeof SaveAgentSchema>
+
+/** "Test on scene": an agent (possibly unsaved) and the scene to try it on. */
+export const TestAgentSchema = z.object({ agent: SaveAgentSchema, sceneId: z.string().regex(/^scn_[a-z0-9]+$/) })
+
+/** A finding from a test run (not stored). */
+export interface PreviewFinding {
+  quote: string
+  severity: FindingSeverity
+  category: string
+  message: string
+  suggestion: string | null
+}

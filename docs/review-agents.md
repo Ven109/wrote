@@ -45,3 +45,31 @@ WROTE_EVAL_WORKSPACE=~/Wrote pnpm eval:review
 
 It prints recall (planted issues caught) and precision (findings that are planted issues – a lower bound)
 per agent.
+
+## Custom agents
+
+Custom agents live in the book's `agents/` folder, one Markdown file each (the file name is the agent's id),
+so they travel with the book and can be shared by copying the file:
+
+```markdown
+---
+name: Victorian dialogue checker
+description: Flags modern words and idioms in dialogue.
+scopes: [scene, chapter]   # scene, chapter, book
+model: chat                # chat or fast (the model slots in AI settings)
+tools: [heuristics]        # optional: outline, research, heuristics
+categories: [anachronism]  # optional
+summary: false             # optional: also write a per-scene summary
+---
+Check that dialogue sounds like 1880s London. Flag words and idioms that did not exist yet.
+```
+
+- Create and edit them on the **Agents** page (or in any editor). New and changed files are picked up
+  without a restart; files that are not valid agents are listed there with the reason.
+- **Test on scene** runs the agent as edited (unsaved changes included) on one scene and shows the findings
+  without storing them.
+- **Customize** a built-in agent to get a copy with the same id that replaces it for this book; deleting the
+  copy brings the original back.
+- Custom agents appear in the **Review** menu next to the built-ins, can be called in the assistant with
+  `@agent-id …` (that turn uses the agent's instructions, model slot and material for the open scene), and
+  are offered to MCP clients as prompts (`review-<id>`, see [MCP](./mcp.md)).

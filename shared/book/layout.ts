@@ -7,6 +7,8 @@ export const BOOK_LAYOUT = {
   inbox: 'notes/inbox',
   codex: 'codex',
   research: 'research',
+  /** Custom review agents (`<id>.md`: settings in frontmatter, instructions in the body). */
+  agents: 'agents',
   outline: 'outline.md',
   styleGuide: 'style-guide.md',
   index: '.wrote',

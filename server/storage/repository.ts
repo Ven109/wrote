@@ -1,6 +1,8 @@
 import type { BookConfigInput } from '#shared/schemas/book'
 import { readBookConfig, writeBookConfig } from './config'
 import { listEntries, readEntry } from './entries'
+import { readMarkdownFiles } from './fs'
+import { resolveInBook } from './paths'
 import { readRawFile, restoreRawFile } from './raw'
 import { createEntry, moveEntry, trashEntry, type CreateEntryInput } from './mutations'
 import { listOrderedChildren, reorderChildren } from './reorder'
@@ -37,6 +39,10 @@ export function createBookRepository(root: string) {
     readRaw: (path: string) => readRawFile(root, path),
     /** Restores a recorded raw file state; `null` removes the file (undo). */
     restoreRaw: (path: string, content: string | null) => restoreRawFile(root, path, content, onWrite),
+    /** Writes (or with `null` removes) a non-entry book file such as `agents/<id>.md`. */
+    writeRaw: (path: string, content: string | null) => restoreRawFile(root, path, content, onWrite),
+    /** The `.md` files directly in a book folder (name → text); `null` when the folder does not exist. */
+    readFolder: (dir: string) => readMarkdownFiles(resolveInBook(root, dir)),
   }
 }
 
