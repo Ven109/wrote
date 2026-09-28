@@ -1,5 +1,4 @@
-import { mkdtemp, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { copyFixtureBook } from '../../test/utils/fixture-book'
@@ -11,6 +10,7 @@ import { createBookRepository, type BookRepository } from '../storage/repository
 import { updateAiSettings } from './ai-settings'
 import { EMBED_JOB, embedIndex, scheduleEmbedding, withEmbeddingRefresh, type EmbedTexts } from './embeddings'
 import type { BookContext } from './workspace'
+import { createTempDir } from '../../test/utils/workspace'
 
 let db: IndexDb
 let repo: BookRepository
@@ -81,7 +81,7 @@ describe('scheduling', () => {
   const fakeBook = (): BookContext => ({ workspaceDir: workspace, db, jobs: { enqueue: vi.fn(async () => ({ id: 'job_1' })) } }) as unknown as BookContext
 
   beforeEach(async () => {
-    workspace = await mkdtemp(join(tmpdir(), 'wrote-emb-'))
+    workspace = await createTempDir('wrote-emb-')
   })
 
   it('queues nothing without an embedding model', async () => {

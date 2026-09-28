@@ -1,8 +1,5 @@
-import { mkdtemp } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createTestWorkspace } from '../../test/utils/workspace'
+import { createTestWorkspace, createTempDir } from '../../test/utils/workspace'
 import { saveGeneratedSummary } from '../db/state/summaries'
 import { runTool } from '../tools/define'
 import { getSummariesTool } from '../tools/summary-tools'
@@ -75,7 +72,7 @@ describe('summary scheduling', () => {
   })
 
   it('does not use a workspace without AI settings', async () => {
-    const empty = await mkdtemp(join(tmpdir(), 'wrote-empty-'))
+    const empty = await createTempDir('wrote-empty-')
     expect(await scheduleSummaries({ ...fakeBook(), workspaceDir: empty } as BookContext)).toBeNull()
   })
 })

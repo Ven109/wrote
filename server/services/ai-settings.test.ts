@@ -1,13 +1,13 @@
-import { mkdtemp, readFile, stat } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { aiSettingsView, loadAiConfig, modelRefFor, parseModelRef, providerReady, resolveModel, updateAiSettings } from './ai-settings'
+import { createTempDir } from '../../test/utils/workspace'
 
 let workspace: string
 
 beforeEach(async () => {
-  workspace = await mkdtemp(join(tmpdir(), 'wrote-ai-'))
+  workspace = await createTempDir('wrote-ai-')
 })
 
 describe('ai settings', () => {

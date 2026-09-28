@@ -1,13 +1,13 @@
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readdir, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { hashContent, readTextIfExists, writeFileAtomic } from './fs'
+import { createTempDir } from '../../test/utils/workspace'
 
 describe('fs helpers', () => {
   let dir: string
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'wrote-fs-'))
+    dir = await createTempDir('wrote-fs-')
   })
   afterEach(() => rm(dir, { recursive: true, force: true }))
 
