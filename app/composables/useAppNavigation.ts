@@ -1,4 +1,4 @@
-import type { NavigationMenuItem } from '@nuxt/ui'
+import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 
 /** Book sections shown in the sidebar once a book is open. */
 export const BOOK_SECTIONS = [
@@ -11,7 +11,7 @@ export const BOOK_SECTIONS = [
   { key: 'agents', label: 'Agents', icon: 'i-lucide-bot' },
   { key: 'snapshots', label: 'Snapshots', icon: 'i-lucide-camera' },
   { key: 'activity', label: 'Activity', icon: 'i-lucide-history' },
-  { key: 'settings', label: 'Settings', icon: 'i-lucide-settings' },
+  { key: 'settings', label: 'Settings', icon: 'i-lucide-sliders-horizontal' },
 ] as const
 
 type SectionKey = (typeof BOOK_SECTIONS)[number]['key']
@@ -23,6 +23,19 @@ export function bookNavigationItems(bookId: string, badges: Partial<Record<Secti
     to: `/books/${bookId}/${section.key}`,
     badge: badges[section.key] || undefined,
   }))
+}
+
+/** App-wide settings, opened from the settings menu in the sidebar footer. */
+export const SETTINGS_ITEMS = [
+  { label: 'AI models', icon: 'i-lucide-sparkles', to: '/settings/ai' },
+  { label: 'Connect agents', icon: 'i-lucide-plug', to: '/settings/mcp' },
+  { label: 'Integrations', icon: 'i-lucide-blocks', to: '/settings/integrations' },
+  { label: 'Usage', icon: 'i-lucide-chart-column', to: '/settings/usage' },
+] as const
+
+/** The settings menu: a labelled "AI Agents" group with the settings pages. */
+export function settingsMenuItems(): DropdownMenuItem[][] {
+  return [[{ type: 'label', label: 'AI Agents' }, ...SETTINGS_ITEMS.map(item => ({ ...item }))]]
 }
 
 /** Sidebar navigation: global items plus book sections for the book in the current route. */
@@ -46,13 +59,11 @@ export function useAppNavigation() {
   const items = computed<NavigationMenuItem[][]>(() => {
     const global: NavigationMenuItem[] = [
       { label: 'Library', icon: 'i-lucide-library-big', to: '/', exact: true },
-      { label: 'AI models', icon: 'i-lucide-sparkles', to: '/settings/ai' },
-      { label: 'Connect agents', icon: 'i-lucide-plug', to: '/settings/mcp' },
-      { label: 'Integrations', icon: 'i-lucide-blocks', to: '/settings/integrations' },
-      { label: 'Usage', icon: 'i-lucide-chart-column', to: '/settings/usage' },
     ]
     return bookId.value ? [global, bookNavigationItems(bookId.value, badges.value)] : [global]
   })
 
-  return { bookId, activeEntryPath, items }
+  const settingsActive = computed(() => route.path.startsWith('/settings/'))
+
+  return { bookId, activeEntryPath, items, settingsItems: settingsMenuItems(), settingsActive }
 }

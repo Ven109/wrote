@@ -67,9 +67,13 @@ function openSearch(closeSidebar: () => void) {
     </template>
 
     <template #footer="{ state }">
-      <UColorModeButton
-        :class="state === 'collapsed' ? '' : 'ms-auto'"
-      />
+      <div
+        class="flex w-full gap-1"
+        :class="state === 'collapsed' ? 'flex-col items-center' : 'items-center justify-between'"
+      >
+        <AppSettingsMenu :collapsed="state === 'collapsed'" />
+        <UColorModeButton class="size-11 justify-center" />
+      </div>
     </template>
   </USidebar>
 </template>
