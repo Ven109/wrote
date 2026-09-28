@@ -12,7 +12,7 @@ const STATUS = {
   failed: { label: 'Failed', color: 'error' },
   cancelled: { label: 'Cancelled', color: 'neutral' },
 } as const
-const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+const when = useFormat().dateTime
 </script>
 
 <template>

@@ -13,7 +13,7 @@ export function useCommentLayout(margin: Ref<HTMLElement | null>) {
   const tops = ref<Record<string, number>>({})
 
   function measure() {
-    const view = context?.editor.value?.view
+    const view = liveView(context?.editor.value)
     if (!view || !margin.value || !context) return
     const origin = margin.value.getBoundingClientRect().top
     const positions = commentPositions(view.state)

@@ -4,6 +4,7 @@ import { heatmapWeeks } from '~/utils/goals-view'
 
 const props = defineProps<{ days: WritingDay[], today: string }>()
 const weeks = computed(() => heatmapWeeks(props.days, props.today))
+const format = useFormat()
 const LEVEL = ['bg-elevated', 'bg-primary/25', 'bg-primary/50', 'bg-primary/75', 'bg-primary']
 </script>
 
@@ -34,7 +35,7 @@ const LEVEL = ['bg-elevated', 'bg-primary/25', 'bg-primary/50', 'bg-primary/75',
             :key="cell.day"
             class="size-2.5 rounded-xs"
             :class="cell.future ? 'bg-transparent' : LEVEL[cell.level]"
-            :title="cell.future ? undefined : `${cell.day}: ${cell.words.toLocaleString()} words`"
+            :title="cell.future ? undefined : `${cell.day}: ${format.number(cell.words)} words`"
           />
         </div>
       </div>

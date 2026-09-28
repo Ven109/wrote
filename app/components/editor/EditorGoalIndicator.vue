@@ -3,6 +3,7 @@
 const props = defineProps<{ bookId: string }>()
 const { progress, todayPercent } = useGoals(() => props.bookId)
 const circumference = 2 * Math.PI * 8
+const format = useFormat()
 </script>
 
 <template>
@@ -37,6 +38,6 @@ const circumference = 2 * Math.PI * 8
         :stroke-dashoffset="circumference * (1 - (todayPercent ?? 0) / 100)"
       />
     </svg>
-    <span class="text-xs tabular-nums">{{ Math.max(0, progress.today.net).toLocaleString() }}/{{ progress.dailyTarget.toLocaleString() }}</span>
+    <span class="text-xs tabular-nums">{{ format.number(Math.max(0, progress.today.net)) }}/{{ format.number(progress.dailyTarget) }}</span>
   </UButton>
 </template>

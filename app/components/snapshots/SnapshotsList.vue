@@ -3,7 +3,8 @@ import type { SnapshotSummary } from '#shared/schemas/snapshot'
 
 defineProps<{ snapshots: SnapshotSummary[], selectedId: string | null }>()
 defineEmits<{ select: [id: string], take: [] }>()
-const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+const format = useFormat()
+const when = format.dateTime
 </script>
 
 <template>
@@ -47,7 +48,7 @@ const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyl
               size="sm"
             />
           </span>
-          <span class="text-xs text-muted">{{ when(snapshot.createdAt) }} · {{ snapshot.scope.title }} · {{ snapshot.words.toLocaleString() }} words</span>
+          <span class="text-xs text-muted">{{ when(snapshot.createdAt) }} · {{ snapshot.scope.title }} · {{ format.number(snapshot.words) }} words</span>
         </button>
       </li>
     </ul>
