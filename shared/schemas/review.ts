@@ -26,9 +26,10 @@ export const ReviewAgentSchema = z.object({
   /**
    * Extra material the agent gets besides the book context: `outline` (the beats the scene tells, for
    * structure), `research` (research notes matching the scene, for fact checks), `heuristics` (cheap
-   * line-level flags – repetition, filter words, adverbs, passive voice – for the model to confirm).
+   * line-level flags – repetition, filter words, adverbs, passive voice – for the model to confirm), `timeline`
+   * (scenes and events around this one in in-world order, with who and where).
    */
-  tools: z.array(z.enum(['outline', 'research', 'heuristics'])).default([]),
+  tools: z.array(z.enum(['outline', 'research', 'heuristics', 'timeline'])).default([]),
   /** Also asks for a short per-scene summary (e.g. a beta reader's engagement), kept on the run. */
   summary: z.boolean().default(false),
   /** Categories the agent reports (shown as filters; findings may use others). */

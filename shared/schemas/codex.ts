@@ -68,6 +68,16 @@ export const BUILT_IN_CODEX_TYPES: CodexTypeTemplate[] = [
     fields: [field('era', 'Era'), field('summary', 'Summary', 'longtext')],
   },
   {
+    id: 'event', label: 'Event', plural: 'Events', icon: 'i-lucide-calendar-clock', folder: 'events', builtIn: true,
+    fields: [
+      field('date', 'Date', 'text', { hint: 'In-world date: 1890-05-12, Day 3, or a custom calendar date' }),
+      field('end', 'Until', 'text', { hint: 'For events that last: when they end' }),
+      field('participants', 'Participants', 'entries'),
+      field('place', 'Place', 'entry'),
+      field('summary', 'Summary', 'longtext'),
+    ],
+  },
+  {
     id: 'glossary', label: 'Glossary term', plural: 'Glossary', icon: 'i-lucide-book-a', folder: 'glossary', builtIn: true,
     fields: [field('definition', 'Definition', 'longtext')],
   },

@@ -12,6 +12,7 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 | `get_summaries` | Whole-book summary and outline with chapter/part (optionally scene) summaries | read |
 | `get_outline` | The plot outline: notes, acts and beats with the scenes that tell each beat | read |
 | `get_codex` | Characters, places, … | read |
+| `timeline_query` | Scenes and events in in-world order with dates, characters and places; filters `character`, `place`, `from`, `to` | read |
 | `get_progress` | Word counts and goals | read |
 | `list_suggestions` | Edit suggestions with status, author and `stale` (text changed since) | read |
 | `list_comments` | Comments on the book or an entry, with replies and `detached` (passage changed) | read |

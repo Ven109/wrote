@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { TimelineConfigSchema } from './timeline'
 
 export const BOOK_CONFIG_FILE = 'wrote.json'
 
@@ -18,6 +19,8 @@ export const BookConfigSchema = z.looseObject({
   export: z.object({
     blocks: z.record(z.string(), z.enum(['include', 'strip'])).default({}),
   }).default({ blocks: {} }),
+  /** In-world dates: what "Day 1" is, and custom calendars (see docs/timeline.md). */
+  timeline: TimelineConfigSchema.default({ calendars: [] }),
 })
 
 export type BookConfig = z.infer<typeof BookConfigSchema>
