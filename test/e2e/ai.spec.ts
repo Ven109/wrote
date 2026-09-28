@@ -17,6 +17,14 @@ test.beforeAll(async () => {
       { name: 'Captain Rook', type: 'character', existingId: null, aliases: ['Rook'], facts: [{ field: 'role', value: 'supporting' }], description: 'Waits at the market.', evidence: ['Captain Rook waited'] },
       { name: 'Weir Market', type: 'place', existingId: null, aliases: [], facts: [], description: 'A market.', evidence: ['at the Weir Market'] },
     ] }) }
+    if (system.includes('story structure editor')) {
+      return JSON.stringify(lastUser?.content).includes('between')
+        ? { text: JSON.stringify({ beats: [
+            { title: 'Shelter in the lighthouse', summary: 'They wait out the storm.', rationale: 'A quiet beat before the map.' },
+            { title: 'The keeper talks', summary: 'He knew her father.', rationale: 'Motivates the search.' },
+          ] }) }
+        : { text: JSON.stringify({ notes: [{ text: 'Nothing explains why the Guild waits.' }], beats: [{ actId: 'act_e2e0000002', afterBeatId: null, title: 'The Guild watches', summary: 'Spies at the harbor.', rationale: 'Sets up the offer.' }] }) }
+    }
     if (system.includes('manuscript editor')) return { text: JSON.stringify(lastUser?.content).includes('Continue after') ? 'The gulls rose over the pier.' : 'The harbor reeked of brine.' }
     if (JSON.stringify(lastUser?.content).includes('inject')) return { text: 'Look: <img src=x onerror="window.__xss=1"> **done**' }
     return messages.some(message => message.role === 'tool')
@@ -182,6 +190,38 @@ test('scan chapter proposes codex entries that are only added when accepted', as
   const entries = page.getByRole('navigation', { name: 'Codex entries' })
   await expect(entries).toContainText('Captain Ada Rook')
   await expect(entries).not.toContainText('Weir Market')
+})
+
+test('outline helpers propose bridge beats and plot holes as ghost cards', async ({ page }) => {
+  const { bookId } = await createBookWithHarbor(page, `Helpers ${Date.now()}`)
+  await page.request.post(`/api/books/${bookId}/outline/ops`, { data: { ops: [
+    { op: 'addAct', id: 'act_e2e0000001', title: 'Setup' },
+    { op: 'addBeat', id: 'bt_e2e0000001', actId: 'act_e2e0000001', title: 'The storm hits', summary: '' },
+    { op: 'addBeat', id: 'bt_e2e0000002', actId: 'act_e2e0000001', title: 'She finds the map', summary: '' },
+    { op: 'addAct', id: 'act_e2e0000002', title: 'The Guild' },
+  ] } })
+  await gotoHydrated(page, `/books/${bookId}/outline`)
+  const setup = page.getByRole('region', { name: 'Setup' })
+
+  await setup.getByRole('button', { name: 'Actions for The storm hits' }).click()
+  await page.getByRole('menuitem', { name: 'Suggest bridge beats' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Suggest bridge beats' })
+  await expect(dialog.getByRole('combobox', { name: 'To' })).toContainText('She finds the map')
+  await dialog.getByRole('button', { name: 'Suggest' }).click()
+  await expect(dialog).toBeHidden()
+  const ghost = setup.getByRole('listitem', { name: 'Proposed beat: Shelter in the lighthouse' })
+  await expect(ghost).toContainText('Bridge: The storm hits → She finds the map')
+  await expect(setup.getByRole('listitem', { name: 'Proposed beat: The keeper talks' })).toBeVisible()
+  await ghost.getByRole('button', { name: /^Accept/ }).click()
+  await setup.getByRole('listitem', { name: 'Proposed beat: The keeper talks' }).getByRole('button', { name: /^Reject/ }).click()
+  await expect(setup.getByRole('listitem')).toHaveCount(3)
+  await expect(setup.getByRole('listitem').nth(1)).toHaveAccessibleName('Shelter in the lighthouse')
+
+  await page.getByRole('button', { name: 'Ask AI' }).click()
+  await page.getByRole('menuitem', { name: 'Find plot holes' }).click()
+  await page.getByRole('dialog', { name: 'Find plot holes' }).getByRole('button', { name: 'Suggest' }).click()
+  await expect(page.getByRole('region', { name: /Proposals/ }).getByRole('listitem', { name: /Note: Nothing explains why the Guild waits/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'The Guild' }).getByRole('listitem', { name: 'Proposed beat: The Guild watches' })).toContainText('Plot holes')
 })
 
 test('settings and assistant fit a phone screen', async ({ browser }) => {

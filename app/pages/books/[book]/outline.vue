@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const bookId = useRouteBookId()
 const view = useOutlineView(bookId)
-const { outline, status, mode, board, beats, templates, proposals, listedProposals, promptOpen, deleteOpen, promptTitle, deleteTitle, promptInitial } = view
+const { outline, status, mode, board, beats, templates, proposals, helpers, listedProposals, promptOpen, deleteOpen, promptTitle, deleteTitle, promptInitial } = view
 const { dragging, drop } = board
 useSeoMeta({ title: 'Outline' })
 </script>
@@ -33,6 +33,15 @@ useSeoMeta({ title: 'Outline' })
             @click="mode = 'tree'"
           />
         </UFieldGroup>
+        <UDropdownMenu :items="view.aiMenu.value">
+          <UButton
+            label="Ask AI"
+            icon="i-lucide-sparkles"
+            color="neutral"
+            variant="outline"
+            class="min-h-11 lg:min-h-0"
+          />
+        </UDropdownMenu>
         <UButton
           label="Template"
           icon="i-lucide-layout-template"
@@ -125,6 +134,16 @@ useSeoMeta({ title: 'Outline' })
       confirm-label="Delete"
       danger
       @confirm="view.confirmDelete"
+    />
+    <OutlineHelperModal
+      v-model:open="helpers.open.value"
+      v-model:form="helpers.form.value"
+      :beat-items="helpers.beatItems.value"
+      :act-items="helpers.actItems.value"
+      :template-items="helpers.templateItems.value"
+      :running="helpers.running.value"
+      :can-run="helpers.canRun.value"
+      @run="helpers.run"
     />
     <OutlineTemplateModal
       v-model:open="templates.open.value"

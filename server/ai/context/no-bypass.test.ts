@@ -14,6 +14,7 @@ const ALLOWED: Record<string, { reason: string, mustUse?: RegExp }> = {
   'services/assistant.ts': { reason: 'assistant – prompt from the context engine', mustUse: /prepareAssistantPrompt|buildContext/ },
   'services/inline-ai.ts': { reason: 'inline actions and autocomplete – prompts from the context engine', mustUse: /buildContext/ },
   'services/codex-extraction.ts': { reason: 'codex extraction – the scanned manuscript text is the input by design; prompt in ai/extraction-prompts.ts', mustUse: /extractionPrompt/ },
+  'services/outline-helpers.ts': { reason: 'outline helpers – book context from the context engine, plus the outline itself', mustUse: /buildContext/ },
   'services/summary-jobs.ts': { reason: 'background summaries – no request from the author; prompts in ai/summary-prompts.ts' },
 }
 

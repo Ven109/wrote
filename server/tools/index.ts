@@ -2,7 +2,7 @@ import type { WroteTool } from './define'
 import { getCodexEntryTool, getCodexTool } from './codex-tools'
 import { addCommentTool, listCommentsTool } from './comment-tools'
 import { extractCodexTool, proposeCodexEntriesTool } from './extraction-tools'
-import { getOutlineTool, proposeOutlineChangesTool, updateOutlineTool } from './outline-tools'
+import { getOutlineTool, proposeOutlineChangesTool, reviewOutlineTool, suggestBridgeBeatsTool, updateOutlineTool } from './outline-tools'
 import { getProgressTool, getStructureTool, listBooksTool, readEntryTool, searchTool } from './read-tools'
 import { getSummariesTool } from './summary-tools'
 import { createNoteTool, listSuggestionsTool, proposeEditTool } from './write-tools'
@@ -26,6 +26,8 @@ export const WROTE_TOOLS = [
   listCommentsTool,
   addCommentTool,
   proposeOutlineChangesTool,
+  suggestBridgeBeatsTool,
+  reviewOutlineTool,
   updateOutlineTool,
 ] as const satisfies readonly WroteTool[]
 

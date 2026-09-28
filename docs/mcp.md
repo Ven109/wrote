@@ -20,6 +20,8 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 | `extract_codex` | Scans a chapter/scene/part with Wrote's configured model and proposes codex entries (with quotes as evidence) – **never applied directly** | propose |
 | `propose_codex_entries` | Proposes codex entries the agent found itself in a chapter/scene/part; entries whose quotes are not in the text are dropped | propose |
 | `propose_outline_changes` | Proposes new beats, edits of beats and notes (plot holes, open questions) – **never applied directly**; they appear live as ghost cards on the outline board to accept or reject | propose |
+| `suggest_bridge_beats` | Uses Wrote's configured model to propose 2–4 alternative beats between two beats (as outline proposals) | propose |
+| `review_outline` | Uses Wrote's configured model to find plot holes, or what is missing in one act (`actId`), optionally against a beat sheet (`templateId`); results are outline proposals | propose |
 | `update_outline` | Adds, moves, edits and deletes acts and beats; logged and undoable | write |
 | `propose_edit` | Suggests a change (replace a passage, or `mode: "insert_after"` to add paragraphs) – **never applied directly**; it appears live as a tracked change you accept, edit or reject in Wrote | propose |
 

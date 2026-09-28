@@ -1,9 +1,11 @@
 import { z } from 'zod'
-import { OutlineOpSchema } from '#shared/schemas/outline'
+import { ActIdSchema, BeatIdSchema, OutlineOpSchema } from '#shared/schemas/outline'
 import { NewOutlineProposalSchema } from '#shared/schemas/outline-proposals'
+import { getModelWithRef } from '../ai/models'
 import { readOutline, updateOutline } from '../services/outline'
+import { generateWith, reviewOutline, suggestBridgeBeats } from '../services/outline-helpers'
 import { createOutlineProposals } from '../services/outline-proposals'
-import { InvalidInputError } from '../storage/errors'
+import { InvalidInputError, NotFoundError } from '../storage/errors'
 import { defineWroteTool, ToolError } from './define'
 
 export const getOutlineTool = defineWroteTool({
@@ -51,4 +53,42 @@ export const proposeOutlineChangesTool = defineWroteTool({
       throw error
     }
   },
+})
+
+const helperView = (proposals: { id: string, change: unknown, rationale: string }[]) => ({
+  proposals: proposals.map(({ id, change, rationale }) => ({ id, change, rationale })),
+  note: 'The proposals appear on the outline board for the author to accept or reject. Nothing was changed yet.',
+})
+
+/** Runs an outline helper with Wrote's configured model; errors become tool errors the agent can act on. */
+async function withConfiguredModel<T>(workspaceDir: string, run: (options: { generate: ReturnType<typeof generateWith>, model: string }) => Promise<T>): Promise<T> {
+  const configured = await getModelWithRef(workspaceDir, 'chat')
+  if (!configured) throw new ToolError('No AI model is configured in Wrote. Read the outline with get_outline and use propose_outline_changes instead.', 'ai_not_configured')
+  try {
+    return await run({ generate: generateWith(configured.model), model: configured.ref })
+  }
+  catch (error) {
+    if (error instanceof InvalidInputError || error instanceof NotFoundError) throw new ToolError(error.message, 'invalid_input')
+    throw error
+  }
+}
+
+export const suggestBridgeBeatsTool = defineWroteTool({
+  name: 'suggest_bridge_beats',
+  title: 'Suggest bridge beats',
+  description: 'Asks Wrote\'s configured AI model for 2–4 alternative beats that get the story from one beat to another, and proposes them on the outline (after the first beat) for the author to accept or reject. If you can think them up yourself, use propose_outline_changes instead.',
+  permission: 'propose',
+  input: z.object({ fromBeatId: BeatIdSchema, toBeatId: BeatIdSchema, count: z.number().int().min(2).max(4).optional() }),
+  handler: (input, { book, caller, workspaceDir }) =>
+    withConfiguredModel(workspaceDir, async options => helperView(await suggestBridgeBeats(book!, input, { ...options, author: caller }))),
+})
+
+export const reviewOutlineTool = defineWroteTool({
+  name: 'review_outline',
+  title: 'Review the outline',
+  description: 'Asks Wrote\'s configured AI model to find plot holes in the outline (or, with actId, what is missing in that act), optionally compared with a beat-sheet template (templateId, e.g. "save-the-cat"). Results are proposed as notes and beats for the author to accept or reject.',
+  permission: 'propose',
+  input: z.object({ actId: ActIdSchema.optional(), templateId: z.string().regex(/^[\w.-]+$/).optional() }),
+  handler: (input, { book, caller, workspaceDir }) =>
+    withConfiguredModel(workspaceDir, async options => helperView(await reviewOutline(book!, input, { ...options, author: caller }))),
 })
