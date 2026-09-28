@@ -11,6 +11,7 @@ export const settingsKeys = {
   /** Without a purpose: the prefix of both model lists (for invalidation). */
   aiModels: (purpose?: ModelPurpose) => (purpose ? ['settings', 'ai', 'models', purpose] as const : ['settings', 'ai', 'models'] as const),
   mcp: () => ['settings', 'mcp'] as const,
+  integrations: () => ['settings', 'integrations'] as const,
 }
 
 /** Workspace-wide templates (shared by all books). */
