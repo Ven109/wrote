@@ -179,11 +179,39 @@ Bodies are GitHub-flavoured Markdown. The editor writes a canonical form, so sav
 
 | Written | Saved as |
 |---|---|
-| `***`, `___` (scene break) | `---` |
+| `***`, `___` (horizontal rule) | `---` |
 | `* item` | `- item` |
 | `__bold__`, `_em_` | `**bold**`, `*em*` |
 
 Bodies end with exactly one newline. `[[Target]]` / `[[Target|Label]]` wiki links are kept verbatim. Known limitation: inline formatting wrapped around a wiki link (`**[[Target]]**`) is dropped by the editor.
+
+### Custom blocks
+
+Wrote's own blocks are Markdown directives, so any editor shows them as plain text:
+
+```markdown
+* * *
+
+:::note{todo=open}
+Check whether the lamp burned oil in 1890.
+:::
+
+:::callout{variant=tip}
+Spring tides come at new and full moon.
+:::
+
+::codex-card{id=cdx_mara000001}
+```
+
+| Block | Syntax | Exported by default |
+|---|---|---|
+| Scene break | `* * *` (exactly; `---` stays a horizontal rule) | yes |
+| Note (author note / to-do) | `:::note` … `:::`, optional `{todo=open}` or `{todo=done}` | no |
+| Callout | `:::callout{variant=info\|tip\|warning}` … `:::` | yes |
+| Codex card | `::codex-card{id=…}` – shows the entry's current data | no |
+
+The book settings (`wrote.json` → `export.blocks`) change what exports include per block type. Directives
+Wrote does not know are kept exactly as written. Directive blocks cannot be nested.
 
 ## Book config – `wrote.json`
 

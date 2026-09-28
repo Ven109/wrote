@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { wroteExtensions } from '~/editor/extensions'
 import { WikiLinkView } from '~/editor/extensions/wiki-link-view'
+import { BLOCK_VIEWS } from '~/editor/extensions/block-views'
+import { blockHandlers } from '~/editor/block-handlers'
 import { MARKDOWN_OPTIONS } from '~/editor/markdown'
 import { SLASH_ITEMS } from '~/editor/menus'
 import { WIKI_LINK_CONTEXT, wikiLinkHandlers } from '~/editor/wiki-link-context'
@@ -13,10 +15,10 @@ const markdown = defineModel<string>({ required: true })
 const { mode } = useEditorMode()
 const links = inject(WIKI_LINK_CONTEXT, null)
 const codex = inject(CODEX_MENTIONS_CONTEXT, null)
-const extensions = wroteExtensions({ wikiLink: WikiLinkView })
+const extensions = wroteExtensions({ wikiLink: WikiLinkView, blocks: BLOCK_VIEWS })
 const ai = inject(INLINE_AI_CONTEXT, null)
 const slashItems = ai ? [...SLASH_ITEMS, SLASH_AI_ITEMS] : SLASH_ITEMS
-const editorHandlers = ai ? { ...wikiLinkHandlers, ...inlineAiHandlers(ai) } : wikiLinkHandlers
+const editorHandlers = ai ? { ...wikiLinkHandlers, ...blockHandlers, ...inlineAiHandlers(ai) } : { ...wikiLinkHandlers, ...blockHandlers }
 </script>
 
 <template>

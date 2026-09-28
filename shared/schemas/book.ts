@@ -14,6 +14,10 @@ export const BookConfigSchema = z.looseObject({
   ai: z.object({
     model: z.string().optional(),
   }).default({}),
+  /** Export options. `blocks`: per custom block type (`note`, `callout`, `codex-card`, `scene-break`), include or strip. */
+  export: z.object({
+    blocks: z.record(z.string(), z.enum(['include', 'strip'])).default({}),
+  }).default({ blocks: {} }),
 })
 
 export type BookConfig = z.infer<typeof BookConfigSchema>

@@ -16,7 +16,7 @@ describe('library page', () => {
   })
 
   it('lists books as cards linking to the editor', async () => {
-    books.push({ id: 'tide', title: 'The Long Tide', subtitle: null, author: 'A. Writer', language: 'en', template: 'novel', external: false, wordCount: 1234, scenes: 3, updatedAt: null })
+    books.push({ id: 'tide', title: 'The Long Tide', subtitle: null, author: 'A. Writer', language: 'en', template: 'novel', external: false, wordCount: 1234, scenes: 3, updatedAt: null, blockExport: {} })
     await useQueryCache().invalidateQueries({ key: ['books'] })
     const page = await mountSuspended(IndexPage)
     await vi.waitFor(() => expect(page.text()).toContain('The Long Tide'))
