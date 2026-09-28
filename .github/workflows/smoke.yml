@@ -1,0 +1,167 @@
+name: Smoke test
+
+# Runs Wrote the way users do, on fresh runners: `docker run -v ./books:/books -p 3000:3000 <image>` and
+# `npx wrote ./books/sample-book`, then checks health, the book list, the app page and exports (test/smoke/check.mjs).
+# - with a version (after a release, or run by hand): the published image and npm package
+# - on pull requests touching packaging: an image and a tarball built from the branch
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Published version to test (without the leading v)
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published version to test (without the leading v)
+        type: string
+        required: true
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - cli/**
+      - test/smoke/**
+      - nuxt.config.ts
+      - package.json
+      - pnpm-lock.yaml
+      - server/middleware/**
+      - .github/workflows/smoke.yml
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  VERSION: ${{ inputs.version }}
+  IMAGE: ghcr.io/ven109/wrote
+
+jobs:
+  package:
+    name: Pack npm tarball from the branch
+    if: ${{ !inputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - run: pnpm pack:npm
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-tarball
+          path: dist/wrote-*.tgz
+          retention-days: 3
+
+  docker:
+    name: docker run
+    runs-on: ubuntu-latest
+    steps:
+      # Only for the fixture book and the check script; the app runs from the image.
+      - uses: actions/checkout@v4
+
+      - name: Build image from the branch
+        if: ${{ !env.VERSION }}
+        run: docker build --build-arg VERSION=0.0.0-smoke -t wrote:smoke .
+
+      - name: Log in to GHCR (the package may still be private)
+        if: ${{ env.VERSION }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Choose image
+        id: image
+        run: |
+          if [ -n "$VERSION" ]; then echo "ref=$IMAGE:$VERSION" >> "$GITHUB_OUTPUT"; echo "check=$VERSION" >> "$GITHUB_OUTPUT"
+          else echo "ref=wrote:smoke" >> "$GITHUB_OUTPUT"; echo "check=0.0.0-smoke" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Prepare books folder
+        run: |
+          mkdir books && cp -r test/fixtures/sample-book books/
+          # The container runs as the unprivileged `node` user.
+          chmod -R a+rwX books
+
+      - name: docker run
+        run: docker run -d --name wrote -v "$PWD/books:/books" -p 3000:3000 "${{ steps.image.outputs.ref }}"
+
+      - name: Check app, API and exports (EPUB, PDF, DOCX, HTML, Markdown)
+        run: node test/smoke/check.mjs http://localhost:3000 --formats md,epub,pdf,docx,html --version "${{ steps.image.outputs.check }}"
+
+      - name: Wait for the Docker healthcheck
+        run: |
+          for i in $(seq 1 60); do
+            status="$(docker inspect --format '{{.State.Health.Status}}' wrote)"
+            echo "health: $status"; [ "$status" = healthy ] && exit 0; sleep 2
+          done
+          exit 1
+
+      - name: Basic auth
+        run: |
+          docker run -d --name wrote-auth -v "$PWD/books:/books" -p 3001:3000 -e WROTE_AUTH_USER=smoke -e WROTE_AUTH_PASSWORD=secret "${{ steps.image.outputs.ref }}"
+          SMOKE_AUTH=smoke:secret node test/smoke/check.mjs http://localhost:3001
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/api/books)" = 401
+
+      - name: Container logs
+        if: failure()
+        run: docker logs wrote; docker logs wrote-auth || true
+
+  npx:
+    name: npx wrote (${{ matrix.os }})
+    needs: package
+    if: ${{ !cancelled() && needs.package.result != 'failure' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      # Only for the fixture book and the check script; no dependencies are installed.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - uses: actions/download-artifact@v4
+        if: ${{ !env.VERSION }}
+        with:
+          name: npm-tarball
+          path: tarball
+
+      - name: Choose package
+        id: package
+        run: |
+          if [ -n "$VERSION" ]; then
+            # A fresh publish can take a moment to show up in the registry.
+            for i in $(seq 1 30); do npm view "wrote@$VERSION" version && break; sleep 10; done
+            echo "spec=wrote@$VERSION" >> "$GITHUB_OUTPUT"; echo "check=$VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "spec=$(ls "$PWD"/tarball/wrote-*.tgz)" >> "$GITHUB_OUTPUT"; echo "check=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: npx wrote ./books/sample-book
+        run: |
+          mkdir -p "$RUNNER_TEMP/books" && cp -r test/fixtures/sample-book "$RUNNER_TEMP/books/"
+          cd "$RUNNER_TEMP"
+          nohup npx -y --package="${{ steps.package.outputs.spec }}" wrote ./books/sample-book --no-open > "$RUNNER_TEMP/wrote.log" 2>&1 &
+
+      - name: Check app, API and Markdown export
+        run: node test/smoke/check.mjs http://127.0.0.1:3000 --timeout 300 ${{ steps.package.outputs.check && format('--version {0}', steps.package.outputs.check) || '' }}
+
+      - name: CLI log
+        if: always()
+        run: cat "$RUNNER_TEMP/wrote.log" || true

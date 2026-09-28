@@ -78,9 +78,10 @@ Runs without the Wrote app, directly on a book folder:
 }
 ```
 
-`npx wrote` works once Wrote is published as a package. Until then, from a checkout of this repository, build the CLI
-with `pnpm build:cli` and use `"command": "node", "args": ["/path/to/wrote/dist/cli/wrote.mjs", "mcp", "--book", "…"]`.
-`--workspace <dir>` serves all books of a folder instead.
+From a checkout of this repository, build the CLI with `pnpm build:cli` and use
+`"command": "node", "args": ["/path/to/wrote/dist/cli/wrote.mjs", "mcp", "--book", "…"]`.
+`--workspace <dir>` serves all books of a folder instead. (`npx wrote ./my-book` without `mcp` starts the app itself,
+see [self-hosting.md](self-hosting.md).)
 
 ## Permissions
 
@@ -113,7 +114,8 @@ in `.wrote/state.db` of the book.
 ## Security
 
 - The HTTP endpoint only answers on **localhost** (requests with another `Host` or a foreign browser `Origin` are
-  rejected – DNS-rebinding safe) and requires the **bearer token**.
+  rejected – DNS-rebinding safe) and requires the **bearer token**. With [basic auth](self-hosting.md#basic-auth)
+  on, requests carrying a bearer token skip basic auth; all others to `/mcp` need the basic-auth password.
 - Tokens and policies live in `<workspace>/.wrote/mcp-clients.json` (readable by your user only). Only a hash of each
   token is stored. **Revoke** an agent in **Connect agents** and its token stops working immediately; create a new one
   to rotate.

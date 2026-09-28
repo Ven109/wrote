@@ -10,7 +10,7 @@ const PORTS_PER_WORKER = 200
  * workspace. Ports are derived from the vitest worker (unique among files running at the same time) and the
  * file, so concurrently booting servers never race for a port.
  */
-export function setupApiServer(workspaceDir: string, file: string) {
+export function setupApiServer(workspaceDir: string, file: string, options: { env?: Record<string, string> } = {}) {
   const worker = Number(process.env.VITEST_POOL_ID ?? 1)
   const offset = [...file].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7) % PORTS_PER_WORKER
   return setup({
@@ -18,6 +18,6 @@ export function setupApiServer(workspaceDir: string, file: string) {
     server: true,
     port: BASE_PORT + worker * PORTS_PER_WORKER + offset,
     nuxtConfig: { nitro: { output: { dir: API_OUTPUT_DIR } } },
-    env: { NUXT_WORKSPACE_DIR: workspaceDir },
+    env: { NUXT_WORKSPACE_DIR: workspaceDir, ...options.env },
   })
 }

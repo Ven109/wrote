@@ -1,0 +1,122 @@
+name: Release
+
+# Pushing a version tag (v1.2.3, v1.3.0-beta.1) publishes the npm package `wrote` and the multi-arch image
+# ghcr.io/ven109/wrote with the same version, then smoke-tests both on clean runners.
+# Needs the repository secret NPM_TOKEN (an npm automation token); GHCR uses the built-in GITHUB_TOKEN.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/ven109/wrote
+
+jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+
+  npm:
+    name: Publish npm package
+    needs: version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Set version from tag
+        run: npm pkg set version="$VERSION"
+
+      - run: pnpm build
+
+      - name: Stage package
+        run: node cli/pack.mjs
+
+      - name: Publish
+        working-directory: dist/npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DIST_TAG: ${{ needs.version.outputs.prerelease == 'true' && 'next' || 'latest' }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then echo "::error::The NPM_TOKEN secret is not set."; exit 1; fi
+          npm publish --access public --provenance --tag "$DIST_TAG"
+
+  image:
+    name: Publish image (amd64 + arm64)
+    needs: version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: latest=false
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ needs.version.outputs.prerelease == 'false' }}
+            type=raw,value=latest,enable=${{ needs.version.outputs.prerelease == 'false' }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: VERSION=${{ needs.version.outputs.version }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  smoke:
+    name: Smoke test the release
+    needs: [version, npm, image]
+    uses: ./.github/workflows/smoke.yml
+    permissions:
+      contents: read
+      packages: read
+    with:
+      version: ${{ needs.version.outputs.version }}

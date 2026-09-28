@@ -1,3 +1,5 @@
+import pkg from './package.json'
+
 // API tests build the app once into a shared folder (see test/setup/api-build.ts).
 const testBuildDir = process.env.WROTE_TEST_BUILD_DIR
 
@@ -23,6 +25,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Folder containing the user's books (override with NUXT_WORKSPACE_DIR).
     workspaceDir: '',
+    // Reported by /api/health (Docker image and npm package are released with matching versions).
+    appVersion: pkg.version,
   },
 
   compatibilityDate: '2026-09-01',

@@ -14,6 +14,15 @@ Built with **Nuxt 4** and **Nuxt UI 4** (zinc + yellow).
 
 > Status: concept stage. See [docs/CONCEPT.md](docs/CONCEPT.md).
 
+## Run it
+
+```bash
+npx wrote ./my-book                                        # Node 22+, opens the book in your browser
+docker run -v ./books:/books -p 3000:3000 ghcr.io/ven109/wrote   # with Pandoc + Typst for every export
+```
+
+Options, basic auth and environment variables: [docs/self-hosting.md](docs/self-hosting.md).
+
 ## Development
 
 Requirements: Node 22+, pnpm 10 (`corepack enable`).
