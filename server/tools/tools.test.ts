@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createTestWorkspace } from '../../test/utils/workspace'
+import { listSnapshotSummaries } from '../services/snapshots'
 import { closeAllBooks, openBook } from '../services/workspace'
 import { toAiSdkTools, toMcpTools } from './adapters'
 import { runTool, ToolError, type ToolContext } from './define'
@@ -167,5 +168,19 @@ describe('outline tools', () => {
     const next = await runTool(updateOutlineTool, { ops: [{ op: 'renameAct', actId: 'act_tw00000001', title: 'Act Two: Offers' }] }, { ...context, policy })
     expect(next.acts[1]!.title).toBe('Act Two: Offers')
     await expect(runTool(updateOutlineTool, { ops: [{ op: 'deleteAct', actId: 'act_missing' }] }, { ...context, policy })).rejects.toMatchObject({ code: 'invalid_input' })
+  })
+})
+
+describe('automatic snapshots', () => {
+  it('snapshots the files an AI bulk action changes, as they were before', async () => {
+    const policy = { read: 'allow', propose: 'allow', write: 'allow', destructive: 'ask' } as const
+    const before = await context.book!.repository.readRaw('outline.md')
+    await runTool(updateOutlineTool, { ops: [
+      { op: 'renameAct', actId: 'act_0ne0000001', title: 'Act One: Homecoming' },
+      { op: 'setNotes', notes: 'Tighter, darker.' },
+    ] }, { ...context, policy })
+    const [snapshot] = await listSnapshotSummaries(context.book!, { path: 'outline.md' })
+    expect(snapshot).toMatchObject({ auto: true, name: expect.stringMatching(/^Before .* \(Test\)$/), fileCount: 1 })
+    expect(before).toContain('act_0ne0000001')
   })
 })

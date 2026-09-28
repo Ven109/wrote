@@ -139,4 +139,13 @@ export const STATE_MIGRATIONS: string[][] = [
     )`,
     'CREATE INDEX review_runs_created_idx ON review_runs(created_at)',
   ],
+  // 11: snapshots (WRO-4); file contents live in .wrote/snapshots/objects
+  [
+    `CREATE TABLE snapshots (
+      id TEXT PRIMARY KEY,
+      created_at TEXT NOT NULL,
+      data TEXT NOT NULL
+    )`,
+    'CREATE INDEX snapshots_created_idx ON snapshots(created_at)',
+  ],
 ]

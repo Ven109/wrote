@@ -8,12 +8,10 @@ const MAX_CELLS = 1_000_000
 
 const lines = (text: string | null) => (text === null || text === '' ? [] : text.replace(/\n$/, '').split('\n'))
 
-/** Line diff (LCS) of two file versions; `null` is a file that did not exist. */
-export function diffLines(before: string | null, after: string | null): DiffLine[] {
-  const a = lines(before)
-  const b = lines(after)
+/** LCS diff of two sequences: each item of `a` or `b` marked same, removed (only in `a`) or added (only in `b`). */
+export function diffSequences<T>(a: T[], b: T[]): { kind: DiffLine['kind'], item: T }[] {
   if (a.length * b.length > MAX_CELLS) {
-    return [...a.map(text => ({ kind: 'removed' as const, text })), ...b.map(text => ({ kind: 'added' as const, text }))]
+    return [...a.map(item => ({ kind: 'removed' as const, item })), ...b.map(item => ({ kind: 'added' as const, item }))]
   }
   // lengths[i][j] = LCS of a[i..] and b[j..]
   const lengths = Array.from({ length: a.length + 1 }, () => new Uint32Array(b.length + 1))
@@ -22,19 +20,24 @@ export function diffLines(before: string | null, after: string | null): DiffLine
       lengths[i]![j] = a[i] === b[j] ? lengths[i + 1]![j + 1]! + 1 : Math.max(lengths[i + 1]![j]!, lengths[i]![j + 1]!)
     }
   }
-  const result: DiffLine[] = []
+  const result: { kind: DiffLine['kind'], item: T }[] = []
   let i = 0
   let j = 0
   while (i < a.length || j < b.length) {
     if (i < a.length && j < b.length && a[i] === b[j]) {
-      result.push({ kind: 'same', text: a[i++]! })
+      result.push({ kind: 'same', item: a[i++]! })
       j++
     }
     // Removals first on ties, so a replaced line reads "- old / + new".
-    else if (i < a.length && (j >= b.length || lengths[i + 1]![j]! >= lengths[i]![j + 1]!)) result.push({ kind: 'removed', text: a[i++]! })
-    else result.push({ kind: 'added', text: b[j++]! })
+    else if (i < a.length && (j >= b.length || lengths[i + 1]![j]! >= lengths[i]![j + 1]!)) result.push({ kind: 'removed', item: a[i++]! })
+    else result.push({ kind: 'added', item: b[j++]! })
   }
   return result
+}
+
+/** Line diff (LCS) of two file versions; `null` is a file that did not exist. */
+export function diffLines(before: string | null, after: string | null): DiffLine[] {
+  return diffSequences(lines(before), lines(after)).map(({ kind, item }) => ({ kind, text: item }))
 }
 
 /** Only the changed lines with `context` unchanged lines around them; skipped runs become `null`. */

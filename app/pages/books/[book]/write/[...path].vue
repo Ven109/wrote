@@ -33,6 +33,14 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
             :ai-shares="provenance.shares.value"
           />
           <UButton
+            icon="i-lucide-camera"
+            color="neutral"
+            variant="ghost"
+            :to="`/books/${bookId}/snapshots?path=${encodeURIComponent(activeEntryPath)}`"
+            aria-label="Snapshots of this scene"
+            class="size-11 justify-center lg:size-auto"
+          />
+          <UButton
             icon="i-lucide-highlighter"
             color="neutral"
             :variant="provenance.highlight.value ? 'soft' : 'ghost'"

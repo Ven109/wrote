@@ -19,6 +19,8 @@ export const BookConfigSchema = z.looseObject({
   export: z.object({
     blocks: z.record(z.string(), z.enum(['include', 'strip'])).default({}),
   }).default({ blocks: {} }),
+  /** Snapshots: `git` commits each manual snapshot when the book folder is a git repository. */
+  snapshots: z.object({ git: z.boolean().default(false) }).default({ git: false }),
   /** In-world dates: what "Day 1" is, and custom calendars (see docs/timeline.md). */
   timeline: TimelineConfigSchema.default({ calendars: [] }),
 })

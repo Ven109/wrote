@@ -44,6 +44,7 @@ async function summarize(workspaceDir: string, location: BookLocation, config?: 
     scenes: progress.scenes,
     updatedAt: await lastModified(location.root),
     blockExport: blockExportPolicy(cfg.export.blocks),
+    snapshotGit: cfg.snapshots.git,
   }
 }
 

@@ -100,3 +100,10 @@ export const comments = sqliteTable('comments', {
   createdAt: text('created_at').notNull(),
   data: text('data', { mode: 'json' }).notNull(),
 })
+
+/** Snapshots (WRO-4); `data` holds the full `Snapshot` (JSON); contents are blobs in `.wrote/snapshots/objects`. */
+export const snapshots = sqliteTable('snapshots', {
+  id: text('id').primaryKey(),
+  createdAt: text('created_at').notNull(),
+  data: text('data', { mode: 'json' }).notNull(),
+})
