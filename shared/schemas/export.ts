@@ -9,8 +9,10 @@ export const ExportRequestSchema = z.object({
   format: ExportFormatSchema,
   /** Chapters to export (in book order); omitted or empty: the whole book. */
   chapterIds: z.array(EntryIdSchema).max(2000).optional(),
-  /** Front matter: title page and table of contents. */
+  /** Front matter (title page, copyright, dedication, contents …) and back matter, as the preset lists them. */
   frontMatter: z.boolean().default(true),
+  /** Export preset id (built-in or the book's `.wrote/presets/<id>.yaml`); default: `default`. */
+  presetId: z.string().max(60).optional(),
 })
 export type ExportRequest = z.infer<typeof ExportRequestSchema>
 

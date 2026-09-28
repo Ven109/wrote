@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -21,7 +21,10 @@ let out: string
 describe.runIf(enabled)('export check (sample book)', () => {
   beforeAll(async () => {
     book = await openBook(await createTestWorkspace(), 'sample-book')
-    out = await mkdtemp(join(tmpdir(), 'wrote-export-check-'))
+    out = process.env.WROTE_EXPORT_OUT || await mkdtemp(join(tmpdir(), 'wrote-export-check-'))
+    await mkdir(join(book.repository.root, 'matter'), { recursive: true })
+    await writeFile(join(book.repository.root, 'matter/dedication.md'), 'For everyone who left and came back.\n')
+    await writeFile(join(book.repository.root, 'matter/acknowledgements.md'), 'Thanks to the harbor master.\n')
   })
   afterAll(() => closeAllBooks())
 
@@ -29,6 +32,12 @@ describe.runIf(enabled)('export check (sample book)', () => {
     const file = await exportBook(book, { format, frontMatter: true })
     expect(file.data.length).toBeGreaterThan(100)
     await writeFile(join(out, file.filename), file.data)
+  })
+
+  it.each([['pdf', 'print-6x9'], ['pdf', 'manuscript'], ['docx', 'manuscript']] as const)('exports %s with the %s preset', { timeout: 120_000 }, async (format, presetId) => {
+    const file = await exportBook(book, { format, presetId, frontMatter: true })
+    expect(file.data.length).toBeGreaterThan(100)
+    await writeFile(join(out, `${presetId}.${format}`), file.data)
   })
 
   it('produces an EPUB that passes epubcheck', { timeout: 120_000 }, async () => {

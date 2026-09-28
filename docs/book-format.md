@@ -22,9 +22,11 @@ my-novel/
 │   └── places/hollow-bay.md
 ├── research/                      # sources, clippings, interviews
 ├── agents/                        # custom review agents (see review-agents.md)
+├── matter/                        # front/back matter for export: dedication.md, acknowledgements.md … (see export.md)
+├── cover.jpg                      # optional EPUB cover
 ├── outline.md
 ├── style-guide.md
-└── .wrote/                        # index (rebuildable), app state, AI provenance – gitignored
+└── .wrote/                        # index (rebuildable), app state, AI provenance, export presets (presets/*.yaml) – gitignored
 ```
 
 Paths inside the book are POSIX and relative to the book root. Entry types are derived from the location (`shared/book/layout.ts`):

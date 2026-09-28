@@ -9,6 +9,8 @@ export const BOOK_LAYOUT = {
   research: 'research',
   /** Custom review agents (`<id>.md`: settings in frontmatter, instructions in the body). */
   agents: 'agents',
+  /** Front and back matter for export (`dedication.md`, `epigraph.md`, `copyright.md`, `acknowledgements.md`, `about-the-author.md`). */
+  matter: 'matter',
   outline: 'outline.md',
   styleGuide: 'style-guide.md',
   index: '.wrote',
