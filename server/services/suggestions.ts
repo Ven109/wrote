@@ -6,6 +6,7 @@ import { InvalidInputError, NotFoundError } from '../storage/errors'
 import { readLegacySuggestionFiles, removeLegacySuggestionFiles } from '../storage/legacy-suggestions'
 import { publishSuggestionEvent } from '../utils/book-events'
 import { recordProvenance } from './provenance'
+import { resolveFindingsFixedBy } from './review-findings'
 import { getEntry } from './entries'
 import type { BookContext } from './workspace'
 
@@ -92,6 +93,7 @@ export async function resolveSuggestions(book: BookContext, input: ResolveSugges
       suggestionId: suggestion.id,
     }, now)
   }
+  await resolveFindingsFixedBy(book, resolved.filter(suggestion => suggestion.status === 'accepted'), now)
   for (const entryId of new Set(resolved.map(suggestion => suggestion.entryId))) publishSuggestionEvent(book.id, { entryId })
   return resolved
 }

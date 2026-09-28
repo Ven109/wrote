@@ -44,3 +44,42 @@ export function locateAnchor(text: string, find: string, context: { before?: str
   }
   return { from: best, to: best + find.length }
 }
+
+/** Characters of a quote or its context that must still match for a fuzzy re-anchor. */
+const PROBE = 16
+const occurrences = (text: string, part: string) => {
+  const found: number[] = []
+  for (let at = text.indexOf(part); at >= 0; at = text.indexOf(part, at + 1)) found.push(at)
+  return found
+}
+
+/**
+ * Like `locateAnchor`, but survives edits inside the passage: when the exact quote is gone, it is found again
+ * between its unchanged surroundings, or between its unchanged first and last words. The length may change
+ * by half at most (plus a little), so an unrelated passage is not picked up. `null`: the passage is gone –
+ * the finding or comment is orphaned (kept, but shown as detached). Only for display anchors: never replace
+ * text at a fuzzy range.
+ */
+export function locateAnchorFuzzy(text: string, find: string, context: { before?: string, after?: string } = {}): TextRange | null {
+  const exact = locateAnchor(text, find, context)
+  if (exact || !find) return exact
+  const plausible = (from: number, to: number) => to > from && to - from >= find.length * 0.5 && to - from <= find.length * 1.5 + 40
+  const before = (context.before ?? '').slice(-PROBE)
+  const after = (context.after ?? '').slice(0, PROBE)
+  if (before.length >= 8 && after.length >= 8) {
+    for (const at of occurrences(text, before)) {
+      const from = at + before.length
+      const to = text.indexOf(after, from)
+      if (to >= 0 && plausible(from, to)) return { from, to }
+    }
+  }
+  if (find.length >= PROBE * 2) {
+    const head = find.slice(0, PROBE)
+    const tail = find.slice(-PROBE)
+    for (const from of occurrences(text, head)) {
+      const end = text.indexOf(tail, from + head.length)
+      if (end >= 0 && plausible(from, end + tail.length)) return { from, to: end + tail.length }
+    }
+  }
+  return null
+}

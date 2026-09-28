@@ -1,7 +1,7 @@
 import type { Comment, CommentView, CreateCommentInput } from '#shared/schemas/comments'
 import type { Actor } from '#shared/schemas/suggestion'
 import { createRecordId } from '#shared/utils/ids'
-import { anchorContext, locateAnchor } from '#shared/utils/text-anchor'
+import { anchorContext, locateAnchorFuzzy } from '#shared/utils/text-anchor'
 import { findComments, upsertComment } from '../db/state/comments'
 import { InvalidInputError, NotFoundError } from '../storage/errors'
 import { publishCommentEvent } from '../utils/book-events'
@@ -38,6 +38,7 @@ export async function addComment(book: BookContext, input: CreateCommentInput & 
     replies: [],
     createdAt: now.toISOString(),
     resolvedAt: null,
+    review: null,
   })
 }
 
@@ -49,7 +50,7 @@ export async function listComments(book: BookContext, filter: { entryId?: string
   for (const comment of comments) {
     if (!bodies.has(comment.entryId)) bodies.set(comment.entryId, await bodyOf(book, comment.entryId))
     const body = bodies.get(comment.entryId) ?? null
-    views.push({ ...comment, detached: body === null || !locateAnchor(body, comment.quote, comment) })
+    views.push({ ...comment, detached: body === null || !locateAnchorFuzzy(body, comment.quote, comment) })
   }
   return views
 }

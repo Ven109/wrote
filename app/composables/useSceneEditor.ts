@@ -1,4 +1,4 @@
-/** Everything the write page needs for one entry: document + autosave + word counts + metadata + links + summary. */
+/** Everything the write page needs for one entry: document + autosave + word counts + metadata + links + summary + review. */
 export function useSceneEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefOrGetter<string | null>) {
   const entry = useEntryDocument(bookId, path)
   const autosave = useAutosave(entry)
@@ -14,5 +14,6 @@ export function useSceneEditor(bookId: MaybeRefOrGetter<string>, path: MaybeRefO
   const ai = useInlineAi(bookId, entry.document, autosave.flush)
   useAutocomplete(bookId, entry.document)
   const provenance = useProvenance(bookId, entry.document)
-  return { entry, autosave, words, meta, links, backlinks, summary, suggestions, comments, beats, ai, provenance }
+  const review = useSceneReview(bookId, entry.document)
+  return { entry, autosave, words, meta, links, backlinks, summary, suggestions, comments, beats, ai, provenance, review }
 }

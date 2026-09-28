@@ -17,6 +17,13 @@ test.beforeAll(async () => {
       { name: 'Captain Rook', type: 'character', existingId: null, aliases: ['Rook'], facts: [{ field: 'role', value: 'supporting' }], description: 'Waits at the market.', evidence: ['Captain Rook waited'] },
       { name: 'Weir Market', type: 'place', existingId: null, aliases: [], facts: [], description: 'A market.', evidence: ['at the Weir Market'] },
     ] }) }
+    if (system.includes('You review one scene')) {
+      return { text: JSON.stringify({ findings: [
+        { quote: 'The harbor smelled of salt.', severity: 'medium', category: 'imagery', message: 'Name the smell more precisely.', suggestion: 'The harbor reeked of salt and diesel.' },
+        { quote: 'harbor', severity: 'low', category: 'repetition', message: 'Harbor appears often in this chapter.', suggestion: null },
+        { quote: 'Not in the scene at all', severity: 'high', category: 'invented', message: 'Dropped.', suggestion: null },
+      ] }) }
+    }
     if (system.includes('story structure editor')) {
       return JSON.stringify(lastUser?.content).includes('between')
         ? { text: JSON.stringify({ beats: [
@@ -222,6 +229,40 @@ test('outline helpers propose bridge beats and plot holes as ghost cards', async
   await page.getByRole('dialog', { name: 'Find plot holes' }).getByRole('button', { name: 'Suggest' }).click()
   await expect(page.getByRole('region', { name: /Proposals/ }).getByRole('listitem', { name: /Note: Nothing explains why the Guild waits/ })).toBeVisible()
   await expect(page.getByRole('region', { name: 'The Guild' }).getByRole('listitem', { name: 'Proposed beat: The Guild watches' })).toContainText('Plot holes')
+})
+
+test('a review agent adds findings to the margin; a fix becomes a suggestion, a dismissed finding stays gone', async ({ page }) => {
+  const { bookId, scenePath } = await createBookWithHarbor(page, `Review ${Date.now()}`)
+  await gotoHydrated(page, `/books/${bookId}/write/${scenePath}`)
+  await page.getByRole('button', { name: 'Review', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Editor' }).click()
+  await page.getByRole('menuitem', { name: 'This scene' }).click()
+
+  const margin = page.getByRole('complementary', { name: 'Comments' })
+  const fix = margin.getByRole('article').filter({ hasText: 'medium · imagery' })
+  await expect(fix).toContainText('Suggested: The harbor reeked of salt and diesel.')
+  await expect(margin.getByRole('article')).toHaveCount(2)
+  await fix.getByRole('button', { name: 'Apply fix from Editor' }).click()
+  await expect(page.getByRole('button', { name: '1 suggestion' })).toBeVisible()
+
+  await margin.getByRole('article').filter({ hasText: 'low · repetition' }).getByRole('button', { name: 'Dismiss finding from Editor' }).click()
+  await expect(margin.getByRole('article')).toHaveCount(1)
+
+  await page.getByRole('button', { name: 'Review', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Review history' }).click()
+  const history = page.getByRole('dialog', { name: 'Review history' })
+  await expect(history).toContainText('Done')
+  await expect(history).toContainText('2 findings')
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: 'Review', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Editor' }).click()
+  await page.getByRole('menuitem', { name: 'This scene' }).click()
+  await page.getByRole('button', { name: 'Review', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Review history' }).click()
+  await expect(history.getByRole('listitem').first()).toContainText('0 findings')
+  await page.keyboard.press('Escape')
+  await expect(margin.getByRole('article')).toHaveCount(1)
 })
 
 test('settings and assistant fit a phone screen', async ({ browser }) => {

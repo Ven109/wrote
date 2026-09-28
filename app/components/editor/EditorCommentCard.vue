@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { CommentView } from '#shared/schemas/comments'
 
-defineProps<{ comment: CommentView, active: boolean, busy: boolean }>()
-const emit = defineEmits<{ reply: [body: string], resolve: [], focus: [] }>()
+const props = defineProps<{ comment: CommentView, active: boolean, busy: boolean }>()
+const emit = defineEmits<{ reply: [body: string], resolve: [], focus: [], dismiss: [], fix: [] }>()
+const SEVERITY_COLORS = { low: 'neutral', medium: 'warning', high: 'error' } as const
+const review = computed(() => props.comment.review)
 const draft = ref('')
 function send() {
   if (!draft.value.trim()) return
@@ -26,6 +28,13 @@ function send() {
       />
       <span class="font-medium text-highlighted">{{ comment.author.name }}</span>
       <UBadge
+        v-if="review"
+        :label="`${review.severity} · ${review.category}`"
+        :color="SEVERITY_COLORS[review.severity]"
+        variant="subtle"
+        size="sm"
+      />
+      <UBadge
         v-if="comment.detached"
         label="Passage changed"
         color="neutral"
@@ -38,6 +47,12 @@ function send() {
     </blockquote>
     <p class="whitespace-pre-line">
       {{ comment.body }}
+    </p>
+    <p
+      v-if="review?.suggestion"
+      class="rounded bg-elevated px-2 py-1 text-xs"
+    >
+      <span class="text-muted">Suggested:</span> {{ review.suggestion }}
     </p>
     <div
       v-for="reply in comment.replies"
@@ -55,16 +70,41 @@ function send() {
       @keydown.enter.prevent="send"
       @click.stop
     />
-    <UButton
-      label="Resolve"
-      icon="i-lucide-check"
-      color="neutral"
-      variant="soft"
-      size="sm"
-      class="min-h-11 self-start sm:min-h-0"
-      :loading="busy"
-      :aria-label="`Resolve comment by ${comment.author.name}`"
-      @click.stop="emit('resolve')"
-    />
+    <div class="flex flex-wrap gap-1.5">
+      <UButton
+        v-if="review?.suggestion && !review.suggestionId && !comment.detached"
+        label="Apply fix"
+        icon="i-lucide-wand-sparkles"
+        variant="soft"
+        size="sm"
+        class="min-h-11 sm:min-h-0"
+        :disabled="busy"
+        :aria-label="`Apply fix from ${comment.author.name}`"
+        @click.stop="emit('fix')"
+      />
+      <UButton
+        label="Resolve"
+        icon="i-lucide-check"
+        color="neutral"
+        variant="soft"
+        size="sm"
+        class="min-h-11 sm:min-h-0"
+        :loading="busy"
+        :aria-label="`Resolve comment by ${comment.author.name}`"
+        @click.stop="emit('resolve')"
+      />
+      <UButton
+        v-if="review"
+        label="Dismiss"
+        icon="i-lucide-x"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        class="min-h-11 sm:min-h-0"
+        :disabled="busy"
+        :aria-label="`Dismiss finding from ${comment.author.name}`"
+        @click.stop="emit('dismiss')"
+      />
+    </div>
   </article>
 </template>

@@ -14,7 +14,7 @@ type ShownComment = Pick<Comment, 'id' | 'quote' | 'before' | 'after'>
 function decorate(doc: PmNode, comments: ShownComment[], active: string | null): DecorationSet {
   const index = docTextIndex(doc)
   const decorations = comments.flatMap((comment) => {
-    const found = locateSuggestion(doc, { find: comment.quote, before: comment.before, after: comment.after }, index)
+    const found = locateSuggestion(doc, { find: comment.quote, before: comment.before, after: comment.after }, index, { fuzzy: true })
     const className = comment.id === active ? 'comment-highlight comment-highlight-active' : 'comment-highlight'
     return found ? [Decoration.inline(found.from, found.to, { 'class': className, 'data-comment-id': comment.id }, { commentId: comment.id })] : []
   })

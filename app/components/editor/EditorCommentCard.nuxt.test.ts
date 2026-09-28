@@ -5,7 +5,7 @@ import EditorCommentCard from './EditorCommentCard.vue'
 
 const comment: CommentView = {
   id: 'cmt_1', entryId: 'scn_1', quote: 'The tide was out', before: '', after: '', body: 'Strong image.', author: { kind: 'mcp', name: 'Claude Code' },
-  replies: [{ id: 'rpl_1', author: { kind: 'user', name: 'You' }, body: 'Thanks', createdAt: '2026-09-28T10:00:00.000Z' }], createdAt: '2026-09-28T10:00:00.000Z', resolvedAt: null, detached: true,
+  replies: [{ id: 'rpl_1', author: { kind: 'user', name: 'You' }, body: 'Thanks', createdAt: '2026-09-28T10:00:00.000Z' }], createdAt: '2026-09-28T10:00:00.000Z', resolvedAt: null, review: null, detached: true,
 }
 
 describe('EditorCommentCard', () => {
@@ -21,5 +21,18 @@ describe('EditorCommentCard', () => {
     await card.get('button[aria-label="Resolve comment by Claude Code"]').trigger('click')
     expect(card.emitted('reply')).toEqual([['Agreed']])
     expect(card.emitted('resolve')).toHaveLength(1)
+  })
+
+  it('shows a finding\'s severity, category and fix, and emits fix and dismiss', async () => {
+    const finding: CommentView = { ...comment, detached: false, replies: [], author: { kind: 'agent', name: 'Editor' }, review: { runId: 'rvr_1', agentId: 'editor', severity: 'high', category: 'clarity', suggestion: 'The tide had gone out', fingerprint: 'f', suggestionId: null, dismissed: false } }
+    const card = await mountSuspended(EditorCommentCard, { props: { comment: finding, active: false, busy: false } })
+    expect(card.text()).toContain('high · clarity')
+    expect(card.text()).toContain('Suggested: The tide had gone out')
+    await card.get('button[aria-label="Apply fix from Editor"]').trigger('click')
+    await card.get('button[aria-label="Dismiss finding from Editor"]').trigger('click')
+    expect(card.emitted('fix')).toHaveLength(1)
+    expect(card.emitted('dismiss')).toHaveLength(1)
+    await card.setProps({ comment: { ...finding, review: { ...finding.review!, suggestionId: 'sug_1' } } })
+    expect(card.find('button[aria-label="Apply fix from Editor"]').exists()).toBe(false)
   })
 })
