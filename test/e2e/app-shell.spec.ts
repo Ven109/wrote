@@ -31,6 +31,18 @@ test.describe('app shell', () => {
     await expect(page.getByRole('dialog').getByRole('link', { name: 'Library', exact: true })).toBeVisible()
   })
 
+  test('opens app settings from the sidebar footer menu', async ({ page, isMobile }) => {
+    await gotoHydrated(page, '/')
+    if (isMobile) await page.getByRole('button', { name: 'Toggle sidebar' }).click()
+    await expect(page.getByRole('link', { name: 'AI models' })).toHaveCount(0)
+    await page.getByRole('button', { name: 'App settings' }).click()
+    const menu = page.getByRole('menu')
+    await expect(menu.getByText('AI Agents')).toBeVisible()
+    await expect(menu.getByRole('menuitem')).toHaveText(['AI models', 'Connect agents', 'Integrations', 'Usage'])
+    await menu.getByRole('menuitem', { name: 'Connect agents' }).click()
+    await expect(page).toHaveURL(/\/settings\/mcp$/)
+  })
+
   test('has no horizontal scroll', async ({ page }) => {
     await gotoHydrated(page, '/')
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)

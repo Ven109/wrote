@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BOOK_SECTIONS, bookNavigationItems } from './useAppNavigation'
+import { BOOK_SECTIONS, bookNavigationItems, SETTINGS_ITEMS, settingsMenuItems } from './useAppNavigation'
 
 describe('bookNavigationItems', () => {
   it('links every book section under the book route', () => {
@@ -24,8 +24,15 @@ describe('useAppNavigation', () => {
     })
     const { items, bookId } = nav
     expect(bookId.value).toBeNull()
-    expect(items.value).toHaveLength(1)
-    expect(items.value[0]![0]).toMatchObject({ label: 'Library', to: '/' })
-    expect(items.value[0]![1]).toMatchObject({ label: 'AI models', to: '/settings/ai' })
+    expect(items.value).toEqual([[expect.objectContaining({ label: 'Library', to: '/' })]])
+  })
+})
+
+describe('settingsMenuItems', () => {
+  it('groups the settings pages under an "AI Agents" label', () => {
+    const [group] = settingsMenuItems()
+    expect(group![0]).toEqual({ type: 'label', label: 'AI Agents' })
+    expect(group!.slice(1).map(item => item.to)).toEqual(SETTINGS_ITEMS.map(item => item.to))
+    expect(group!.slice(1).map(item => item.label)).toEqual(['AI models', 'Connect agents', 'Integrations', 'Usage'])
   })
 })
