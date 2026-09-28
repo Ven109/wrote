@@ -23,6 +23,7 @@
     "prepare": "simple-git-hooks",
     "build:cli": "node cli/build.mjs",
     "eval:extraction": "vitest run --project unit server/codex/extraction-eval.test.ts",
+    "export:check": "WROTE_EXPORT_CHECK=1 vitest run --project unit server/export/export-check.test.ts",
     "eval:review": "vitest run --project unit server/review/review-eval.test.ts"
   },
   "dependencies": {
