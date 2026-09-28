@@ -9,6 +9,7 @@ import { WIKI_LINK_CONTEXT, wikiLinkHandlers } from '~/editor/wiki-link-context'
 import { CODEX_MENTIONS_CONTEXT } from '~/editor/codex-mentions-context'
 import { inlineAiHandlers, SLASH_AI_ITEMS } from '~/editor/ai-actions'
 import { INLINE_AI_CONTEXT } from '~/editor/inline-ai-context'
+import { WRITING_MODES_CONTEXT } from '~/editor/writing-modes-context'
 
 withDefaults(defineProps<{ placeholder?: string }>(), { placeholder: 'Write, or press / for blocks…' })
 const markdown = defineModel<string>({ required: true })
@@ -17,6 +18,8 @@ const links = inject(WIKI_LINK_CONTEXT, null)
 const codex = inject(CODEX_MENTIONS_CONTEXT, null)
 const extensions = wroteExtensions({ wikiLink: WikiLinkView, blocks: BLOCK_VIEWS })
 const ai = inject(INLINE_AI_CONTEXT, null)
+const writingModes = inject(WRITING_MODES_CONTEXT, null)
+const chrome = computed(() => !writingModes?.distractionFree.value)
 const slashItems = ai ? [...SLASH_ITEMS, SLASH_AI_ITEMS] : SLASH_ITEMS
 const editorHandlers = ai ? { ...wikiLinkHandlers, ...blockHandlers, ...inlineAiHandlers(ai) } : { ...wikiLinkHandlers, ...blockHandlers }
 </script>
@@ -33,7 +36,7 @@ const editorHandlers = ai ? { ...wikiLinkHandlers, ...blockHandlers, ...inlineAi
     :placeholder="placeholder"
     :data-mode="mode"
     class="prose-manuscript w-full"
-    :class="mode === 'document' ? 'pb-24' : 'lg:ps-8'"
+    :class="{ 'pb-24': chrome && mode === 'document', 'lg:ps-8': chrome && mode === 'block' }"
     :ui="{ base: 'min-h-[60vh] text-lg sm:px-0 [&_p]:leading-8' }"
   >
     <UEditorSuggestionMenu
@@ -65,7 +68,11 @@ const editorHandlers = ai ? { ...wikiLinkHandlers, ...blockHandlers, ...inlineAi
     <EditorComments :editor="editor" />
     <EditorGhostText :editor="editor" />
     <EditorProvenance :editor="editor" />
-    <template v-if="mode === 'block'">
+    <EditorWritingModes
+      v-if="writingModes"
+      :editor="editor"
+    />
+    <template v-if="chrome && mode === 'block'">
       <EditorBlockHandle
         :editor="editor"
         :handlers="handlers"
@@ -73,7 +80,7 @@ const editorHandlers = ai ? { ...wikiLinkHandlers, ...blockHandlers, ...inlineAi
       <EditorBubbleToolbar :editor="editor" />
     </template>
     <EditorMobileToolbar
-      v-else
+      v-else-if="chrome"
       :editor="editor"
       :handlers="handlers"
     />
