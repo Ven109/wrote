@@ -3,6 +3,7 @@ const bookId = useRouteBookId()
 const { activeEntryPath } = useAppNavigation()
 const note = useNoteEditor(bookId, activeEntryPath)
 const { document, status, draft } = note.entry
+const triage = useNoteTriage(bookId, note)
 useSeoMeta({ title: () => note.title.value || 'Note' })
 defineShortcuts({ meta_s: { usingInput: true, handler: note.autosave.flush } })
 </script>
@@ -24,6 +25,11 @@ defineShortcuts({ meta_s: { usingInput: true, handler: note.autosave.flush } })
         @keep-mine="note.autosave.keepMine"
         @use-theirs="note.autosave.useTheirs"
         @retry="note.autosave.flush"
+      />
+      <NotesTriageChips
+        :chips="triage.chips.value"
+        @accept="triage.accept"
+        @dismiss="triage.dismiss"
       />
       <EditorWroteEditor
         :key="document.path"

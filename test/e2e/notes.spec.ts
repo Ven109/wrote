@@ -54,3 +54,20 @@ test('notes list filters, edit, tag, pin and file out of the inbox', async ({ pa
   await expect(list.getByRole('link')).toHaveCount(1)
   await expect(list.getByRole('link', { name: /Harbor smell/ })).toBeVisible()
 })
+
+test('inbox triage suggests a codex link and the chapter, and applies them', async ({ page, request }, testInfo) => {
+  const res = await request.post('/api/books', { data: { title: `Triage ${testInfo.project.name} ${Date.now()}`, template: 'novel' } })
+  const { book, firstScenePath } = await res.json() as { book: { id: string }, firstScenePath: string }
+  await request.put(`/api/books/${book.id}/document`, { data: { path: firstScenePath, body: 'The lighthouse stairs were steep and wet.\n' } })
+  await request.post(`/api/books/${book.id}/codex`, { data: { type: 'character', title: 'Ines Calder' } })
+  const { path } = await (await request.post(`/api/books/${book.id}/notes`, { data: { text: 'Lighthouse idea\nInes Calder counts the lighthouse stairs.' } })).json() as { path: string }
+  await gotoHydrated(page, `/books/${book.id}/notes/${path}`)
+
+  const suggestions = page.getByRole('region', { name: 'Triage suggestions' })
+  await suggestions.getByRole('button', { name: 'Link Ines Calder' }).click()
+  await expect(suggestions.getByRole('button', { name: 'Link Ines Calder' })).toBeHidden()
+  await suggestions.getByRole('button', { name: /^Link chapter .+ and file the note$/ }).click()
+  await expect(page).toHaveURL(/\/notes\/notes\/lighthouse-idea\.md$/)
+  const saved = await (await request.get(`/api/books/${book.id}/document`, { params: { path: 'notes/lighthouse-idea.md' } })).json() as { body: string }
+  expect(saved.body).toMatch(/\[\[Ines Calder\]\] \[\[.+\]\]/)
+})
