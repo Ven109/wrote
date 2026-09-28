@@ -40,7 +40,7 @@ test.beforeAll(async () => {
       if (tools === 1) return { toolCall: { name: 'create_note', arguments: { title: 'Lighthouse automation', body: 'Lighthouses were automated in the 1980s (web search).' } } }
       return { text: 'They were automated in the 1980s – I saved a note.' }
     }
-    if (JSON.stringify(lastUser?.content).includes('inject')) return { text: 'Look: <img src=x onerror="window.__xss=1"> **done**' }
+    if (JSON.stringify(lastUser?.content).includes('inject')) return { text: 'Look: <img src="data:," onerror="window.__xss=1"> **done**' }
     return messages.some(message => message.role === 'tool')
       ? { text: 'The harbor appears in **Opening**.' }
       : { toolCall: { name: 'search', arguments: { query: 'harbor' } } }
