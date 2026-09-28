@@ -26,7 +26,8 @@ export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
   const mode = useLocalStorage<OutlineViewMode>('wrote:outline-view', 'board')
   const board = useOutlineBoard(outline, op => apply(op))
   const dialog = ref<Dialog | null>(null)
-  const editing = ref<{ beat: Beat, title: string, summary: string } | null>(null)
+  const beats = useBeatEditor(bookId, apply)
+  const { edit } = beats
 
   const actMenu = (act: Act): DropdownMenuItem[][] => [
     [
@@ -44,17 +45,6 @@ export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
     }),
     [{ label: 'Delete beat', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => (dialog.value = { kind: 'deleteBeat', beat }) }],
   ]
-
-  function edit(beat: Beat) {
-    editing.value = { beat, title: beat.title, summary: beat.summary }
-  }
-
-  async function saveBeat() {
-    const current = editing.value
-    if (!current?.title.trim()) return
-    editing.value = null
-    await apply({ op: 'updateBeat', beatId: current.beat.id, title: current.title.trim(), summary: current.summary })
-  }
 
   /** Title submitted in the add/rename prompt. */
   function submitTitle(title: string) {
@@ -96,11 +86,10 @@ export function useOutlineView(bookId: MaybeRefOrGetter<string>) {
     board,
     dragEnabled: computed(() => !isCoarsePointer.value),
     dialog,
-    editing,
+    beats,
     actMenu,
     beatMenu,
     edit,
-    saveBeat,
     submitTitle,
     confirmDelete,
     saveNotes: (notes: string) => notes !== outline.value.notes && apply({ op: 'setNotes', notes }),

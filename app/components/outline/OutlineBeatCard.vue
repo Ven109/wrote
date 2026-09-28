@@ -16,6 +16,7 @@ defineEmits<{ open: [] }>()
       <button
         type="button"
         class="min-h-11 min-w-0 flex-1 text-start lg:min-h-0"
+        :aria-label="`Edit ${beat.title}`"
         @click="$emit('open')"
       >
         <span class="block font-medium text-highlighted">{{ beat.title }}</span>
@@ -30,9 +31,8 @@ defineEmits<{ open: [] }>()
       />
     </div>
     <UBadge
-      v-if="!beat.scenes.length"
-      label="Unwritten"
-      color="warning"
+      :label="beat.scenes.length ? `${beat.scenes.length} ${beat.scenes.length === 1 ? 'scene' : 'scenes'}` : 'Unwritten'"
+      :color="beat.scenes.length ? 'neutral' : 'warning'"
       variant="subtle"
       size="sm"
       class="mt-2"

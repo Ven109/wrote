@@ -40,3 +40,22 @@ test('builds an outline and moving a beat on the board updates outline.md and th
   await page.getByRole('button', { name: 'Save' }).click()
   await expect.poll(outlineFile).toContain('Rain for three days.')
 })
+
+test('a scene created from a beat shows the beat while drafting, and follows changes to it', async ({ page, request }, testInfo) => {
+  const { book } = await (await request.post('/api/books', { data: { title: `Beats ${testInfo.project.name} ${Date.now()}`, template: 'novel' } })).json() as { book: { id: string } }
+  const ops = (body: unknown) => request.post(`/api/books/${book.id}/outline/ops`, { data: body })
+  await ops({ ops: [{ op: 'addAct', id: 'act_e2e0000001', title: 'Setup' }, { op: 'addBeat', id: 'bt_e2e0000001', actId: 'act_e2e0000001', title: 'The storm hits', summary: 'Rain for three days.' }] })
+  await gotoHydrated(page, `/books/${book.id}/outline`)
+
+  await page.getByRole('region', { name: 'Setup' }).getByRole('button', { name: 'Edit The storm hits' }).click()
+  await page.getByRole('button', { name: 'Create scene' }).click()
+  await page.getByRole('link', { name: 'Open “The storm hits”' }).click()
+  const panel = page.getByRole('complementary', { name: 'Outline beat' })
+  await expect(panel).toContainText('The storm hits')
+  await expect(panel).toContainText('Rain for three days.')
+
+  await ops({ ops: [{ op: 'updateBeat', beatId: 'bt_e2e0000001', title: 'The storm breaks' }] })
+  await expect(panel).toContainText('The storm breaks')
+  await panel.getByRole('link', { name: 'Open the outline' }).click()
+  await expect(page.getByRole('region', { name: 'Setup' }).getByRole('listitem', { name: 'The storm breaks' })).toContainText('1 scene')
+})

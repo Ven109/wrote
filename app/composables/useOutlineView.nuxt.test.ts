@@ -8,6 +8,7 @@ import { useOutlineView } from './useOutlineView'
 const doc: OutlineDocument = { hash: 'h', outline: { notes: '', acts: [{ id: 'act_1', title: 'One', beats: [{ id: 'bt_a', title: 'A', summary: '', scenes: [] }] }] } }
 const sent: OutlineOp[][] = []
 registerEndpoint('/api/books/otlv-book/outline', () => doc)
+registerEndpoint('/api/books/otlv-book/structure', () => [])
 registerEndpoint('/api/books/otlv-book/outline/ops', { method: 'POST', handler: async (event) => {
   sent.push((await readBody<{ ops: OutlineOp[] }>(event)).ops)
   return doc
@@ -31,10 +32,10 @@ describe('useOutlineView', () => {
     expect(view.promptTitle.value).toBe('New beat')
     view.submitTitle('B')
     view.edit(beat)
-    view.editing.value!.summary = 'Storm.'
-    await view.saveBeat()
+    view.beats.editing.value!.summary = 'Storm.'
+    await view.beats.save()
     await vi.waitFor(() => expect(sent).toHaveLength(2))
     expect(sent[0]).toMatchObject([{ op: 'addBeat', actId: 'act_1', title: 'B' }])
-    expect(sent[1]).toEqual([{ op: 'updateBeat', beatId: 'bt_a', title: 'A', summary: 'Storm.' }])
+    expect(sent[1]).toEqual([{ op: 'updateBeat', beatId: 'bt_a', title: 'A', summary: 'Storm.', scenes: [] }])
   })
 })
