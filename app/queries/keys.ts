@@ -18,6 +18,7 @@ export const bookKeys = {
   book: (bookId: string) => ['book', bookId] as const,
   summary: (bookId: string) => ['book', bookId, 'summary'] as const,
   structure: (bookId: string) => ['book', bookId, 'structure'] as const,
+  outline: (bookId: string) => ['book', bookId, 'outline'] as const,
   entry: (bookId: string, entryId: string) => ['book', bookId, 'entry', entryId] as const,
   document: (bookId: string, path: string) => ['book', bookId, 'document', path] as const,
   notes: (bookId: string) => ['book', bookId, 'notes'] as const,
