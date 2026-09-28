@@ -37,7 +37,8 @@ describe('codex extraction eval', () => {
     const expected = JSON.parse(await readFile(join(FIXTURE, 'expected.json'), 'utf8')) as ExpectedEntries
     const { proposals, ref } = await scanFixture()
     const score = scoreExtraction(expected, proposals)
-    console.info(`[eval] extraction recall ${(score.recall * 100).toFixed(0)}% with ${ref}`, JSON.stringify(score.byType), score.extra.length ? `extra: ${score.extra.join(', ')}` : '')
+    // The report is for runs against a real model; the mock run is covered by the assertions below.
+    if (REAL_WORKSPACE) console.info(`[eval] extraction recall ${(score.recall * 100).toFixed(0)}% with ${ref}`, JSON.stringify(score.byType), score.extra.length ? `extra: ${score.extra.join(', ')}` : '')
     expect(score.byType.character!.recall).toBeGreaterThanOrEqual(REAL_WORKSPACE ? 0.66 : 1)
     expect(score.byType.place!.recall).toBeGreaterThanOrEqual(REAL_WORKSPACE ? 0.5 : 1)
     if (!REAL_WORKSPACE) {

@@ -18,7 +18,11 @@ describe('bookNavigationItems', () => {
 
 describe('useAppNavigation', () => {
   it('shows only global items outside a book', () => {
-    const { items, bookId } = useAppNavigation()
+    let nav!: ReturnType<typeof useAppNavigation>
+    useNuxtApp().runWithContext(() => {
+      nav = useAppNavigation()
+    })
+    const { items, bookId } = nav
     expect(bookId.value).toBeNull()
     expect(items.value).toHaveLength(1)
     expect(items.value[0]![0]).toMatchObject({ label: 'Library', to: '/' })
