@@ -54,3 +54,20 @@ export const indexMeta = sqliteTable('index_meta', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),
 })
+
+/** Outline beats, derived from outline.md (WRO-9). */
+export const beats = sqliteTable('beats', {
+  id: text('id').primaryKey(),
+  entryId: text('entry_id').notNull().references(() => entries.id, { onDelete: 'cascade' }),
+  actId: text('act_id').notNull(),
+  actTitle: text('act_title').notNull(),
+  title: text('title').notNull(),
+  summary: text('summary').notNull(),
+  position: integer('position').notNull(),
+})
+
+export const beatScenes = sqliteTable('beat_scenes', {
+  beatId: text('beat_id').notNull().references(() => beats.id, { onDelete: 'cascade' }),
+  sceneId: text('scene_id').notNull(),
+  position: integer('position').notNull(),
+}, table => [index('beat_scenes_scene_idx').on(table.sceneId)])

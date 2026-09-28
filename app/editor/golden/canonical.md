@@ -21,6 +21,8 @@ const tide = 'out'
 
 ---
 
+<!-- A hidden note that the editor keeps. -->
+
 ![Harbor map](images/map.png)
 
 A line with a hard  

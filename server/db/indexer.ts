@@ -1,5 +1,6 @@
 import { eq, inArray } from 'drizzle-orm'
 import { extractWikiLinks } from '#shared/utils/links'
+import { parseOutline } from '#shared/utils/outline-format'
 import { countWords } from '#shared/utils/word-count'
 import { chunkMarkdown } from '../search/chunk'
 import type { StoredEntry } from '../storage/entries'
@@ -36,9 +37,27 @@ export async function indexEntry(db: IndexDb, entry: StoredEntry): Promise<void>
     await db.insert(links).values(found.map(link => ({ sourceId: id, target: link.target.toLowerCase(), label: link.label })))
   }
   await db.$client.execute({ sql: 'INSERT INTO entries_fts (id, title, body) VALUES (?, ?, ?)', args: [id, fm.title, entry.body] })
+  if (entry.type === 'outline') await indexBeats(db, id, entry.body)
   // Chunks only; their vectors are computed later by the background `embed` job.
   const pieces = chunkMarkdown(fm.title, entry.body)
   if (pieces.length) await db.insert(chunks).values(pieces.map(chunk => ({ entryId: id, seq: chunk.seq, hash: chunk.hash, text: chunk.text })))
+}
+
+/** Beats of the outline (with ids; hand-written ones get theirs when the outline is next saved). */
+async function indexBeats(db: IndexDb, entryId: string, body: string) {
+  let position = 0
+  for (const act of parseOutline(body).acts) {
+    for (const beat of act.beats.filter(candidate => candidate.id)) {
+      const inserted = await db.$client.execute({
+        sql: 'INSERT OR IGNORE INTO beats (id, entry_id, act_id, act_title, title, summary, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        args: [beat.id, entryId, act.id, act.title, beat.title, beat.summary, position++],
+      })
+      if (!inserted.rowsAffected) continue
+      for (const [index, sceneId] of beat.scenes.entries()) {
+        await db.$client.execute({ sql: 'INSERT INTO beat_scenes (beat_id, scene_id, position) VALUES (?, ?, ?)', args: [beat.id, sceneId, index] })
+      }
+    }
+  }
 }
 
 async function removeEntryRows(db: IndexDb, ids: string[], path?: string) {

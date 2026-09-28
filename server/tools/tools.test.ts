@@ -6,6 +6,7 @@ import { runTool, ToolError, type ToolContext } from './define'
 import { WROTE_TOOLS } from './index'
 import { getCodexEntryTool, getCodexTool } from './codex-tools'
 import { getProgressTool, getStructureTool, listBooksTool, readEntryTool, searchTool } from './read-tools'
+import { getOutlineTool, updateOutlineTool } from './outline-tools'
 import { createNoteTool, listSuggestionsTool, proposeEditTool } from './write-tools'
 
 let context: ToolContext
@@ -155,5 +156,16 @@ describe('permissions', () => {
       throw new Error('should not ask')
     }
     await expect(runTool(searchTool, { query: 'harbor' }, { ...context, requestApproval })).resolves.toBeDefined()
+  })
+})
+
+describe('outline tools', () => {
+  it('reads the outline and restructures it at the write level', async () => {
+    const outline = await runTool(getOutlineTool, {}, context)
+    expect(outline.acts.map(act => act.id)).toEqual(['act_0ne0000001', 'act_tw00000001'])
+    const policy = { read: 'allow' as const, propose: 'allow' as const, write: 'allow' as const, destructive: 'ask' as const }
+    const next = await runTool(updateOutlineTool, { ops: [{ op: 'renameAct', actId: 'act_tw00000001', title: 'Act Two: Offers' }] }, { ...context, policy })
+    expect(next.acts[1]!.title).toBe('Act Two: Offers')
+    await expect(runTool(updateOutlineTool, { ops: [{ op: 'deleteAct', actId: 'act_missing' }] }, { ...context, policy })).rejects.toMatchObject({ code: 'invalid_input' })
   })
 })
