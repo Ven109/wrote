@@ -3,7 +3,7 @@ import type { ExportFormat, ExportRequest } from '#shared/schemas/export'
 import { exportCapabilitiesQuery } from '~/queries/export'
 import { structureQuery } from '~/queries/manuscript'
 import { useExportStore } from '~/stores/export'
-import { chapterOptions, filenameFromDisposition } from '~/utils/export'
+import { exportChapterOptions, filenameFromDisposition } from '~/utils/export'
 
 /** Opens and closes the export dialog from anywhere (top bar, command palette). */
 export function useExportDialog() {
@@ -25,7 +25,7 @@ export function useExport(bookId: MaybeRefOrGetter<string>) {
   const { data: capabilities, refetch: recheck, isPending: checking } = useQuery(() => ({ ...exportCapabilitiesQuery, enabled: store.open }))
   // Shared with the sidebar tree: same key, so no `enabled` override here (it would switch the tree's query off too).
   const { data: structure } = useQuery(() => structureQuery(toValue(bookId)))
-  const chapters = computed(() => chapterOptions(structure.value ?? []))
+  const chapters = computed(() => exportChapterOptions(structure.value ?? []))
 
   const presets = useExportPresets(bookId, () => store.open)
   const format = ref<ExportFormat>('epub')

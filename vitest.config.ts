@@ -4,6 +4,8 @@ import { defineVitestProject } from '@nuxt/test-utils/config'
 
 export default defineConfig({
   test: {
+    // Vue prints this notice once per file for mountSuspended's <Suspense> wrapper (not from app code).
+    onConsoleLog: log => !log.includes('<Suspense> is an experimental feature'),
     projects: [
       {
         resolve: {

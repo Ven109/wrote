@@ -19,11 +19,16 @@ function target(results: SaveResult[] = []) {
   return { draft, dirty, save, reload }
 }
 
+/** Runs the composable inside an effect scope, as a component would. */
+function autosaveIn(t: ReturnType<typeof target>, options?: { delay?: number }) {
+  return effectScope().run(() => useAutosave(t, options))!
+}
+
 describe('useAutosave', () => {
   it('debounces typing into one save', async () => {
     vi.useFakeTimers()
     const t = target()
-    const { status } = useAutosave(t, { delay: 1000 })
+    const { status } = autosaveIn(t, { delay: 1000 })
     t.draft.value = 'ab'
     await nextTick()
     t.draft.value = 'abc'
@@ -37,7 +42,7 @@ describe('useAutosave', () => {
 
   it('flushes immediately and stops on conflicts until resolved', async () => {
     const t = target(['conflict'])
-    const autosave = useAutosave(t, { delay: 60_000 })
+    const autosave = autosaveIn(t, { delay: 60_000 })
     t.draft.value = 'mine'
     await autosave.flush()
     expect(autosave.status.value).toBe('conflict')
@@ -51,7 +56,7 @@ describe('useAutosave', () => {
 
   it('discards the draft with useTheirs', async () => {
     const t = target(['conflict'])
-    const autosave = useAutosave(t)
+    const autosave = autosaveIn(t)
     t.draft.value = 'mine'
     await autosave.flush()
     await autosave.useTheirs()

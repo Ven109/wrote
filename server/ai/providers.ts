@@ -104,8 +104,8 @@ export function createProvider(id: AiProviderId, config: ProviderRuntimeConfig) 
     case 'google': return createGoogleGenerativeAI({ apiKey: config.apiKey, baseURL: config.baseUrl })
     case 'mistral': return createMistral({ apiKey: config.apiKey, baseURL: config.baseUrl })
     case 'openrouter': return createOpenAICompatible({ name: 'openrouter', apiKey: config.apiKey, baseURL: baseURL! })
-    // Ollama serves an OpenAI-compatible API under /v1.
-    case 'ollama': return createOpenAICompatible({ name: 'ollama', baseURL: `${baseURL!.replace(/\/$/, '')}/v1` })
+    // Ollama serves an OpenAI-compatible API under /v1, including JSON-schema structured outputs.
+    case 'ollama': return createOpenAICompatible({ name: 'ollama', baseURL: `${baseURL!.replace(/\/$/, '')}/v1`, supportsStructuredOutputs: true })
     case 'openai-compatible': return createOpenAICompatible({ name: 'openai-compatible', apiKey: config.apiKey, baseURL: baseURL! })
   }
 }

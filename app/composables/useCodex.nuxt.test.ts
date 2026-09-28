@@ -1,9 +1,13 @@
-import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import { mockNuxtImport, mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { getQuery, readBody } from 'h3'
 import { BUILT_IN_CODEX_TYPES, type CodexEntrySummary } from '#shared/schemas/codex'
 import { useCodex } from './useCodex'
+
+// Navigation itself is Nuxt's job; loading the target page (with the editor) would only slow these tests down.
+const { navigateTo } = vi.hoisted(() => ({ navigateTo: vi.fn() }))
+mockNuxtImport('navigateTo', () => navigateTo)
 
 const entry = (title: string, codexType: string): CodexEntrySummary => ({ id: `cdx_${title}00000`, path: `codex/x/${title}.md`, title, codexType, aliases: [], tags: codexType === 'place' ? ['coast'] : [], excerpt: '' })
 const queries: Record<string, unknown>[] = []
@@ -47,6 +51,6 @@ describe('useCodex', () => {
     await api.submitNew('Oren')
     expect(created).toEqual([{ type: 'character', title: 'Oren' }])
     expect(api.creating.value).toBe(false)
-    await vi.waitFor(() => expect(useRoute().fullPath).toBe('/books/cx/codex/codex/characters/oren.md'))
+    expect(navigateTo).toHaveBeenCalledWith('/books/cx/codex/codex/characters/oren.md')
   })
 })

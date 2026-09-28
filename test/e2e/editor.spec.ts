@@ -31,6 +31,27 @@ test('edits a scene and saves Markdown with Mod+S (before autosave fires)', asyn
   await expect.poll(() => storedBody(request, bookId, path)).toBe('First line with [[Harbor]].\n\nSecond line.\n')
 })
 
+test('a reloaded scene hydrates without mismatches and stays editable', async ({ page, request }, testInfo) => {
+  const { bookId, path } = await bookWithScene(request, `Reload ${testInfo.project.name} ${Date.now()}`, 'Three words here.\n')
+  const problems: string[] = []
+  page.on('console', (message) => {
+    if (message.text().includes('Hydration')) problems.push(message.text())
+  })
+  page.on('pageerror', error => problems.push(error.message))
+  await gotoHydrated(page, `/books/${bookId}/write/${path}`)
+  await expect(editorContent(page).getByText('Three words here.')).toBeVisible()
+
+  await page.reload()
+  const content = editorContent(page)
+  await expect(content.getByText('Three words here.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Word counts' })).toHaveText('3 words')
+  await content.click()
+  await page.keyboard.press('ControlOrMeta+End')
+  await page.keyboard.type(' More.')
+  await expect(content).toContainText('Three words here. More.')
+  expect(problems).toEqual([])
+})
+
 test('block mode: slash menu and block handle menu', async ({ page, request, isMobile }, testInfo) => {
   test.skip(isMobile, 'Block mode is desktop-only')
   const { bookId, path } = await bookWithScene(request, `Blocks ${Date.now()}-${testInfo.retry}`, 'Alpha\n\nBeta\n')

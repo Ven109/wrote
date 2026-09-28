@@ -64,7 +64,8 @@ describe('review agent eval', () => {
       }
       else if (agentId === 'continuity') expect(score.recall).toBeGreaterThanOrEqual(0.8)
     }
-    console.info(`[eval] review agents (${REAL_WORKSPACE ? 'configured models' : 'recorded answers'})\n${rows.join('\n')}`)
+    // The report is for runs against real models; recorded answers are covered by the assertions above.
+    if (REAL_WORKSPACE) console.info(`[eval] review agents (${REAL_WORKSPACE ? 'configured models' : 'recorded answers'})\n${rows.join('\n')}`)
   })
 })
 
