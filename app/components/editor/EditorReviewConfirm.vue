@@ -5,7 +5,7 @@ import type { ReviewEstimate } from '#shared/schemas/review'
 const props = defineProps<{ estimate: ReviewEstimate | null, agentName: string, starting: boolean }>()
 const open = defineModel<boolean>('open', { default: false })
 defineEmits<{ confirm: [] }>()
-const format = (value: number) => new Intl.NumberFormat().format(value)
+const format = useFormat().number
 const cost = computed(() => (props.estimate?.cost != null ? ` (about $${props.estimate.cost.toFixed(2)})` : ''))
 </script>
 

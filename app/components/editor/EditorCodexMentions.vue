@@ -5,12 +5,12 @@ import { setCodexMatcher } from '~/editor/extensions/codex-mentions'
 
 const props = defineProps<{ editor: Editor }>()
 const context = inject(CODEX_MENTIONS_CONTEXT, null)
-const root = computed(() => props.editor.view.dom as HTMLElement)
-const card = useCodexHoverCard(root, id => context?.target(id))
+const bridge = useEditorBridge(() => props.editor)
+const card = useCodexHoverCard(bridge.dom, id => context?.target(id))
 
 // Feed (or clear) the names to detect whenever the codex changes.
 watch(() => context?.matcher.value ?? null, (matcher) => {
-  props.editor.view.dispatch(setCodexMatcher(props.editor.state, matcher))
+  bridge.dispatch(state => setCodexMatcher(state, matcher))
 }, { immediate: true })
 </script>
 

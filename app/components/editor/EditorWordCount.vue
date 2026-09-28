@@ -3,7 +3,7 @@ import { formatShare, type AiShares } from '~/utils/provenance'
 import type { LiveWordCounts } from '~/utils/word-counts'
 
 const props = defineProps<{ counts: LiveWordCounts, sessionWords: number, aiShares?: AiShares | null }>()
-const format = (value: number) => new Intl.NumberFormat().format(value)
+const format = useFormat().number
 const rows = computed(() => [
   { label: 'Scene', value: format(props.counts.scene) },
   ...(props.counts.chapter === null ? [] : [{ label: 'Chapter', value: format(props.counts.chapter) }]),

@@ -13,14 +13,14 @@ export function useGhostText(editor: MaybeRefOrGetter<Editor>, context: Autocomp
   let controller: AbortController | null = null
 
   const request = useDebounceFn(async () => {
-    const { view } = toValue(editor)
-    const point = context?.enabled.value ? completionPoint(view.state) : null
-    if (!point || !context) return
+    const view = liveView(toValue(editor))
+    const point = view && context?.enabled.value ? completionPoint(view.state) : null
+    if (!view || !point || !context) return
     controller = new AbortController()
     const doc = view.state.doc
     const text = await context.complete(point.before, controller.signal).catch(() => '')
     // Drop answers that arrive after the author typed on or moved the cursor.
-    if (text.trim() && view.state.doc === doc && view.state.selection.from === point.pos) view.dispatch(setGhostText(view.state, text, point.pos))
+    if (text.trim() && !view.isDestroyed && view.state.doc === doc && view.state.selection.from === point.pos) view.dispatch(setGhostText(view.state, text, point.pos))
   }, delay)
 
   function onUpdate() {

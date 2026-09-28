@@ -6,20 +6,15 @@ import { COMMENT_FOCUS_EVENT, setCommentHighlights } from '~/editor/extensions/c
 /** Bridges the page's comments and the editor: feeds the highlights and reports clicks on them. */
 const props = defineProps<{ editor: Editor }>()
 const context = inject(COMMENTS_CONTEXT, null)
-const onFocus = (event: Event) => context?.focus((event as CustomEvent<string>).detail)
+const bridge = useEditorBridge(() => props.editor)
+bridge.listen(COMMENT_FOCUS_EVENT, event => context?.focus((event as CustomEvent<string>).detail))
 
 watch(() => [context?.comments.value ?? [], context?.active.value ?? null] as const, ([comments, active]) => {
-  props.editor.view.dispatch(setCommentHighlights(props.editor.state, comments, active))
+  bridge.dispatch(state => setCommentHighlights(state, comments, active))
 }, { immediate: true })
 
-onMounted(() => {
-  context?.attach(props.editor)
-  props.editor.view.dom.addEventListener(COMMENT_FOCUS_EVENT, onFocus)
-})
-onBeforeUnmount(() => {
-  context?.attach(null)
-  props.editor.view.dom.removeEventListener(COMMENT_FOCUS_EVENT, onFocus)
-})
+onMounted(() => context?.attach(props.editor))
+onBeforeUnmount(() => context?.attach(null))
 </script>
 
 <template>

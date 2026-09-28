@@ -3,7 +3,8 @@ import type { ActivityEntry } from '#shared/schemas/activity'
 
 const props = defineProps<{ entry: ActivityEntry, expanded: boolean, busy: boolean }>()
 defineEmits<{ toggle: [], undo: [] }>()
-const time = computed(() => new Date(props.entry.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }))
+const format = useFormat()
+const time = computed(() => format.dateTime(props.entry.createdAt))
 </script>
 
 <template>

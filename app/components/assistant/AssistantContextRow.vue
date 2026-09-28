@@ -3,6 +3,7 @@ import type { ContextRow } from '~/utils/context-items'
 
 defineProps<{ row: ContextRow }>()
 defineEmits<{ pin: [], remove: [] }>()
+const format = useFormat()
 </script>
 
 <template>
@@ -16,7 +17,7 @@ defineEmits<{ pin: [], remove: [] }>()
           {{ row.item.title }}
         </p>
         <p class="text-xs text-muted">
-          {{ row.item.tokens.toLocaleString() }} tokens
+          {{ format.number(row.item.tokens) }} tokens
           <template v-if="'reason' in row.item">
             · {{ row.item.reason === 'budget' ? 'left out: over the budget' : 'left out by you' }}
           </template>

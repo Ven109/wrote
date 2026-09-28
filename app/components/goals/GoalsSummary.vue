@@ -2,7 +2,7 @@
 import type { GoalProgress } from '#shared/schemas/writing'
 
 defineProps<{ progress: GoalProgress, todayPercent: number | null, bookPercent: number | null }>()
-const n = (value: number) => value.toLocaleString()
+const n = useFormat().number
 </script>
 
 <template>

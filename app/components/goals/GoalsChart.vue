@@ -3,6 +3,7 @@ import type { GoalProgress } from '#shared/schemas/writing'
 import { chartGeometry } from '~/utils/goals-view'
 
 const props = defineProps<{ progress: GoalProgress }>()
+const format = useFormat()
 const geometry = computed(() => chartGeometry(props.progress.history, props.progress, 600, 160))
 </script>
 
@@ -28,7 +29,7 @@ const geometry = computed(() => chartGeometry(props.progress.history, props.prog
         viewBox="-4 -4 608 168"
         class="h-40 w-full"
         role="img"
-        :aria-label="`Words from ${geometry.firstDay} to ${progress.history.at(-1)?.day}${progress.target ? `, target ${progress.target.toLocaleString()} by ${progress.deadline}` : ''}`"
+        :aria-label="`Words from ${geometry.firstDay} to ${progress.history.at(-1)?.day}${progress.target ? `, target ${format.number(progress.target)} by ${progress.deadline}` : ''}`"
         preserveAspectRatio="none"
       >
         <path

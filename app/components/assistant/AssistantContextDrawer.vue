@@ -10,13 +10,14 @@ defineProps<{
 }>()
 const open = defineModel<boolean>('open', { required: true })
 defineEmits<{ pin: [id: string], remove: [id: string], rerun: [] }>()
+const format = useFormat()
 </script>
 
 <template>
   <USlideover
     v-model:open="open"
     title="Context sent"
-    :description="snapshot ? `${snapshot.used.toLocaleString()} of ${snapshot.budget.toLocaleString()} tokens · ${snapshot.model}` : 'Loading…'"
+    :description="snapshot ? `${format.number(snapshot.used)} of ${format.number(snapshot.budget)} tokens · ${snapshot.model}` : 'Loading…'"
   >
     <template #body>
       <div

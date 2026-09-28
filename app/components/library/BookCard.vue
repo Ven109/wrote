@@ -3,8 +3,9 @@ import type { BookSummary } from '#shared/schemas/library'
 
 const props = defineProps<{ book: BookSummary }>()
 
-const words = computed(() => `${new Intl.NumberFormat().format(props.book.wordCount)} words`)
-const edited = computed(() => props.book.updatedAt ? new Date(props.book.updatedAt).toLocaleDateString() : null)
+const format = useFormat()
+const words = computed(() => `${format.number(props.book.wordCount)} words`)
+const edited = computed(() => props.book.updatedAt ? format.date(props.book.updatedAt) : null)
 </script>
 
 <template>

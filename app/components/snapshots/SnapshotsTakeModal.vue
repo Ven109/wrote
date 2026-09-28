@@ -6,9 +6,10 @@ const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ submit: [name: string, scope: string] }>()
 const name = ref('')
 const scope = ref('book')
+const format = useFormat()
 watch(open, (isOpen) => {
   if (!isOpen) return
-  name.value = `Snapshot ${new Date().toLocaleDateString()}`
+  name.value = `Snapshot ${format.date(new Date())}`
   scope.value = props.scopes[0]?.value ?? 'book'
 })
 

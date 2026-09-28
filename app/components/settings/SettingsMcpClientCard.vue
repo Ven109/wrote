@@ -4,7 +4,7 @@ import type { McpClientView, ToolPolicyPatch } from '#shared/schemas/permissions
 defineProps<{ client: McpClientView }>()
 defineEmits<{ policy: [patch: ToolPolicyPatch], revoke: [] }>()
 const confirming = ref(false)
-const date = (value: string) => new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+const date = useFormat().dateTime
 </script>
 
 <template>
