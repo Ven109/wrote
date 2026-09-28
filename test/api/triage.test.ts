@@ -1,10 +1,11 @@
-import { $fetch, fetch, setup } from '@nuxt/test-utils/e2e'
+import { $fetch, fetch } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
 import type { TriageSuggestions } from '#shared/schemas/triage'
+import { setupApiServer } from '../utils/api-server'
 import { createTestWorkspace } from '../utils/workspace'
 
 const workspace = await createTestWorkspace()
-await setup({ server: true, nuxtConfig: { runtimeConfig: { workspaceDir: workspace } } })
+await setupApiServer(workspace, import.meta.url)
 
 describe('inbox triage API', () => {
   it('returns tags, links and a chapter for a note, and rejects other entries', async () => {
