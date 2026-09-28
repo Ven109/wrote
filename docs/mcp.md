@@ -10,6 +10,7 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 | `read_entry` | Reads a scene, note, codex or research entry (paginated) | read |
 | `get_structure` | Parts, chapters, scenes with word counts | read |
 | `get_summaries` | Whole-book summary and outline with chapter/part (optionally scene) summaries | read |
+| `get_outline` | The plot outline: notes, acts and beats with the scenes that tell each beat | read |
 | `get_codex` | Characters, places, … | read |
 | `get_progress` | Word counts and goals | read |
 | `list_suggestions` | Edit suggestions with status, author and `stale` (text changed since) | read |
@@ -18,6 +19,8 @@ Wrote exposes your books to AI agents (Claude Code, Claude Desktop, Cursor, MCP 
 | `create_note` | Adds a note to the inbox | write |
 | `extract_codex` | Scans a chapter/scene/part with Wrote's configured model and proposes codex entries (with quotes as evidence) – **never applied directly** | propose |
 | `propose_codex_entries` | Proposes codex entries the agent found itself in a chapter/scene/part; entries whose quotes are not in the text are dropped | propose |
+| `propose_outline_changes` | Proposes new beats, edits of beats and notes (plot holes, open questions) – **never applied directly**; they appear live as ghost cards on the outline board to accept or reject | propose |
+| `update_outline` | Adds, moves, edits and deletes acts and beats; logged and undoable | write |
 | `propose_edit` | Suggests a change (replace a passage, or `mode: "insert_after"` to add paragraphs) – **never applied directly**; it appears live as a tracked change you accept, edit or reject in Wrote | propose |
 
 **Resources** (read level; listable, Markdown):

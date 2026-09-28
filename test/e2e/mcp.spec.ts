@@ -63,3 +63,32 @@ test('the connect page creates an agent token shown once, with client configs, a
   await page.getByRole('button', { name: `Confirm revoking ${name}` }).click()
   await expect(page.getByRole('heading', { name, exact: true })).toBeHidden()
 })
+
+test('an agent\'s outline proposals appear live as ghost cards; accepting adds the beat', async ({ page, request, baseURL }, testInfo) => {
+  const book = await createBook(request, `Proposals ${testInfo.project.name} ${Date.now()}`)
+  await request.post(`/api/books/${book.id}/outline/ops`, { data: { ops: [{ op: 'addAct', id: 'act_e2e0000001', title: 'Setup' }, { op: 'addBeat', id: 'bt_e2e0000001', actId: 'act_e2e0000001', title: 'The storm hits', summary: '' }] } })
+  await gotoHydrated(page, `/books/${book.id}/outline`)
+  const client = await agent(request, baseURL, 'Plotting agent')
+  const result = await client.callTool({ name: 'propose_outline_changes', arguments: { bookId: book.id, source: 'Bridge', proposals: [
+    { change: { kind: 'addBeat', actId: 'act_e2e0000001', afterBeatId: 'bt_e2e0000001', title: 'Shelter in the lighthouse' }, rationale: 'Gives them a quiet moment.' },
+    { change: { kind: 'note', text: 'Why does nobody warn the harbor?' } },
+  ] } })
+  expect(result.isError).toBeFalsy()
+  await client.close()
+
+  const setup = page.getByRole('region', { name: 'Setup' })
+  const ghost = setup.getByRole('listitem', { name: 'Proposed beat: Shelter in the lighthouse' })
+  await expect(ghost).toContainText('Gives them a quiet moment.')
+  await expect(ghost).toContainText('Bridge · Plotting agent')
+  const proposals = page.getByRole('region', { name: /Proposals/ })
+  await expect(proposals.getByRole('listitem', { name: /Note: Why does nobody warn/ })).toBeVisible()
+
+  await ghost.getByRole('button', { name: 'Accept proposed beat: Shelter in the lighthouse' }).click()
+  await expect(setup.getByRole('listitem', { name: 'Shelter in the lighthouse', exact: true })).toContainText('Unwritten')
+  await expect(ghost).toHaveCount(0)
+  await proposals.getByRole('button', { name: /Reject note/ }).click()
+  await expect(proposals).toHaveCount(0)
+  const outline = (await (await request.get(`/api/books/${book.id}/document`, { params: { path: 'outline.md' } })).json() as { body: string }).body
+  expect(outline).toMatch(/### The storm hits[\s\S]*### Shelter in the lighthouse/)
+  expect(outline).not.toContain('warn the harbor')
+})

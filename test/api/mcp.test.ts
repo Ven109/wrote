@@ -33,7 +33,7 @@ describe('MCP over HTTP', () => {
     expect(endpoint).toMatch(/\/mcp$/)
     const client = await connect(await createMcpToken($fetch, 'Claude Code', { write: 'allow' }))
     const tools = (await client.listTools()).tools.map(tool => tool.name).sort()
-    expect(tools).toEqual(['add_comment', 'create_note', 'extract_codex', 'get_codex', 'get_codex_entry', 'get_outline', 'get_progress', 'get_structure', 'get_summaries', 'list_books', 'list_comments', 'list_suggestions', 'propose_codex_entries', 'propose_edit', 'read_entry', 'search', 'update_outline'])
+    expect(tools).toEqual(['add_comment', 'create_note', 'extract_codex', 'get_codex', 'get_codex_entry', 'get_outline', 'get_progress', 'get_structure', 'get_summaries', 'list_books', 'list_comments', 'list_suggestions', 'propose_codex_entries', 'propose_edit', 'propose_outline_changes', 'read_entry', 'search', 'update_outline'])
 
     expect(text(await client.callTool({ name: 'list_books', arguments: {} }))).toContain('sample-book')
     expect((await client.listResources()).resources.map(r => r.uri)).toContain('wrote://book/sample-book/outline')
@@ -48,7 +48,11 @@ describe('MCP over HTTP', () => {
     const proposal = await client.callTool({ name: 'propose_edit', arguments: { entryId: 'scn_arr1val001', find: 'The tide was out', replace: 'The tide had gone out', rationale: 'Tense' } })
     expect(proposal.isError).toBeFalsy()
     expect(text(await client.callTool({ name: 'list_suggestions', arguments: {} }))).toContain('The tide had gone out')
+    const outlineProposal = await client.callTool({ name: 'propose_outline_changes', arguments: { proposals: [{ change: { kind: 'note', text: 'Why now?' } }] } })
+    expect(outlineProposal.isError).toBeFalsy()
     await client.close()
+
+    expect(await $fetch('/api/books/sample-book/outline/proposals')).toMatchObject([{ change: { kind: 'note', text: 'Why now?' }, author: { kind: 'mcp', name: 'Claude Code' } }])
 
     const inbox = await $fetch<{ title: string }[]>('/api/books/sample-book/notes', { query: { filter: 'inbox' } })
     expect(inbox.map(n => n.title)).toContain('Agent note')

@@ -120,4 +120,14 @@ export const STATE_MIGRATIONS: string[][] = [
     )`,
     'CREATE INDEX comments_entry_idx ON comments(entry_id, resolved)',
   ],
+  // 9: outline proposals – ghost beats and notes for the author to accept or reject (WRO-117)
+  [
+    `CREATE TABLE outline_proposals (
+      id TEXT PRIMARY KEY,
+      status TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      data TEXT NOT NULL
+    )`,
+    'CREATE INDEX outline_proposals_status_idx ON outline_proposals(status)',
+  ],
 ]

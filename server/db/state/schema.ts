@@ -77,6 +77,14 @@ export const codexProposals = sqliteTable('codex_proposals', {
   data: text('data', { mode: 'json' }).notNull(),
 })
 
+/** Outline proposals (WRO-117); `data` holds the full `OutlineProposal` (JSON). */
+export const outlineProposals = sqliteTable('outline_proposals', {
+  id: text('id').primaryKey(),
+  status: text('status').notNull(),
+  createdAt: text('created_at').notNull(),
+  data: text('data', { mode: 'json' }).notNull(),
+})
+
 /** Comments on passages (WRO-67); `data` holds the full `Comment` (JSON). */
 export const comments = sqliteTable('comments', {
   id: text('id').primaryKey(),
