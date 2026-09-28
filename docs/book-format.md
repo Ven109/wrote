@@ -39,6 +39,29 @@ Paths inside the book are POSIX and relative to the book root. Entry types are d
 | `outline.md` | `outline` |
 | `style-guide.md` | `style-guide` |
 
+## Outline (`outline.md`)
+
+The plot outline: free notes first, then **acts** (`##`) with their **beats** (`###`). A comment under each heading
+holds its id and, for beats, the scenes that tell it. Everything stays readable and editable in any editor:
+
+```markdown
+A cartographer returns home and uncovers what her father drew.
+
+## Act One: Return
+
+<!-- wrote:act id=act_0ne0000001 -->
+
+### Mara returns to Hollow Bay
+
+<!-- wrote:beat id=bt_arr1va0001 scenes=scn_arr1val001 -->
+
+She arrives at low tide, older and unwelcome.
+```
+
+- Text under a beat heading is its summary. A beat without `scenes` is not written yet.
+- Acts and beats written by hand without the comment get an id the next time Wrote reads the outline.
+- Wrote writes the file back in exactly this format, so an unchanged outline round-trips without a diff.
+
 ## Ordering
 
 Parts, chapters and scenes are ordered by a **numeric prefix** in the file or folder name: `01-arrival.md`, `02-the-map.md`. Prefixes are at least two digits. Reordering renames files (see [ADR 0001](adr/0001-ordering-and-ids.md)). Notes, codex and research entries are unordered.

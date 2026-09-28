@@ -33,7 +33,7 @@ describe('MCP over HTTP', () => {
     expect(endpoint).toMatch(/\/mcp$/)
     const client = await connect(await createMcpToken($fetch, 'Claude Code', { write: 'allow' }))
     const tools = (await client.listTools()).tools.map(tool => tool.name).sort()
-    expect(tools).toEqual(['add_comment', 'create_note', 'extract_codex', 'get_codex', 'get_codex_entry', 'get_progress', 'get_structure', 'get_summaries', 'list_books', 'list_comments', 'list_suggestions', 'propose_codex_entries', 'propose_edit', 'read_entry', 'search'])
+    expect(tools).toEqual(['add_comment', 'create_note', 'extract_codex', 'get_codex', 'get_codex_entry', 'get_outline', 'get_progress', 'get_structure', 'get_summaries', 'list_books', 'list_comments', 'list_suggestions', 'propose_codex_entries', 'propose_edit', 'read_entry', 'search', 'update_outline'])
 
     expect(text(await client.callTool({ name: 'list_books', arguments: {} }))).toContain('sample-book')
     expect((await client.listResources()).resources.map(r => r.uri)).toContain('wrote://book/sample-book/outline')

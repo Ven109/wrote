@@ -68,6 +68,14 @@
   cursor: help;
 }
 
+/* Block HTML comments (e.g. outline markers): kept for the Markdown, shown quietly. */
+.prose-manuscript .html-comment {
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  color: var(--ui-text-dimmed);
+  user-select: none;
+}
+
 /* Commented passages (decorations; comments live in app state). */
 .prose-manuscript .comment-highlight {
   background: color-mix(in oklab, var(--ui-warning) 18%, transparent);

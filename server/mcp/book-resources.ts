@@ -1,5 +1,7 @@
 import { BOOK_LAYOUT } from '#shared/book/layout'
 import { RESERVED_CODEX_KEYS } from '#shared/schemas/codex'
+import type { Outline } from '#shared/schemas/outline'
+import { parseOutline } from '#shared/utils/outline-format'
 import { listCodex } from '../services/codex'
 import { pathForId } from '../services/entries'
 import { getStructure, type StructureNode } from '../services/structure'
@@ -82,15 +84,26 @@ function outlineLines(nodes: OutlineNode[], depth: number): string[] {
 }
 
 /** The book at a glance: the author's outline notes, the whole-book summary and the structure with summaries. */
+/** Acts → beats as Markdown lines, with linked scenes or "not written yet". */
+function plotLines(outline: Outline): string[] {
+  return outline.acts.flatMap(act => [
+    `- **${act.title}**`,
+    ...act.beats.map(beat => `  - ${beat.title} (${beat.id}; ${beat.scenes.length ? `scenes ${beat.scenes.join(', ')}` : 'not written yet'})${beat.summary ? `: ${beat.summary.replace(/\s+/g, ' ')}` : ''}`),
+  ])
+}
+
+/** The book at a glance: the author's outline notes and plot (acts → beats), the summary and the structure with summaries. */
 export async function readOutlineResource(book: BookContext): Promise<ResourceText> {
-  const [notes, { book: summary, outline }] = await Promise.all([
+  const [entry, { book: summary, outline: structure }] = await Promise.all([
     book.repository.read(BOOK_LAYOUT.outline).catch(() => null),
     summaryOutline(book, { includeScenes: true }),
   ])
+  const plot = parseOutline(entry?.body ?? '')
   const sections = [
-    notes?.body.trim() ? `## Outline notes\n\n${notes.body.trim()}` : '',
+    plot.notes ? `## Outline notes\n\n${plot.notes}` : '',
+    plot.acts.length ? `## Plot\n\n${plotLines(plot).join('\n')}` : '',
     summary ? `## Summary\n\n${summary}` : '',
-    `## Structure\n\n${outlineLines(outline, 0).join('\n') || '(No parts yet.)'}`,
+    `## Structure\n\n${outlineLines(structure, 0).join('\n') || '(No parts yet.)'}`,
   ]
   return markdown(bookUri.outline(book.id), sections.filter(Boolean).join('\n\n'))
 }

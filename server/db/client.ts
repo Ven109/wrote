@@ -5,7 +5,7 @@ import { drizzle } from 'drizzle-orm/libsql'
 import * as schema from './schema'
 
 /** Bump when the index schema changes: the index is dropped and rebuilt from the Markdown files. */
-export const INDEX_SCHEMA_VERSION = 2
+export const INDEX_SCHEMA_VERSION = 3
 
 const DDL = [
   `CREATE TABLE entries (
@@ -36,6 +36,15 @@ const DDL = [
   // Vectors are keyed by chunk hash: identical text is embedded once and survives unrelated edits.
   'CREATE TABLE embeddings (hash TEXT PRIMARY KEY, vector BLOB NOT NULL)',
   'CREATE TABLE index_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+  // Outline beats (parsed from outline.md) and the scenes that tell them.
+  `CREATE TABLE beats (
+    id TEXT PRIMARY KEY, entry_id TEXT NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
+    act_id TEXT NOT NULL, act_title TEXT NOT NULL, title TEXT NOT NULL, summary TEXT NOT NULL, position INTEGER NOT NULL
+  )`,
+  `CREATE TABLE beat_scenes (
+    beat_id TEXT NOT NULL REFERENCES beats(id) ON DELETE CASCADE, scene_id TEXT NOT NULL, position INTEGER NOT NULL
+  )`,
+  'CREATE INDEX beat_scenes_scene_idx ON beat_scenes(scene_id)',
 ]
 
 export type IndexDb = ReturnType<typeof drizzle<typeof schema>> & { $client: Client }
