@@ -25,7 +25,21 @@ export default defineNuxtConfig({
     workspaceDir: '',
   },
 
+  build: {
+    // Bundle Pinia and Pinia Colada into the server build so they share the app's Vue instance; externalized they
+    // load a second Vue copy, lose the app's injection context and fall back to a global Pinia (PINIA_R1004).
+    transpile: ['pinia', '@pinia/colada', '@pinia/colada-nuxt'],
+  },
+
   compatibilityDate: '2026-09-01',
+
+  vite: {
+    build: {
+      // The editor bundle is large by nature; keep build output to real warnings.
+      chunkSizeWarningLimit: 3000,
+      rolldownOptions: { checks: { pluginTimings: false } },
+    },
+  },
 
   typescript: {
     strict: true,
