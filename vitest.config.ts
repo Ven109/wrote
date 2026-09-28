@@ -21,10 +21,12 @@ export default defineConfig({
         test: {
           name: 'api',
           environment: 'node',
+          // The app is built once for all API test files (each file starts its own server from it).
+          globalSetup: ['test/setup/api-build.ts'],
           setupFiles: ['test/setup/cleanup.ts'],
           include: ['test/api/**/*.test.ts'],
           testTimeout: 30_000,
-          hookTimeout: 240_000,
+          hookTimeout: 60_000,
         },
       },
       await defineVitestProject({
