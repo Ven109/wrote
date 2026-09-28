@@ -4,7 +4,7 @@ import { FORMAT_INFO } from '~/utils/export'
 
 const props = defineProps<{ bookId: string }>()
 const exporter = useExport(() => props.bookId)
-const { open, chapters, format, scope, chapterIds, frontMatter, missing, canExport, running, checking } = exporter
+const { open, presets, chapters, format, scope, chapterIds, frontMatter, missing, canExport, running, checking } = exporter
 const formatItems = EXPORT_FORMATS.map(value => ({ value, label: FORMAT_INFO[value].label, description: FORMAT_INFO[value].description }))
 const scopeItems = [{ value: 'book', label: 'Whole book' }, { value: 'chapters', label: 'Selected chapters' }]
 const chapterItems = computed(() => chapters.value.map(chapter => ({ value: chapter.id, label: chapter.title, description: chapter.part })))
@@ -19,6 +19,15 @@ const chapterItems = computed(() => chapters.value.map(chapter => ({ value: chap
   >
     <template #body>
       <div class="flex flex-col gap-5">
+        <ExportPresetPicker
+          v-model="presets.presetId.value"
+          :presets="presets.presets.value"
+          :errors="presets.errors.value"
+          :file-url="presets.fileUrl"
+          @save-as="presets.saveAs($event, format)"
+          @import="presets.importFile"
+          @remove="presets.remove"
+        />
         <URadioGroup
           v-model="format"
           legend="Format"
@@ -47,7 +56,8 @@ const chapterItems = computed(() => chapters.value.map(chapter => ({ value: chap
         />
         <USwitch
           v-model="frontMatter"
-          label="Title page and table of contents"
+          label="Front and back matter"
+          description="Title page, copyright, dedication, contents, acknowledgements … as the preset lists them (from the matter/ folder)."
         />
       </div>
     </template>

@@ -14,6 +14,8 @@ export interface CompiledBook {
   withParts: boolean
   chapters: number
   scenes: number
+  /** Words of the exported scenes. */
+  words: number
 }
 
 interface Plan {
@@ -57,6 +59,7 @@ export async function compileManuscript(book: BookContext, options: { chapterIds
   const chapterLevel = plan.withParts ? 2 : 1
   const blocks: string[] = []
   let sceneCount = 0
+  let words = 0
   const body = async (node: StructureNode, prefix: string) => {
     const entry = await book.repository.read(node.path)
     const folder = dirname(node.path)
@@ -71,6 +74,7 @@ export async function compileManuscript(book: BookContext, options: { chapterIds
       const scenes = chapter.children.filter(child => child.type === 'scene')
       for (const [index, scene] of scenes.entries()) {
         if (index > 0) blocks.push('* * *')
+        words += scene.wordCount
         blocks.push(`::: {#${scene.id} .scene}`, await body(scene, `s${++sceneCount}`), ':::')
       }
     }
@@ -81,5 +85,6 @@ export async function compileManuscript(book: BookContext, options: { chapterIds
     withParts: plan.withParts,
     chapters: plan.parts.reduce((sum, part) => sum + part.chapters.length, 0),
     scenes: sceneCount,
+    words,
   }
 }

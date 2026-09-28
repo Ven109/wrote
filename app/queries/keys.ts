@@ -57,6 +57,7 @@ export const bookKeys = {
   entryComments: (bookId: string, entryId: string) => ['book', bookId, 'comments', entryId] as const,
   noteTriage: (bookId: string, path: string) => ['book', bookId, 'triage', path] as const,
   timeline: (bookId: string) => ['book', bookId, 'timeline'] as const,
+  exportPresets: (bookId: string) => ['book', bookId, 'export-presets'] as const,
   activity: (bookId: string) => ['book', bookId, 'activity'] as const,
   activityList: (bookId: string, filter: Record<string, unknown>) => ['book', bookId, 'activity', filter] as const,
   contextSnapshot: (bookId: string, snapshotId: string) => ['book', bookId, 'context', snapshotId] as const,

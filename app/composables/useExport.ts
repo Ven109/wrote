@@ -27,7 +27,12 @@ export function useExport(bookId: MaybeRefOrGetter<string>) {
   const { data: structure } = useQuery(() => structureQuery(toValue(bookId)))
   const chapters = computed(() => chapterOptions(structure.value ?? []))
 
+  const presets = useExportPresets(bookId, () => store.open)
   const format = ref<ExportFormat>('epub')
+  // A preset brings its default format (e.g. print presets → PDF).
+  watch(presets.preset, (preset, previous) => {
+    if (preset && preset.id !== previous?.id) format.value = preset.formats[0]!
+  })
   const scope = ref<'book' | 'chapters'>('book')
   const chapterIds = ref<string[]>([])
   const frontMatter = ref(true)
@@ -46,7 +51,7 @@ export function useExport(bookId: MaybeRefOrGetter<string>) {
   async function run() {
     if (!canExport.value) return
     running.value = true
-    const body: ExportRequest = { format: format.value, frontMatter: frontMatter.value, ...(scope.value === 'chapters' ? { chapterIds: chapterIds.value } : {}) }
+    const body: ExportRequest = { format: format.value, frontMatter: frontMatter.value, presetId: presets.presetId.value, ...(scope.value === 'chapters' ? { chapterIds: chapterIds.value } : {}) }
     try {
       const response = await $fetch.raw<Blob>(`/api/books/${encodeURIComponent(toValue(bookId))}/export`, { method: 'POST', body, responseType: 'blob' })
       download(response._data!, filenameFromDisposition(response.headers.get('content-disposition'), `book.${format.value}`))
@@ -61,7 +66,7 @@ export function useExport(bookId: MaybeRefOrGetter<string>) {
     }
   }
 
-  return { open, capabilities, checking, recheck, chapters, format, scope, chapterIds, frontMatter, formats, missing, canExport, running, run }
+  return { open, presets, capabilities, checking, recheck, chapters, format, scope, chapterIds, frontMatter, formats, missing, canExport, running, run }
 }
 
 function download(blob: Blob, filename: string) {
