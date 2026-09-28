@@ -18,6 +18,8 @@
     "lint:fix": "eslint . --cache --fix",
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
+    "test:unit": "vitest run --project unit --project nuxt",
+    "test:api": "vitest run --project api",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "prepare": "simple-git-hooks",
@@ -80,7 +82,7 @@
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged",
-    "pre-push": "pnpm typecheck && pnpm test"
+    "pre-push": "pnpm typecheck"
   },
   "lint-staged": {
     "*.{ts,mts,js,mjs,vue}": [

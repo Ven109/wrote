@@ -22,24 +22,26 @@ Open-source, AI-native book writing app. Concept: `docs/CONCEPT.md`. Backlog: Pl
 pnpm dev          # start app
 pnpm lint         # eslint (fix with --fix)
 pnpm typecheck    # nuxi typecheck
-pnpm test         # vitest (unit + nuxt)
+pnpm test         # all vitest projects (unit, nuxt, api)
+pnpm test:unit    # unit + component tests (fast; run by the commit hook)
+pnpm test:api     # API tests against one shared build of the app
 pnpm test:e2e     # playwright
 ```
 
-Run `lint`, `typecheck` and `test` before every commit. Never commit with failing checks.
+Run `lint`, `typecheck` and `test:unit` before every commit (the commit hook enforces it), plus `test:api` / `test:e2e` for changes they cover. CI runs everything in parallel jobs on every push. Never commit with failing checks.
 
 ## Hooks (automatic checks for agentic coding)
 
-Configured in `.claude/settings.json`, scripts in `.claude/hooks/`. They are inactive until `package.json` and `node_modules` exist, and rely on the `lint`, `typecheck`, `test` scripts above.
+Configured in `.claude/settings.json`, scripts in `.claude/hooks/`. They are inactive until `package.json` and `node_modules` exist, and rely on the `lint`, `typecheck`, `test:unit` scripts above.
 
 | Hook | When | What |
 |---|---|---|
 | `session-start.sh` | session start | `pnpm install` if dependencies are missing or the lockfile changed |
 | `post-edit.sh` | after every Edit/Write | `eslint --fix` on the file; runs the file if it is a `*.test.ts`, otherwise `vitest related` for it. Failures are fed back to Claude to fix immediately |
-| `pre-commit.sh` | before any `git commit` | blocks the commit unless `lint`, `typecheck` and `test` pass |
-| `stop-checks.sh` | before Claude finishes | if code changed, runs `lint`, `typecheck`, `test`; failures keep Claude working |
+| `pre-commit.sh` | before any `git commit` | blocks the commit unless `lint`, `typecheck` and `test:unit` pass |
+| `stop-checks.sh` | before Claude finishes | if code changed, runs `lint`, `typecheck`, `test:unit`; failures keep Claude working |
 
-When a hook reports a failure, fix the cause – never bypass hooks (`--no-verify`) or weaken tests/lint rules to get green. Playwright e2e is not run by hooks (too slow); run `pnpm test:e2e` for UI flow changes.
+When a hook reports a failure, fix the cause – never bypass hooks (`--no-verify`) or weaken tests/lint rules to get green. API tests and Playwright e2e are not run by hooks; run `pnpm test:api` / `pnpm test:e2e` for server or UI flow changes. The git `pre-push` hook only typechecks.
 
 ## Architecture (layers, top → bottom)
 
