@@ -58,6 +58,7 @@ export const bookKeys = {
   noteTriage: (bookId: string, path: string) => ['book', bookId, 'triage', path] as const,
   timeline: (bookId: string) => ['book', bookId, 'timeline'] as const,
   exportPresets: (bookId: string) => ['book', bookId, 'export-presets'] as const,
+  goals: (bookId: string) => ['book', bookId, 'goals'] as const,
   snapshots: (bookId: string) => ['book', bookId, 'snapshots'] as const,
   snapshotList: (bookId: string, path: string) => ['book', bookId, 'snapshots', 'list', path] as const,
   snapshotDiff: (bookId: string, snapshotId: string) => ['book', bookId, 'snapshots', 'diff', snapshotId] as const,

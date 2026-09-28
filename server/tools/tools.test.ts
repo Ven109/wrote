@@ -76,6 +76,7 @@ describe('read tools', () => {
     const progress = await runTool(getProgressTool, {}, context)
     expect(progress).toMatchObject({ scenes: 3, notes: 2, inbox: 1, codexEntries: 2 })
     expect(progress.totalWords).toBeGreaterThan(20)
+    expect(progress.goals).toMatchObject({ totalWords: progress.totalWords, target: null, streak: { current: 0, longest: 0 } })
   })
 
   it('rejects invalid input with a ToolError', async () => {

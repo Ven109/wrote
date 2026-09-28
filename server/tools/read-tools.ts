@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { EntryIdSchema, EntryTypeSchema } from '#shared/schemas/entry'
 import { readBookConfig } from '../storage/config'
 import { getEntry } from '../services/entries'
+import { goalProgress } from '../services/writing'
 import { getProgress } from '../services/progress'
 import { searchBook } from '../services/search'
 import { getStructure } from '../services/structure'
@@ -79,8 +80,11 @@ export const getStructureTool = defineWroteTool({
 export const getProgressTool = defineWroteTool({
   name: 'get_progress',
   title: 'Get writing progress',
-  description: 'Returns word counts (total and per scene status) and counts of scenes, notes, inbox notes and codex entries.',
+  description: 'Returns word counts (total and per scene status), counts of scenes, notes, inbox notes and codex entries, and the writing goal: word target, deadline, remaining words, days left, the daily target, today\'s words (added, deleted, net), current and longest streak, the last 30 days of writing, words over time and recent sessions – the same data as the Goals page.',
   permission: 'read',
   input: z.object({}),
-  handler: (_input, { book }) => getProgress(book!.db),
+  handler: async (_input, { book }) => {
+    const [counts, goals] = await Promise.all([getProgress(book!.db), goalProgress(book!)])
+    return { ...counts, goals: { ...goals, days: goals.days.slice(-30), history: goals.history.slice(-30), sessions: goals.sessions.slice(0, 5) } }
+  },
 })

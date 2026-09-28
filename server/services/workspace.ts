@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path'
 import { z } from 'zod'
 import { BOOK_CONFIG_FILE } from '#shared/schemas/book'
 import { openIndexDb, type IndexDb } from '../db/client'
-import { applyChange, syncIndex } from '../db/indexer'
+import { applyChange, syncIndex, type IndexedChange } from '../db/indexer'
 import { closeUsageDbs } from '../db/usage'
 import { NotFoundError } from '../storage/errors'
 import { readTextIfExists, writeFileAtomic } from '../storage/fs'
@@ -16,6 +16,7 @@ import { WROTE_JOBS } from '../jobs'
 import { scheduleEmbedding } from './embeddings'
 import { importLegacySuggestions } from './suggestions'
 import { scheduleSummaries } from './summary-jobs'
+import { recordWriting } from './writing'
 import { createJobRunner, type JobRunner } from './jobs'
 
 export interface BookContext {
@@ -134,13 +135,15 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
   }
   // After the index, changed text is queued for background AI work: embeddings and summaries (unique + debounced).
   const warn = (what: string) => (error: unknown) => console.warn(`[wrote] ${bookId}: could not queue ${what}`, error)
+  // Scene edits count towards writing sessions and goals – recorded before clients are told, so a refresh sees them.
+  const recordStats = (change: IndexedChange) => recordWriting(context, change).catch(warn('writing statistics'))
   const afterIndexed = (path: string) => {
     void scheduleEmbedding(context).catch(warn('embedding'))
     void scheduleSummaries(context, { path }).catch(warn('summaries'))
   }
   const watcher = createBookWatcher(root, {
     onChange: event => track(async () => {
-      await applyChange(db, repository, event)
+      await recordStats(await applyChange(db, repository, event))
       publishBookEvent(bookId, event)
       afterIndexed(event.path)
     }),
@@ -148,7 +151,7 @@ export async function openBook(workspaceDir: string, bookId: string): Promise<Bo
   repository.onWrite((path, hash) => {
     if (hash) watcher.ignoreOwnWrite(path, hash)
     void track(async () => {
-      await applyChange(db, repository, { kind: hash ? 'changed' : 'removed', path })
+      await recordStats(await applyChange(db, repository, { kind: hash ? 'changed' : 'removed', path }))
       publishBookEvent(bookId, hash ? { kind: 'changed', path, hash } : { kind: 'removed', path })
       afterIndexed(path)
     })

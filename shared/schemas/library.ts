@@ -13,7 +13,7 @@ export const OpenFolderSchema = z.object({
   path: z.string().trim().min(1, 'Enter the folder path'),
 })
 
-export const UpdateBookSchema = BookConfigSchema.pick({ title: true, subtitle: true, author: true, language: true, export: true, snapshots: true }).partial()
+export const UpdateBookSchema = BookConfigSchema.pick({ title: true, subtitle: true, author: true, language: true, export: true, snapshots: true, goals: true }).partial()
 export type UpdateBookInput = z.infer<typeof UpdateBookSchema>
 
 export interface BookSummary {

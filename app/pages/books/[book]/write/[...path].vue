@@ -32,6 +32,7 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
             :session-words="words.sessionWords.value"
             :ai-shares="provenance.shares.value"
           />
+          <EditorGoalIndicator :book-id="bookId" />
           <UButton
             icon="i-lucide-camera"
             color="neutral"
