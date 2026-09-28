@@ -10,7 +10,8 @@ project_ready || exit 0
 # Only check when code changed (uncommitted or untracked).
 git status --porcelain -- 'app' 'server' 'shared' 'desktop' 'test' '*.ts' '*.vue' 2>/dev/null | grep -q . || exit 0
 
-for script in lint typecheck test; do
+# Unit + component tests locally (fast); API and e2e tests run in CI on every push.
+for script in lint typecheck test:unit; do
   has_script "$script" || continue
   if ! OUT="$(pnpm run -s "$script" 2>&1)"; then
     report "Not done yet: \`pnpm $script\` fails on the current changes. Fix it before finishing." "$OUT" 80
