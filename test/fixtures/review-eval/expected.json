@@ -1,0 +1,22 @@
+{
+  "continuity": [
+    { "scene": "The Lighthouse", "quote": "brown eyes", "note": "codex: her eyes are grey" },
+    { "scene": "The Lighthouse", "quote": "dove into the deep water", "note": "codex: she is afraid of deep water" }
+  ],
+  "line-editor": [
+    { "scene": "The Lighthouse", "quote": "he said quietly", "note": "style guide: no adverbs in dialogue tags" },
+    { "scene": "The Lighthouse", "quote": "She felt the cold wind", "note": "filter word" },
+    { "scene": "The Lighthouse", "quote": "The lamp threw their shadows", "note": "repetition of lamp" },
+    { "scene": "The Lighthouse", "quote": "The door was opened by the keeper", "note": "passive voice" }
+  ],
+  "developmental": [
+    { "scene": "Waiting", "quote": null, "note": "a scene without goal or conflict" }
+  ],
+  "beta-reader": [
+    { "scene": "Waiting", "quote": "It fell on the roofs", "note": "bored" },
+    { "scene": "The Lighthouse", "quote": "dove into the deep water", "note": "hooked or skeptical" }
+  ],
+  "fact-checker": [
+    { "scene": "The Lighthouse", "quote": "The big tides only come at the half moon", "note": "research: spring tides come at new and full moon" }
+  ]
+}

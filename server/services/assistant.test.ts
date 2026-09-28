@@ -4,7 +4,8 @@ import { createTestWorkspace } from '../../test/utils/workspace'
 import { scriptedModel } from '../../test/utils/mock-model'
 import { createThread, threadMessages } from '../db/state/chat'
 import { getContextSnapshot } from '../db/state/context-snapshots'
-import { assistantTools, latestQuestion, prepareAssistantPrompt, streamAssistant, titleFromMessages } from './assistant'
+import { assistantTools, latestQuestion, mentionedAgentId, prepareAssistantPrompt, streamAssistant, titleFromMessages } from './assistant'
+import { reviewAgent } from './review-agents'
 import { closeAllBooks, openBook, type BookContext } from './workspace'
 
 let book: BookContext
@@ -86,5 +87,19 @@ describe('assistant', () => {
     expect(titleFromMessages([userMessage('  Which   scenes mention the harbor?')])).toBe('Which scenes mention the harbor?')
     expect(titleFromMessages([userMessage('x'.repeat(100))])?.length).toBe(60)
     expect(titleFromMessages([])).toBeUndefined()
+  })
+})
+
+describe('@agent messages', () => {
+  it('hand the turn to the review agent: its instructions and material for the open scene', async () => {
+    const bookContext = await openBook(await createTestWorkspace(), 'sample-book')
+    const messages = [{ id: 'm1', role: 'user' as const, parts: [{ type: 'text' as const, text: '@line-editor tighten this' }] }]
+    expect(mentionedAgentId(messages)).toBe('line-editor')
+    expect(latestQuestion(messages)).toBe('tighten this')
+    const snapshot = await prepareAssistantPrompt({ book: bookContext, context: { entryPath: 'manuscript/01-part-one/01-the-harbor/01-arrival.md' }, messages, modelRef: 'test:model', agent: await reviewAgent(bookContext, 'line-editor') }, new Date())
+    expect(snapshot.feature).toBe('assistant:@line-editor')
+    expect(snapshot.system).toContain('review agent "Line editor" (@line-editor)')
+    expect(snapshot.system).toContain('You are a line editor.')
+    expect(snapshot.system).toContain('Heuristic flags')
   })
 })

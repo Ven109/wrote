@@ -179,6 +179,7 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
         v-model:open="review.historyOpen.value"
         :runs="review.runs.value"
         :loading="review.runsLoading.value"
+        :scene-id="document?.id ?? ''"
       />
       <EditorScenePanel
         v-model:open="meta.open.value"

@@ -23,13 +23,13 @@ function fake(byScene: Record<string, FindingsOutput['findings']>) {
   const review: ReviewFn = async (prompt) => {
     prompts.push(prompt)
     const title = Object.keys(byScene).find(name => prompt.prompt.includes(`"${name}"`))
-    return { findings: title ? byScene[title]! : [] }
+    return { findings: title ? byScene[title]! : [], summary: null }
   }
   return { prompts, review }
 }
 
-async function run(scope: 'scene' | 'chapter' | 'book', targetId: string | undefined, review: ReviewFn, signal?: AbortSignal) {
-  const plan = await planReview(book, { agentId: 'editor', scope, targetId })
+async function run(scope: 'scene' | 'chapter' | 'book', targetId: string | undefined, review: ReviewFn, signal?: AbortSignal, agentId = 'editor') {
+  const plan = await planReview(book, { agentId, scope, targetId })
   const created = await createReviewRun(book, plan, scope)
   return executeReviewRun(book, created.id, { review, model: 'test:model', signal })
 }
@@ -90,7 +90,7 @@ describe('running a review', () => {
     const controller = new AbortController()
     const review: ReviewFn = async (prompt) => {
       if (prompt.prompt.includes('"The Map"')) controller.abort()
-      return { findings: prompt.prompt.includes('"Arrival"') ? [finding('The tide was out')] : [] }
+      return { findings: prompt.prompt.includes('"Arrival"') ? [finding('The tide was out')] : [], summary: null }
     }
     await expect(run('chapter', 'chp_harb0r0001', review, controller.signal)).rejects.toThrow()
     const [latest] = await listReviewRuns(book.state)
@@ -113,5 +113,27 @@ describe('fixes', () => {
     await run('scene', ARRIVAL, fake({ Arrival: [finding('The tide was out')] }).review)
     const [comment] = await listComments(book, { entryId: ARRIVAL })
     await expect(suggestFindingFix(book, comment!.id)).rejects.toThrow(/no suggested fix/)
+  })
+})
+
+describe('built-in agents', () => {
+  it('get their extra material: scene details, outline beats, research notes, heuristic flags', async () => {
+    const prompts = async (agentId: string, scope: 'scene' | 'chapter') => {
+      const model = fake({})
+      await run(scope, scope === 'scene' ? ARRIVAL : 'chp_harb0r0001', model.review, undefined, agentId)
+      return model.prompts[0]!
+    }
+    const continuity = await prompts('continuity', 'scene')
+    expect(continuity.prompt).toContain('Scene details:\n- pov: Mara Velden\n- location: Hollow Bay\n- timeline: Day 1')
+    expect(continuity.system).toContain('Codex: Mara Velden')
+    expect((await prompts('developmental', 'chapter')).prompt).toContain('Outline beats this scene tells:\n- Act One: Return › Mara returns to Hollow Bay')
+    expect((await prompts('line-editor', 'scene')).prompt).toMatch(/Heuristic flags/)
+    expect((await prompts('fact-checker', 'scene')).prompt).toMatch(/<research>|Research notes: none/)
+  })
+
+  it('keeps a beta reader\'s scene summaries on the run', async () => {
+    const review: ReviewFn = async () => ({ findings: [], summary: 'Hooked from the first line.' })
+    const done = await run('scene', ARRIVAL, review, undefined, 'beta-reader')
+    expect(done.summaries).toEqual([{ sceneId: ARRIVAL, title: 'Arrival', text: 'Hooked from the first line.' }])
   })
 })

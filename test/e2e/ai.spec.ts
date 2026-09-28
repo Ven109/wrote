@@ -242,7 +242,7 @@ test('a review agent adds findings to the margin; a fix becomes a suggestion, a 
   const { bookId, scenePath } = await createBookWithHarbor(page, `Review ${Date.now()}`)
   await gotoHydrated(page, `/books/${bookId}/write/${scenePath}`)
   await page.getByRole('button', { name: 'Review', exact: true }).click()
-  await page.getByRole('menuitem', { name: 'Editor' }).click()
+  await page.getByRole('menuitem', { name: 'Editor', exact: true }).click()
   await page.getByRole('menuitem', { name: 'This scene' }).click()
 
   const margin = page.getByRole('complementary', { name: 'Comments' })
@@ -263,7 +263,7 @@ test('a review agent adds findings to the margin; a fix becomes a suggestion, a 
   await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: 'Review', exact: true }).click()
-  await page.getByRole('menuitem', { name: 'Editor' }).click()
+  await page.getByRole('menuitem', { name: 'Editor', exact: true }).click()
   await page.getByRole('menuitem', { name: 'This scene' }).click()
   await page.getByRole('button', { name: 'Review', exact: true }).click()
   await page.getByRole('menuitem', { name: 'Review history' }).click()
@@ -299,6 +299,36 @@ test('an integration adds web search to the assistant, which saves what it found
   await gotoHydrated(page, '/settings/integrations')
   await page.getByRole('button', { name: 'Remove Web search' }).click()
   await expect(page.getByText('No integrations yet')).toBeVisible()
+})
+
+test('a custom agent is created and tested on the Agents page, then called with @ in chat and from the Review menu', async ({ page }) => {
+  const { bookId, scenePath } = await createBookWithHarbor(page, `Agents ${Date.now()}`)
+  await gotoHydrated(page, `/books/${bookId}/agents`)
+  await page.getByRole('button', { name: 'New agent' }).click()
+  await page.getByLabel('Name', { exact: true }).fill('Victorian dialogue checker')
+  await expect(page.getByLabel('Id', { exact: true })).toHaveValue('victorian-dialogue-checker')
+  await page.getByLabel('Instructions').fill('Flag words that did not exist in 1880s London.')
+  await page.getByRole('button', { name: 'Run test' }).click()
+  const test = page.getByRole('region', { name: 'Test on scene' })
+  await expect(test).toContainText('2 findings')
+  await expect(test).toContainText('medium · imagery')
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByRole('navigation', { name: 'Agents' })).toContainText('Victorian dialogue checker')
+
+  await gotoHydrated(page, `/books/${bookId}/write/${scenePath}`)
+  await page.getByRole('button', { name: 'Toggle assistant' }).click()
+  const prompt = page.getByPlaceholder('Ask about your book…')
+  await prompt.fill('@vic')
+  await page.getByRole('button', { name: 'Ask Victorian dialogue checker' }).click()
+  await expect(prompt).toHaveValue('@victorian-dialogue-checker ')
+  await expect(prompt).toBeFocused()
+  await expect(page.getByText('Answered by Victorian dialogue checker')).toBeVisible()
+  await page.keyboard.type('check this scene')
+  await prompt.press('Enter')
+  await expect.poll(() => JSON.stringify(model.requests.at(-1)?.messages[0]?.content ?? '')).toContain('review agent \\"Victorian dialogue checker\\"')
+
+  await page.getByRole('button', { name: 'Review', exact: true }).click()
+  await expect(page.getByRole('menuitem', { name: 'Victorian dialogue checker' })).toBeVisible()
 })
 
 test('settings and assistant fit a phone screen', async ({ browser }) => {

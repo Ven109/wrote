@@ -3,10 +3,23 @@ const props = defineProps<{ bookId: string }>()
 const assistant = useAssistant(() => props.bookId)
 const { messages, status, input, contextChips, threads, threadId, errorCode, overrides } = assistant
 const drawer = useContextDrawer(() => props.bookId, assistant)
+const mentions = useAgentMentions(() => props.bookId, input)
+const root = ref<HTMLElement | null>(null)
+/** Inserts `@agent ` and puts the cursor after it, so the author keeps typing the request. */
+async function pickAgent(agentId: string) {
+  mentions.pick(agentId)
+  await nextTick()
+  const textarea = root.value?.querySelector('textarea')
+  textarea?.focus()
+  textarea?.setSelectionRange(input.value.length, input.value.length)
+}
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col">
+  <div
+    ref="root"
+    class="flex h-full min-h-0 flex-col"
+  >
     <div class="flex items-center justify-end gap-1 px-2 pb-1">
       <UButton
         icon="i-lucide-square-pen"
@@ -58,7 +71,7 @@ const drawer = useContextDrawer(() => props.bookId, assistant)
     </div>
     <UChatPrompt
       v-model="input"
-      placeholder="Ask about your book…"
+      placeholder="Ask about your book… (@ for review agents)"
       :autofocus="false"
       :error="assistant.error.value ?? undefined"
       variant="subtle"
@@ -67,7 +80,27 @@ const drawer = useContextDrawer(() => props.bookId, assistant)
     >
       <template #header>
         <div
-          v-if="contextChips.length"
+          v-if="mentions.suggestions.value.length"
+          class="flex flex-wrap gap-1"
+          role="group"
+          aria-label="Review agents"
+        >
+          <UButton
+            v-for="agent in mentions.suggestions.value"
+            :key="agent.id"
+            :label="`@${agent.id}`"
+            :title="agent.description"
+            :aria-label="`Ask ${agent.name}`"
+            icon="i-lucide-bot"
+            color="neutral"
+            variant="soft"
+            size="xs"
+            class="min-h-11 lg:min-h-0"
+            @click="pickAgent(agent.id)"
+          />
+        </div>
+        <div
+          v-if="contextChips.length || mentions.active.value"
           class="flex flex-wrap gap-1"
           aria-label="Context"
         >
@@ -77,6 +110,14 @@ const drawer = useContextDrawer(() => props.bookId, assistant)
             :icon="chip.icon"
             :label="chip.label"
             color="neutral"
+            variant="subtle"
+            size="sm"
+          />
+          <UBadge
+            v-if="mentions.active.value"
+            icon="i-lucide-bot"
+            :label="`Answered by ${mentions.active.value.name}`"
+            color="primary"
             variant="subtle"
             size="sm"
           />

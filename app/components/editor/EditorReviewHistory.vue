@@ -2,7 +2,8 @@
 import type { ReviewRun } from '#shared/schemas/review'
 
 /** Past review runs that covered the open scene. */
-defineProps<{ runs: ReviewRun[], loading: boolean }>()
+const props = defineProps<{ runs: ReviewRun[], loading: boolean, sceneId: string }>()
+const summaryOf = (run: ReviewRun) => run.summaries.find(summary => summary.sceneId === props.sceneId)?.text
 const open = defineModel<boolean>('open', { default: false })
 const STATUS = {
   queued: { label: 'Queued', color: 'neutral' },
@@ -44,6 +45,12 @@ const when = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyl
             />
           </div>
           <span class="text-muted">{{ run.targetTitle }} · {{ run.findings }} {{ run.findings === 1 ? 'finding' : 'findings' }} · {{ when(run.createdAt) }}</span>
+          <p
+            v-if="summaryOf(run)"
+            class="italic"
+          >
+            {{ summaryOf(run) }}
+          </p>
           <span
             v-if="run.error"
             class="text-error"
