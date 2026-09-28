@@ -23,3 +23,13 @@ describe('outline API', () => {
     expect(await $fetch(`${base}/beats`, { query: { sceneId: 'scn_arr1val001' } })).toMatchObject([{ id: 'bt_arr1va0001', title: 'Mara returns to Hollow Bay' }])
   })
 })
+
+describe('scenes from beats', () => {
+  it('creates a scene from a beat in a chapter and links it', async () => {
+    const res = await fetch(`${base}/outline/beats/bt_themap0001/scene`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chapterId: 'chp_gu1ld00001' }) })
+    expect(res.status).toBe(201)
+    const { sceneId } = await res.json() as { sceneId: string }
+    expect(await $fetch(`${base}/beats`, { query: { sceneId } })).toMatchObject([{ id: 'bt_themap0001' }])
+    expect((await fetch(`${base}/outline/beats/bt_themap0001/scene`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chapterId: 'nope' }) })).status).toBe(400)
+  })
+})

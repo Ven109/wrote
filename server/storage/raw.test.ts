@@ -1,12 +1,12 @@
-import { mkdtemp, readdir, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { readdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { readRawFile, restoreRawFile } from './raw'
+import { createTempDir } from '../../test/utils/workspace'
 
 let root: string
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), 'wrote-raw-'))
+  root = await createTempDir('wrote-raw-')
 })
 afterEach(() => rm(root, { recursive: true, force: true }))
 

@@ -4,8 +4,9 @@ import { createId, createRecordId } from '#shared/utils/ids'
 import { ensureOutlineIds, parseOutline, serializeOutline } from '#shared/utils/outline-format'
 import { applyOutlineOps as applyOps, OutlineOpError } from '#shared/utils/outline-ops'
 import { applyChange } from '../db/indexer'
-import { ConflictError, InvalidInputError } from '../storage/errors'
+import { ConflictError, InvalidInputError, NotFoundError } from '../storage/errors'
 import type { StoredEntry } from '../storage/entries'
+import { createNode } from './manuscript'
 import type { BookContext } from './workspace'
 
 const PATH = BOOK_LAYOUT.outline
@@ -67,4 +68,22 @@ export async function listBeats(book: BookContext, filter: { sceneId?: string } 
     args: filter.sceneId ? [filter.sceneId] : [],
   })
   return rows.rows.map(row => ({ id: String(row.id), title: String(row.title), summary: String(row.summary), actId: String(row.act_id), actTitle: String(row.act_title), scenes: JSON.parse(String(row.scenes)) as string[] }))
+}
+
+/**
+ * "Create scene from beat": a new scene in the chapter, titled after the beat, with the beat's summary as
+ * its synopsis, linked to the beat in the outline.
+ */
+export async function createSceneForBeat(book: BookContext, beatId: string, chapterId: string): Promise<{ sceneId: string, path: string, outline: OutlineDocument }> {
+  const { outline } = await readOutline(book)
+  const beat = outline.acts.flatMap(act => act.beats).find(candidate => candidate.id === beatId)
+  if (!beat) throw new NotFoundError(`Beat ${beatId}`)
+  const scene = await createNode(book, { type: 'scene', title: beat.title, parentId: chapterId })
+  if (beat.summary.trim()) {
+    const entry = await book.repository.read(scene.path)
+    await book.repository.write(scene.path, { frontmatter: { ...entry.frontmatter, synopsis: beat.summary.trim() }, body: entry.body }, entry.hash)
+    await applyChange(book.db, book.repository, { kind: 'changed', path: scene.path })
+  }
+  const updated = await updateOutline(book, [{ op: 'updateBeat', beatId, scenes: [...beat.scenes, scene.id] }])
+  return { sceneId: scene.id, path: scene.path, outline: updated }
 }

@@ -2,7 +2,7 @@
 const bookId = useRouteBookId()
 const { activeEntryPath } = useAppNavigation()
 const { book } = useBook(bookId)
-const { entry, autosave, words, meta, backlinks, summary, suggestions, comments, ai, provenance } = useSceneEditor(bookId, activeEntryPath)
+const { entry, autosave, words, meta, backlinks, summary, suggestions, comments, beats, ai, provenance } = useSceneEditor(bookId, activeEntryPath)
 const { document, status, draft } = entry
 useSeoMeta({ title: () => document.value?.title ?? book.value?.title ?? 'Write' })
 defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
@@ -74,6 +74,10 @@ defineShortcuts({ meta_s: { usingInput: true, handler: autosave.flush } })
         </div>
       </div>
       <template v-if="document">
+        <EditorBeatPanel
+          :beats="beats.beats.value"
+          :outline-href="beats.outlineHref.value"
+        />
         <div :class="comments.margin.value ? 'grid grid-cols-[minmax(0,1fr)_16rem] gap-6' : ''">
           <EditorWroteEditor
             :key="document.path"

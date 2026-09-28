@@ -12,6 +12,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'node',
+          setupFiles: ['test/setup/cleanup.ts'],
           include: ['{app,server,shared,test,cli}/**/*.test.ts'],
           exclude: ['**/*.nuxt.test.ts', '**/node_modules/**', 'test/e2e/**', 'test/api/**'],
         },
@@ -20,6 +21,7 @@ export default defineConfig({
         test: {
           name: 'api',
           environment: 'node',
+          setupFiles: ['test/setup/cleanup.ts'],
           include: ['test/api/**/*.test.ts'],
           testTimeout: 30_000,
           hookTimeout: 240_000,

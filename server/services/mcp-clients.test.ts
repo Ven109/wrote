@@ -1,12 +1,12 @@
-import { mkdtemp, stat, writeFile, mkdir } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { stat, writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { assistantPolicy, authenticateMcpClient, createMcpClient, deleteMcpClient, mcpSettingsView, updateAssistantPolicy, updateMcpClient } from './mcp-clients'
+import { createTempDir } from '../../test/utils/workspace'
 
 let workspace: string
 beforeEach(async () => {
-  workspace = await mkdtemp(join(tmpdir(), 'wrote-clients-'))
+  workspace = await createTempDir('wrote-clients-')
 })
 
 describe('MCP clients', () => {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const bookId = useRouteBookId()
 const view = useOutlineView(bookId)
-const { outline, status, mode, board, editing, promptOpen, deleteOpen, promptTitle, deleteTitle, promptInitial } = view
+const { outline, status, mode, board, beats, promptOpen, deleteOpen, promptTitle, deleteTitle, promptInitial } = view
 const { dragging, drop } = board
 useSeoMeta({ title: 'Outline' })
 </script>
@@ -99,8 +99,13 @@ useSeoMeta({ title: 'Outline' })
       @confirm="view.confirmDelete"
     />
     <OutlineBeatSheet
-      v-model="editing"
-      @save="view.saveBeat"
+      v-model="beats.editing.value"
+      :scenes="beats.scenes.value"
+      :chapters="beats.chapters.value"
+      :creating="beats.creating.value"
+      :created="beats.created.value"
+      @save="beats.save"
+      @create-scene="beats.createScene"
     />
   </div>
 </template>

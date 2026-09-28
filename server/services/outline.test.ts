@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { parseOutline } from '#shared/utils/outline-format'
 import { createTestWorkspace } from '../../test/utils/workspace'
-import { listBeats, readOutline, updateOutline } from './outline'
+import { createSceneForBeat, listBeats, readOutline, updateOutline } from './outline'
 import { closeAllBooks, openBook, type BookContext } from './workspace'
 
 let book: BookContext
@@ -40,5 +40,16 @@ describe('outline service', () => {
     const { outline } = await readOutline(book)
     expect(outline.acts[0]!.beats[0]!.id).toMatch(/^bt_/)
     expect(await book.repository.readRaw('outline.md')).toContain(`<!-- wrote:beat id=${outline.acts[0]!.beats[0]!.id} -->`)
+  })
+})
+
+describe('beats and scenes', () => {
+  it('creates a scene from a beat, prefilled and linked on both sides', async () => {
+    const { sceneId, path } = await createSceneForBeat(book, 'bt_0ffer00001', 'chp_gu1ld00001')
+    const scene = await book.repository.read(path)
+    expect(scene.frontmatter).toMatchObject({ title: 'The Guild makes an offer', synopsis: 'They want the map, and they will pay.' })
+    expect((await readOutline(book)).outline.acts[1]!.beats[0]!.scenes).toEqual([sceneId])
+    expect(await listBeats(book, { sceneId })).toMatchObject([{ id: 'bt_0ffer00001' }])
+    await expect(createSceneForBeat(book, 'bt_missing000', 'chp_gu1ld00001')).rejects.toThrow('not found')
   })
 })
